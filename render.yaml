@@ -8,16 +8,11 @@ services:
   - type: web
     name: nyo-admin-dashboard
     runtime: python
-    plan: starter
+    plan: free
     region: singapore
     buildCommand: bash build.sh
-    preDeployCommand: python manage.py migrate
     startCommand: python -m gunicorn nyo_dashboard.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120
     healthCheckPath: /health/
-    disk:
-      name: app-media
-      mountPath: /var/data
-      sizeGB: 5
     envVars:
       - key: PYTHON_VERSION
         value: 3.14.0
@@ -29,5 +24,9 @@ services:
         generateValue: true
       - key: DEBUG
         value: "false"
-      - key: MEDIA_ROOT
-        value: /var/data/media
+      - key: DJANGO_SUPERUSER_USERNAME
+        value: admin
+      - key: DJANGO_SUPERUSER_EMAIL
+        value: admin@example.com
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false

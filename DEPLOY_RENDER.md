@@ -1,24 +1,39 @@
 # Deploying To Render
 
-## Recommended setup
+## Free Tier Setup
 
 Use:
 
 - Render web service
 - Render PostgreSQL database
-- A persistent disk mounted at `/var/data` for uploaded QR codes and payment proofs
 
 This keeps local development on SQLite, but uses Postgres in production through `DATABASE_URL`.
 
-## Why not pure SQLite on Render?
+## Important Free Tier Limits
 
 Render's docs note:
 
 - web services use an ephemeral filesystem by default
-- persistent disks are only available on paid web services
-- persistent disks are not available during build or one-off jobs
+- free web services cannot attach persistent disks
+- free web services do not provide Render Shell access
 
-Because this app stores uploaded files and needs management commands like migrations, Postgres plus a disk for `media/` is the smoother deployment path.
+That means uploaded QR images and payment proof images are temporary on free tier and can be lost on redeploy, restart, or idle spin-down.
+
+If you want stable file uploads later, upgrade the web service to `Starter` and attach a disk or move uploads to S3/Cloudinary.
+
+## What the build does now
+
+Because free tier does not support `preDeployCommand` for your use case, `build.sh` now runs:
+
+- `collectstatic`
+- `migrate`
+- `ensure_superuser`
+
+The superuser creation is idempotent:
+
+- if a superuser already exists, it skips
+- if the target username already exists, it skips
+- if the required env vars are missing, it skips
 
 ## Files added for deployment
 
@@ -31,7 +46,9 @@ Because this app stores uploaded files and needs management commands like migrat
 - `DATABASE_URL`
 - `SECRET_KEY`
 - `DEBUG`
-- `MEDIA_ROOT`
+- `DJANGO_SUPERUSER_USERNAME`
+- `DJANGO_SUPERUSER_EMAIL`
+- `DJANGO_SUPERUSER_PASSWORD`
 
 `render.yaml` already defines these for Blueprint deploys.
 
@@ -44,12 +61,9 @@ Because this app stores uploaded files and needs management commands like migrat
    - web service: `nyo-admin-dashboard`
    - database: `nyo-dashboard-db`
 5. Apply the Blueprint.
-6. Wait for the first deploy to finish.
-7. Open the Render Shell for the web service and create an admin user:
-
-```bash
-python manage.py createsuperuser
-```
+6. When Render asks for `DJANGO_SUPERUSER_PASSWORD`, enter your admin password.
+7. Wait for the first deploy to finish.
+8. The build will auto-run migrations and create the first admin user if one does not exist.
 
 ## Build and start commands
 
@@ -57,12 +71,6 @@ Build:
 
 ```bash
 bash build.sh
-```
-
-Pre-deploy:
-
-```bash
-python manage.py migrate
 ```
 
 Start:
@@ -73,6 +81,6 @@ python -m gunicorn nyo_dashboard.wsgi:application --bind 0.0.0.0:$PORT --workers
 
 ## Notes
 
-- Uploaded files are stored under `/var/data/media`.
-- The app serves uploaded media through Django in production, so QR codes and proof images still work.
-- If you later want a cheaper or more scalable setup, move media to S3 or Cloudinary.
+- Uploaded media works on free tier, but it is not persistent.
+- The initial admin user is bootstrapped from environment variables during the build.
+- If you later upgrade to a paid plan, you can reintroduce a persistent disk for safer file storage.
