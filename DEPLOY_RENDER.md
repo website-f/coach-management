@@ -27,13 +27,12 @@ Because free tier does not support `preDeployCommand` for your use case, `build.
 
 - `collectstatic`
 - `migrate`
-- `ensure_superuser`
+- `bootstrap_system_data`
 
-The superuser creation is idempotent:
+The system bootstrap is idempotent:
 
-- if a superuser already exists, it skips
-- if the target username already exists, it skips
-- if the required env vars are missing, it skips
+- if the database already has users or members, it skips
+- if the database is empty, it seeds the built-in demo accounts and sample data
 
 ## Files added for deployment
 
@@ -46,9 +45,6 @@ The superuser creation is idempotent:
 - `DATABASE_URL`
 - `SECRET_KEY`
 - `DEBUG`
-- `DJANGO_SUPERUSER_USERNAME`
-- `DJANGO_SUPERUSER_EMAIL`
-- `DJANGO_SUPERUSER_PASSWORD`
 
 `render.yaml` already defines these for Blueprint deploys.
 
@@ -61,9 +57,21 @@ The superuser creation is idempotent:
    - web service: `nyo-admin-dashboard`
    - database: `nyo-dashboard-db`
 5. Apply the Blueprint.
-6. When Render asks for `DJANGO_SUPERUSER_PASSWORD`, enter your admin password.
-7. Wait for the first deploy to finish.
-8. The build will auto-run migrations and create the first admin user if one does not exist.
+6. Wait for the first deploy to finish.
+7. The build will auto-run migrations and seed these system login accounts on a fresh database:
+
+```text
+admin / Admin123!
+coach / Coach123!
+headcount / Head123!
+parent / Parent123!
+```
+
+## If you deployed manually instead of Blueprint
+
+If your Render URL/service name does not match the one in `render.yaml`, you most likely created a manual web service. That is still fine for this bootstrap path because it no longer depends on extra env vars.
+
+Just redeploy after pushing the latest code.
 
 ## Build and start commands
 
@@ -82,5 +90,5 @@ python -m gunicorn nyo_dashboard.wsgi:application --bind 0.0.0.0:$PORT --workers
 ## Notes
 
 - Uploaded media works on free tier, but it is not persistent.
-- The initial admin user is bootstrapped from environment variables during the build.
+- The initial system login users are bootstrapped during the build on an empty database.
 - If you later upgrade to a paid plan, you can reintroduce a persistent disk for safer file storage.

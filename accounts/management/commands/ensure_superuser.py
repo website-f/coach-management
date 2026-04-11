@@ -10,25 +10,64 @@ class Command(BaseCommand):
     help = "Create an initial superuser if one does not already exist."
 
     def handle(self, *args, **options):
-        username = self.get_env("DJANGO_SUPERUSER_USERNAME", "INITIAL_SUPERUSER_USERNAME")
-        email = self.get_env("DJANGO_SUPERUSER_EMAIL", "INITIAL_SUPERUSER_EMAIL", default="")
-        password = self.get_env("DJANGO_SUPERUSER_PASSWORD", "INITIAL_SUPERUSER_PASSWORD")
-        first_name = self.get_env("DJANGO_SUPERUSER_FIRST_NAME", "INITIAL_SUPERUSER_FIRST_NAME", default="")
-        last_name = self.get_env("DJANGO_SUPERUSER_LAST_NAME", "INITIAL_SUPERUSER_LAST_NAME", default="")
+        username = self.get_env(
+            "DJANGO_SUPERUSER_USERNAME",
+            "INITIAL_SUPERUSER_USERNAME",
+            "SUPERUSER_USERNAME",
+            "ADMIN_USERNAME",
+            default="admin",
+        )
+        email = self.get_env(
+            "DJANGO_SUPERUSER_EMAIL",
+            "INITIAL_SUPERUSER_EMAIL",
+            "SUPERUSER_EMAIL",
+            "ADMIN_EMAIL",
+            default="admin@example.com",
+        )
+        password = self.get_env(
+            "DJANGO_SUPERUSER_PASSWORD",
+            "INITIAL_SUPERUSER_PASSWORD",
+            "SUPERUSER_PASSWORD",
+            "ADMIN_PASSWORD",
+        )
+        first_name = self.get_env(
+            "DJANGO_SUPERUSER_FIRST_NAME",
+            "INITIAL_SUPERUSER_FIRST_NAME",
+            "SUPERUSER_FIRST_NAME",
+            "ADMIN_FIRST_NAME",
+            default="System",
+        )
+        last_name = self.get_env(
+            "DJANGO_SUPERUSER_LAST_NAME",
+            "INITIAL_SUPERUSER_LAST_NAME",
+            "SUPERUSER_LAST_NAME",
+            "ADMIN_LAST_NAME",
+            default="Admin",
+        )
 
         if User.objects.filter(is_superuser=True).exists():
             self.stdout.write("Superuser already exists. Skipping bootstrap.")
             return
 
-        if not username or not password:
+        if not password:
             self.stdout.write(
-                "Missing superuser env vars. Set DJANGO_SUPERUSER_USERNAME and "
-                "DJANGO_SUPERUSER_PASSWORD to bootstrap an admin account."
+                "Missing superuser password env var. Set DJANGO_SUPERUSER_PASSWORD "
+                "(or ADMIN_PASSWORD). Username defaults to 'admin'."
             )
             return
 
-        if User.objects.filter(username=username).exists():
-            self.stdout.write(f"User '{username}' already exists. Skipping bootstrap.")
+        existing_user = User.objects.filter(username=username).first()
+        if existing_user:
+            existing_user.email = email or existing_user.email
+            existing_user.first_name = first_name or existing_user.first_name
+            existing_user.last_name = last_name or existing_user.last_name
+            existing_user.is_staff = True
+            existing_user.is_superuser = True
+            existing_user.set_password(password)
+            existing_user.save()
+            existing_user.profile.role = ROLE_ADMIN
+            existing_user.profile.save()
+            self.stdout.write(self.style.SUCCESS(f"Promoted existing user '{username}' to superuser."))
             return
 
         user = User.objects.create_superuser(
