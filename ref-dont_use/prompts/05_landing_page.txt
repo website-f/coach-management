@@ -1,0 +1,20 @@
+
+Build the complete public landing page.
+
+**Create `components/LandingPage.tsx`**:
+1.  The component should accept `onLogin` and `content` as props.
+2.  **Layout**: Build the full page layout including:
+    *   A hero section with the title, subtitle, and call-to-action buttons, overlaid on a background image.
+    *   A "Staff Access" dropdown menu at the top-left for admin and coach logins.
+    *   A "Feature Highlights" section.
+    *   A multi-step "Apply for Admission" registration funnel.
+    *   A footer with social links and copyright info.
+3.  **Login Modal**: Create a reusable modal that appears when a login button is clicked.
+    *   The modal's title and icon should change based on the role (`ADMIN`, `COACH`, or `CLIENT`).
+    *   It should contain a form with username and password fields.
+    *   Implement the `attemptLogin` function to check credentials against the mock users from `constants.ts`. Show loading and error states. On success, it should call the `onLogin` prop.
+4.  **Registration Funnel**:
+    *   **Step 1 (Details)**: A form to collect the student's name, contact info, program, and location preference.
+    *   **Step 2 (Account)**: A form to create a username and password.
+    *   **Step 3 (Success)**: A confirmation screen showing the registration was successful and displaying the new username.
+    *   Manage the multi-step flow using state.

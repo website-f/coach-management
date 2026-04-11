@@ -1,0 +1,31 @@
+
+Build the main dashboard for the academy administrator. This is the most complex component.
+
+**Create `components/AdminDashboard.tsx`**:
+1.  **Layout**: Create a two-column layout. The left column is a fixed sidebar for main navigation, and the right is the content area.
+2.  **Sidebar Navigation**: Create buttons for 'Financials', 'Operations', 'Syllabus Plan', 'Staff Mgmt', 'Applications', 'Store & Inventory', and 'Website & Landing'.
+3.  **Financials Tab**:
+    *   Use sub-tabs for 'Overview' and 'Ledger'.
+    *   **Overview**: Display stat cards for Total Income, Expenses, and Net Profit. Include a `recharts` BarChart for 'Monthly Performance' and a PieChart for 'Expense Breakdown'.
+    *   **Ledger**: Use further sub-tabs for different ledgers ('General', 'Income', 'Expense', 'Student Fees'). Display transactions in a table. The 'Student Fees' view should show each student's payment status and allow for manual payment confirmation.
+4.  **Operations Tab**:
+    *   Create a location filter and a list of classes.
+    *   When a class is selected, display a detailed monthly attendance grid, similar to the coach's view, but with fee status indicators for each student.
+5.  **Syllabus Plan Tab**:
+    *   Include a button that calls the `generateTrainingPlan` function from `geminiService.ts`.
+    *   Display the generated markdown plan in a styled container.
+6.  **Staff Mgmt Tab**:
+    *   Implement sub-tabs for 'Overview', 'Credentials', and 'Hire'.
+    *   **Overview**: Show coach performance stats and a list of pending session logs for approval.
+    *   **Credentials**: Display a table of all staff usernames and passwords.
+    *   **Hire**: Provide a form to create a new coach account.
+7.  **Applications Tab**:
+    *   Display a list of new student applications.
+    *   Provide 'Approve' and 'Reject' buttons to manage application statuses.
+8.  **Store & Inventory Tab**:
+    *   Display products in a grid.
+    *   Implement functionality to add, edit, and delete products, and update their stock levels.
+9.  **Website & Landing Tab**:
+    *   Create a form, organized into cards, that allows the admin to edit all fields of the `LandingPageContent` object, including the hero text, contact info, and the lists of available programs and locations.
+10. **Payment Proof Modal**:
+    *   Create a modal that appears when an admin clicks 'Review Proof' in the finance tab. It should display the uploaded image and have 'Approve'/'Reject' buttons.

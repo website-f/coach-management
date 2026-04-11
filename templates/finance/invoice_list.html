@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+
+{% block title %}Invoices | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}Invoices{% endblock %}
+
+{% block content %}
+<div class="space-y">
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <form method="get" class="filter-fields">
+            <div class="filter-field">
+                <label>Status</label>
+                <select name="status" id="statusFilter">
+                    <option value="">All statuses</option>
+                    {% for value, label in statuses %}
+                    <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-field">
+                <label>Member</label>
+                <select name="member" id="memberFilter">
+                    <option value="">All members</option>
+                    {% for member_id, member_name in members %}
+                    <option value="{{ member_id }}" {% if request.GET.member == member_id|stringformat:"s" %}selected{% endif %}>{{ member_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-actions" style="margin-top:auto;">
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filter</button>
+                {% if request.GET.status or request.GET.member %}
+                <a href="{% url 'finance:invoice_list' %}" class="btn btn-ghost">Clear</a>
+                {% endif %}
+            </div>
+        </form>
+        </form>
+    </div>
+
+    <!-- Page injected table actions -->
+    <div class="page-table-actions" style="display:none;">
+        <a href="{% url 'finance:invoice_create' %}" class="dt-button" style="background:var(--accent)!important;color:#fff!important;border-color:var(--accent-h)!important;">
+            <i class="fa-solid fa-plus"></i> Generate Invoice
+        </a>
+    </div>
+
+    <!-- Desktop Table -->
+    <div class="table-wrap" id="desktopTable" style="display:none;">
+        <table class="tbl">
+            <thead>
+                <tr>
+                    <th style="width: 40px; text-align: left; padding-left: 24px;"><input type="checkbox" class="select-all"></th>
+                    <th>Date</th>
+                    <th>Member and description</th>
+                    <th>Amount (RM)</th>
+                    <th>Status</th>
+                    <th class="not-export-col">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invoice in invoices %}
+                <tr>
+                    <td style="padding-left: 24px; vertical-align: middle;"><input type="checkbox" class="row-checkbox" value="{{ invoice.id }}"></td>
+                    <td>
+                        <div class="tbl-name">{{ invoice.created_at|date:"M j, Y"|default:invoice.period|date:"M j, Y" }}</div>
+                        <div class="tbl-sub">10:00 am</div> <!-- Mock time for visual matching -->
+                    </td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div style="width:36px;height:36px;border-radius:12px;background:rgba(79,110,247,0.1);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;">
+                                <i class="fa-solid fa-wallet"></i>
+                            </div>
+                            <div>
+                                <div class="tbl-name">{{ invoice.member.full_name }}</div>
+                                <div class="tbl-sub">Invoice #{{ invoice.id|stringformat:"06d" }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="font-weight:600;color:var(--success);">{{ invoice.amount }}</td>
+                    <td><span class="badge {{ invoice.status|status_badge }}">{{ invoice.get_status_display|lower }}</span></td>
+                    <td>
+                        <a href="{% url 'finance:invoice_edit' invoice.pk %}" class="btn btn-xs" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:99px;padding:4px 12px;">Edit</a>
+                    </td>
+                </tr>
+                {% empty %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mobile Cards -->
+    <div id="mobileCards">
+        {% for invoice in invoices %}
+        <div class="card card-sm" style="margin-bottom:10px;">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+                <div>
+                    <p style="font-weight:700;font-size:14px;color:var(--text);">{{ invoice.member.full_name }}</p>
+                    <p class="text-sm text-muted mt-1">{{ invoice.period|date:"F Y" }}</p>
+                    <p style="font-weight:700;color:var(--text);font-size:15px;margin-top:6px;">RM {{ invoice.amount }}</p>
+                </div>
+                <span class="badge {{ invoice.status|status_badge }}">{{ invoice.get_status_display }}</span>
+            </div>
+            <div style="margin-top:12px;">
+                <a href="{% url 'finance:invoice_edit' invoice.pk %}" class="btn btn-sm w-full" style="justify-content:center;background:rgba(79,110,247,.1);color:var(--accent);border:1px solid rgba(79,110,247,.25);">Edit Invoice</a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card">
+            <div class="empty-state">
+                <i class="fa-regular fa-file-alt"></i>
+                <p>No invoices match the current filters.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function applyLayout() {
+        const desktop = document.getElementById('desktopTable');
+        const mobile = document.getElementById('mobileCards');
+        if (window.innerWidth >= 700) {
+            desktop.style.display = 'block';
+            mobile.style.display = 'none';
+        } else {
+            desktop.style.display = 'none';
+            mobile.style.display = 'block';
+        }
+    }
+    applyLayout();
+    window.addEventListener('resize', applyLayout);
+
+    $(document).ready(function() {
+        $('select').not('[multiple]').select2({ theme:'default', allowClear:true });
+    });
+</script>
+{% endblock %}

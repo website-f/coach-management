@@ -1,0 +1,7 @@
+
+Create a service file to handle interactions with the Gemini API.
+
+**Create `geminiService.ts`**:
+1.  Import `GoogleGenAI` from `@google/genai`.
+2.  Create and export an async function `generateTrainingPlan` that takes a `groupLevel` string. It should initialize a new `GoogleGenAI` instance, call the `gemini-3-flash-preview` model with a prompt to generate a 4-week badminton training program, and return the text response. Include error handling.
+3.  Create and export an async function `summarizeReflection` that takes a `reflection` string. It should initialize a new `GoogleGenAI` instance, call the `gemini-3-flash-preview` model with a prompt to analyze the coach's reflection and provide actionable tips, and return the text response. Include error handling.

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+
+{% block title %}Pending Reviews | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}Pending Payment Reviews{% endblock %}
+
+{% block content %}
+<div class="space-y">
+
+    <!-- Header Card -->
+    <div class="card" style="display:flex;align-items:center;gap:14px;">
+        <div style="width:44px;height:44px;border-radius:10px;background:rgba(245,158,11,.12);color:#fbbf24;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">
+            <i class="fa-solid fa-receipt"></i>
+        </div>
+        <div>
+            <h2 style="font-size:16px;font-weight:700;color:var(--text);">Verification Queue</h2>
+            <p class="text-sm text-muted mt-1">Review uploaded proofs and approve or reject them with a reason.</p>
+        </div>
+    </div>
+
+    <!-- Desktop Table -->
+    <div class="table-wrap" id="desktopTable" style="display:none;">
+        <div class="overflow-x">
+            <table class="tbl">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Submitted By</th>
+                        <th>Submitted At</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payments %}
+                    <tr>
+                        <td class="tbl-name">{{ payment.invoice.member.full_name }}</td>
+                        <td class="muted">{{ payment.paid_by|default:"Unknown" }}</td>
+                        <td class="muted">{{ payment.submitted_at }}</td>
+                        <td>
+                            <a href="{% url 'payments:review' payment.pk %}" class="btn btn-xs" style="background:rgba(79,110,247,.1);color:var(--accent);border:1px solid rgba(79,110,247,.25);">
+                                <i class="fa-solid fa-eye"></i> Review
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4">
+                            <div class="empty-state">
+                                <i class="fa-regular fa-circle-check"></i>
+                                <p>No payment proofs waiting for review.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Mobile Cards -->
+    <div id="mobileCards">
+        {% for payment in payments %}
+        <div class="card card-sm" style="margin-bottom:10px;">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+                <div>
+                    <p style="font-weight:700;font-size:14px;color:var(--text);">{{ payment.invoice.member.full_name }}</p>
+                    <p class="text-sm text-muted mt-1">By: {{ payment.paid_by|default:"Unknown" }}</p>
+                    <p class="text-sm text-muted">{{ payment.submitted_at }}</p>
+                </div>
+                <span class="badge badge-warning">Pending</span>
+            </div>
+            <div style="margin-top:12px;">
+                <a href="{% url 'payments:review' payment.pk %}" class="btn btn-primary btn-sm w-full" style="justify-content:center;">
+                    <i class="fa-solid fa-eye"></i> Review
+                </a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card">
+            <div class="empty-state">
+                <i class="fa-regular fa-circle-check"></i>
+                <p>No payment proofs waiting for review.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% include "partials/pagination.html" %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function applyLayout() {
+        const desktop = document.getElementById('desktopTable');
+        const mobile = document.getElementById('mobileCards');
+        if (window.innerWidth >= 700) {
+            desktop.style.display = 'block';
+            mobile.style.display = 'none';
+        } else {
+            desktop.style.display = 'none';
+            mobile.style.display = 'block';
+        }
+    }
+    applyLayout();
+    window.addEventListener('resize', applyLayout);
+</script>
+{% endblock %}

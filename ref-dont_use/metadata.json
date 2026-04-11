@@ -1,0 +1,8 @@
+{
+  "name": "Copy of Copy of RSBE Badminton Pro Manager",
+  "description": "An all-in-one management suite for RSBE Badminton coaching, featuring financial tracking, operations management, coach lesson planning, and a premium parent-client portal with performance reporting.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

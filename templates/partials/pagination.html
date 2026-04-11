@@ -1,0 +1,16 @@
+{% load ui_tags %}
+{% if is_paginated %}
+<div class="pagination">
+    <span class="page-info">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_previous %}
+    <a href="?{% querystring page=page_obj.previous_page_number %}" class="page-btn">
+        <i class="fa-solid fa-chevron-left" style="font-size:11px;"></i> Prev
+    </a>
+    {% endif %}
+    {% if page_obj.has_next %}
+    <a href="?{% querystring page=page_obj.next_page_number %}" class="page-btn">
+        Next <i class="fa-solid fa-chevron-right" style="font-size:11px;"></i>
+    </a>
+    {% endif %}
+</div>
+{% endif %}

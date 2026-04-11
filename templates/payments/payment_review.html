@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+
+{% block title %}Review Payment | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}Review Payment{% endblock %}
+
+{% block content %}
+<div class="grid-2">
+
+    <!-- Proof Image -->
+    <div class="card">
+        <div class="section-header">
+            <span class="section-title">Payment Proof</span>
+        </div>
+        <div style="margin-bottom:14px;">
+            <p style="font-size:18px;font-weight:700;color:var(--text);">{{ payment.invoice.member.full_name }}</p>
+            <p class="text-sm text-muted mt-1">{{ payment.invoice.period|date:"F Y" }} &nbsp;·&nbsp; <strong style="color:var(--text);">RM {{ payment.invoice.amount }}</strong></p>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:8px;overflow:hidden;">
+            <img src="{{ payment.proof_image.url }}" alt="Payment proof" style="width:100%;border-radius:8px;object-fit:contain;max-height:420px;display:block;">
+        </div>
+        <div class="card-inset mt-3">
+            <div style="display:flex;flex-direction:column;gap:6px;">
+                <p class="text-sm"><span class="text-muted">Submitted by:</span> &nbsp;<strong style="color:var(--text);">{{ payment.paid_by|default:"Unknown" }}</strong></p>
+                <p class="text-sm"><span class="text-muted">Submitted at:</span> &nbsp;<strong style="color:var(--text);">{{ payment.submitted_at }}</strong></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Verification  -->
+    <div class="card" style="height:fit-content;">
+        <div class="section-header">
+            <span class="section-title">Verification Actions</span>
+        </div>
+        <p class="text-sm text-muted" style="margin-bottom:20px;line-height:1.7;">
+            Approve the proof to mark the invoice as paid, or reject it with a reason so the parent can resubmit.
+        </p>
+        <form method="post" class="space-y">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="id_rejection_reason">Rejection Reason <span class="text-muted" style="font-weight:400;text-transform:none;letter-spacing:0;">(required only when rejecting)</span></label>
+                {{ review_form.rejection_reason }}
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;">
+                <button type="submit" name="action" value="approve" class="btn btn-solid-success" style="justify-content:center;">
+                    <i class="fa-solid fa-check"></i> Approve
+                </button>
+                <button type="submit" name="action" value="reject" class="btn btn-solid-danger" style="justify-content:center;">
+                    <i class="fa-solid fa-xmark"></i> Reject
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}

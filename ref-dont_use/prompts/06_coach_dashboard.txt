@@ -1,0 +1,30 @@
+
+Now, build the dashboard for the coaches.
+
+**Create `components/CoachDashboard.tsx`**:
+1.  **Props**: The component will receive `coach`, `students`, and `onUpdateStudent`.
+2.  **Layout**:
+    *   Implement a tabbed navigation bar for 'Dashboard', 'Session Log', 'Player Evals', 'Attendance', and 'Earnings'.
+    *   On the left, create a sidebar that lists all classes assigned to the current coach. Selecting a class should update the main view's context.
+3.  **Dashboard Tab**:
+    *   Display a welcome message and key stats (total students, classes, pending evals).
+    *   Show an "Urgent Deadlines" card.
+    *   Display "Today's Focus" based on the selected class, showing the lesson plan checklist.
+4.  **Session Log Tab**:
+    *   Show details of the selected class.
+    *   Display the full interactive lesson plan checklist for the day.
+    *   Include a textarea for the coach to write their session reflection.
+    *   A button to "Submit Log & Complete Class".
+5.  **Player Evals Tab**:
+    *   Show a roster of students in the selected class.
+    *   When a student is selected, display the evaluation form.
+    *   The form should list all skills from `SKILLS_LIST`. For each skill, provide a 5-star rating component and a textarea for reflection notes.
+    *   Implement the "Finalize & Send Report" button. On click, it should call the `summarizeReflection` function from `geminiService.ts` and show a loading/success state.
+6.  **Attendance Tab**:
+    *   Create a monthly grid view for attendance.
+    *   Include controls to navigate between months.
+    *   Display a list of students on the left and days of the month across the top.
+    *   Each cell should be a toggle button to mark attendance.
+    *   Implement a "Confirm Log" feature that locks the attendance for a selected day.
+7.  **Earnings Tab**:
+    *   Display two cards: "Current Verified Earned" and "Pending Approval", calculated from the session logs and class salary data.

@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+
+{% block title %}Dashboard | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y">
+
+    <!-- Stat Cards -->
+    <div class="stat-cards">
+        {% for card in dashboard_cards %}
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">{{ card.label }}</p>
+                    <p class="stat-value">{{ card.value }}</p>
+                </div>
+                <div class="stat-icon"><i class="fa-solid {{ card.icon }}"></i></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Charts -->
+    {% if show_revenue_chart or show_attendance_chart or show_growth_chart %}
+    <div class="{% if show_revenue_chart and show_attendance_chart and show_growth_chart %}grid-3{% elif show_revenue_chart and show_attendance_chart or show_revenue_chart and show_growth_chart or show_attendance_chart and show_growth_chart %}grid-2{% endif %}" style="margin-top:16px;">
+        {% if show_revenue_chart %}
+        <div class="card">
+            <div class="section-header mb-3">
+                <span class="section-title">Monthly Revenue</span>
+            </div>
+            <div class="chart-wrap">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+        {% endif %}
+        {% if show_attendance_chart %}
+        <div class="card">
+            <div class="section-header mb-3">
+                <span class="section-title">Attendance Trend</span>
+            </div>
+            <div class="chart-wrap">
+                <canvas id="attendanceChart"></canvas>
+            </div>
+        </div>
+        {% endif %}
+        {% if show_growth_chart %}
+        <div class="card">
+            <div class="section-header mb-3">
+                <span class="section-title">Member Growth</span>
+            </div>
+            <div class="chart-wrap">
+                <canvas id="growthChart"></canvas>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Recent Sessions + Payments -->
+    <div class="grid-2" style="margin-top:16px;">
+        <!-- Recent Sessions -->
+        <div class="card">
+            <div class="section-header">
+                <span class="section-title">Recent Sessions</span>
+                <a href="{% url 'sessions:list' %}" class="section-link">View all <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i></a>
+            </div>
+            <div class="space-y">
+                {% for session in recent_sessions %}
+                <a href="{% url 'sessions:detail' session.pk %}" class="list-item">
+                    <div>
+                        <p class="list-item-title">{{ session.title }}</p>
+                        <p class="list-item-sub"><i class="fa-regular fa-calendar" style="margin-right:4px;"></i>{{ session.session_date }} &nbsp;·&nbsp; <i class="fa-regular fa-clock" style="margin-right:4px;"></i>{{ session.start_time|time:"H:i" }} &nbsp;·&nbsp; Court {{ session.court }}</p>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-muted" style="font-size:11px;flex-shrink:0;"></i>
+                </a>
+                {% empty %}
+                <div class="empty-state">
+                    <i class="fa-regular fa-calendar-xmark"></i>
+                    <p>No sessions created yet.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Payments -->
+        <div class="card">
+            <div class="section-header">
+                <span class="section-title">
+                    {% if current_role == 'parent' %}My Payment Activity{% else %}Recent Payments{% endif %}
+                </span>
+                {% if current_role == 'parent' %}
+                <a href="{% url 'payments:my_payments' %}" class="section-link">Open payments</a>
+                {% else %}
+                <a href="{% url 'payments:pending_reviews' %}" class="section-link">Open queue</a>
+                {% endif %}
+            </div>
+            <div class="overflow-x">
+                <table class="tbl">
+                    <thead>
+                        <tr>
+                            <th>Member</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in recent_payments %}
+                        <tr>
+                            <td class="tbl-name">{{ payment.invoice.member.full_name }}</td>
+                            <td class="muted">RM {{ payment.invoice.amount }}</td>
+                            <td>
+                                <span class="badge {{ payment.status|status_badge }}">{{ payment.get_status_display }}</span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" style="text-align:center;padding:28px;color:var(--muted);">No payment activity yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Linked Children (Parent role) -->
+    {% if current_role == 'parent' and children %}
+    <div class="card" style="margin-top:16px;">
+        <div class="section-header">
+            <span class="section-title">Linked Children</span>
+        </div>
+        <div class="grid-2 mt-3">
+            {% for child in children %}
+            <a href="{% url 'members:detail' child.pk %}" class="list-item">
+                <div>
+                    <p class="list-item-title">{{ child.full_name }}</p>
+                    <p class="list-item-sub">Coach: {{ child.assigned_coach|default:"Unassigned" }} &nbsp;·&nbsp; {{ child.get_status_display }}</p>
+                </div>
+                <i class="fa-solid fa-chevron-right text-muted" style="font-size:11px;flex-shrink:0;"></i>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const chartDefaults = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { labels: { color: '#8a8a9a', font: { family: 'Inter', size: 12 }, boxWidth: 12 } }
+        },
+        scales: {
+            x: {
+                ticks: { color: '#8a8a9a', font: { family: 'Inter', size: 11 } },
+                grid: { color: 'rgba(255,255,255,0.05)' },
+                border: { color: '#2a2a35' }
+            },
+            y: {
+                ticks: { color: '#8a8a9a', font: { family: 'Inter', size: 11 } },
+                grid: { color: 'rgba(255,255,255,0.05)' },
+                border: { color: '#2a2a35' }
+            }
+        }
+    };
+
+    function applyAccentDataset(data) {
+        if (data.datasets) {
+            data.datasets = data.datasets.map((ds, i) => ({
+                ...ds,
+                backgroundColor: i === 0 ? 'rgba(79,110,247,0.18)' : 'rgba(99,210,130,0.18)',
+                borderColor: i === 0 ? '#4f6ef7' : '#22c55e',
+                borderWidth: 2,
+                borderRadius: 6,
+                pointBackgroundColor: i === 0 ? '#4f6ef7' : '#22c55e',
+                pointRadius: 4,
+                tension: 0.4,
+                fill: true
+            }));
+        }
+        return data;
+    }
+
+    {% if show_revenue_chart %}
+    new Chart(document.getElementById('revenueChart'), {
+        type: 'bar',
+        data: applyAccentDataset(JSON.parse('{{ revenue_chart_data|escapejs }}')),
+        options: chartDefaults
+    });
+    {% endif %}
+    {% if show_attendance_chart %}
+    new Chart(document.getElementById('attendanceChart'), {
+        type: 'line',
+        data: applyAccentDataset(JSON.parse('{{ attendance_chart_data|escapejs }}')),
+        options: chartDefaults
+    });
+    {% endif %}
+    {% if show_growth_chart %}
+    new Chart(document.getElementById('growthChart'), {
+        type: 'line',
+        data: applyAccentDataset(JSON.parse('{{ growth_chart_data|escapejs }}')),
+        options: chartDefaults
+    });
+    {% endif %}
+</script>
+{% endblock %}

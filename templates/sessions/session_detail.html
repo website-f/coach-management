@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+
+{% block title %}{{ training_session.title }} | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}Session Detail{% endblock %}
+
+{% block content %}
+<div class="space-y">
+
+    <!-- Session Header -->
+    <div class="card">
+        <div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:16px;">
+            <div>
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Training Session</p>
+                <h2 style="font-size:22px;font-weight:700;color:var(--text);">{{ training_session.title }}</h2>
+                <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;">
+                    <span class="text-sm text-muted"><i class="fa-regular fa-calendar" style="margin-right:5px;color:var(--accent);"></i>{{ training_session.session_date }}</span>
+                    <span class="text-sm text-muted"><i class="fa-regular fa-clock" style="margin-right:5px;color:var(--accent);"></i>{{ training_session.start_time|time:"H:i" }} – {{ training_session.end_time|time:"H:i" }}</span>
+                    <span class="text-sm text-muted"><i class="fa-solid fa-location-dot" style="margin-right:5px;color:var(--accent);"></i>Court {{ training_session.court }}</span>
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                {% if can_mark_attendance %}
+                <a href="{% url 'sessions:attendance' training_session.pk %}" class="btn btn-success"><i class="fa-solid fa-check-circle"></i> Mark Attendance</a>
+                {% endif %}
+                {% if can_manage %}
+                <a href="{% url 'sessions:edit' training_session.pk %}" class="btn" style="background:rgba(79,110,247,.1);color:var(--accent);border:1px solid rgba(79,110,247,.25);"><i class="fa-solid fa-pen"></i> Edit Session</a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if training_session.notes %}
+        <div class="card-inset mt-3">
+            <p class="text-xs text-muted" style="margin-bottom:6px;">Notes</p>
+            <p style="font-size:13.5px;color:var(--text);line-height:1.7;">{{ training_session.notes }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Assigned Players -->
+    <div class="card">
+        <div class="section-header">
+            <span class="section-title">Assigned Players</span>
+            <span class="badge badge-info">{{ training_session.attendance_records.count }} total</span>
+        </div>
+        <div class="overflow-x">
+            <table class="tbl">
+                <thead>
+                    <tr>
+                        <th>Player</th>
+                        <th>Coach</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in training_session.attendance_records.all %}
+                    <tr>
+                        <td class="tbl-name">{{ record.member.full_name }}</td>
+                        <td class="muted">{{ record.member.assigned_coach|default:"Unassigned" }}</td>
+                        <td><span class="badge {{ record.status|status_badge }}">{{ record.get_status_display }}</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3">
+                            <div class="empty-state">
+                                <i class="fa-regular fa-users"></i>
+                                <p>No players assigned to this session yet.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

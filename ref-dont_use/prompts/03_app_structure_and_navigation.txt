@@ -1,0 +1,15 @@
+
+Let's build the main application shell and navigation.
+
+1.  **Update `App.tsx`**:
+    *   This component will manage the core state: `currentUser`, `view` ('LANDING' or 'DASHBOARD'), `students`, and `landingContent`. Use `useState` to initialize these with the mock data from `constants.ts`.
+    *   Implement `handleLogin` and `handleLogout` functions to update `currentUser` and `view`.
+    *   Implement handler functions to update student and user data (`handleUpdateStudent`, `handleUpdateStudents`, `handleUpdateSelf`) to pass down to child components.
+    *   Create a `renderDashboard` function that uses a switch statement on `currentUser.role` to conditionally render the correct dashboard component (`AdminDashboard`, `CoachDashboard`, `ClientPortal`). Pass the necessary props to each. For now, these can be placeholder divs.
+    *   The main return statement should conditionally render either the `LandingPage` or the main layout (containing `Navigation` and the result of `renderDashboard`) based on the `view` state.
+
+2.  **Create `components/Navigation.tsx`**:
+    *   This component receives the `user` object and the `onLogout` function as props.
+    *   Build a responsive, fixed-top navigation bar.
+    *   On the left, display the "R" logo and the app title "RSBE PRO MANAGER".
+    *   On the right, display a notification bell icon, the user's name and role (with a role-specific icon and color), their avatar, and a logout button. Use Lucide icons.

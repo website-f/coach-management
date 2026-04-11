@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+
+{% block title %}Members | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}Members{% endblock %}
+
+{% block content %}
+<div class="space-y">
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <form method="get" class="filter-fields" id="filterForm">
+            <div class="filter-field">
+                <label>Search Name</label>
+                <input type="text" name="q" id="q" value="{{ request.GET.q }}" placeholder="Search member...">
+            </div>
+            <div class="filter-field">
+                <label>Status</label>
+                <select name="status" id="status">
+                    <option value="">All statuses</option>
+                    {% for value, label in statuses %}
+                    <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-field">
+                <label>Coach</label>
+                <select name="coach" id="coach">
+                    <option value="">All coaches</option>
+                    {% for coach in coaches %}
+                    <option value="{{ coach.id }}" {% if request.GET.coach == coach.id|stringformat:"s" %}selected{% endif %}>{{ coach.get_full_name|default:coach.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-actions" style="margin-top:auto;">
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filter</button>
+                {% if request.GET.q or request.GET.status or request.GET.coach %}
+                <a href="{% url 'members:list' %}" class="btn btn-ghost">Clear</a>
+                {% endif %}
+            </div>
+        </form>
+        </form>
+    </div>
+
+    <!-- Page injected table actions -->
+    {% if can_manage %}
+    <div class="page-table-actions" style="display:none;">
+        <a href="{% url 'members:create' %}" class="dt-button" style="background:var(--accent)!important;color:#fff!important;border-color:var(--accent-h)!important;">
+            <i class="fa-solid fa-plus"></i> Add Member
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Responsive DataTables -->
+    <div class="table-wrap">
+        <table class="tbl">
+            <thead>
+                <tr>
+                    <th style="width: 40px; text-align: left; padding-left: 24px;"><input type="checkbox" class="select-all"></th>
+                    <th>Member Profile</th>
+                    <th>Membership</th>
+                    <th>Coach</th>
+                    <th>Status</th>
+                    <th class="not-export-col">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in members %}
+                <tr>
+                    <td style="padding-left: 24px; vertical-align: middle;"><input type="checkbox" class="row-checkbox" value="{{ member.id }}"></td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div style="width:36px;height:36px;border-radius:50%;background:rgba(59, 130, 246, 0.1);color:var(--info);display:flex;align-items:center;justify-content:center;font-size:16px;">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+                            <div>
+                                <div class="tbl-name">{{ member.full_name }}</div>
+                                <div class="tbl-sub">{{ member.contact_number }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="muted">{{ member.get_membership_type_display }}</td>
+                    <td class="muted">{{ member.assigned_coach|default:"Unassigned" }}</td>
+                    <td><span class="badge {{ member.status|status_badge }}">{{ member.get_status_display|lower }}</span></td>
+                    <td>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                            <a href="{% url 'members:detail' member.pk %}" class="btn btn-ghost btn-xs">View</a>
+                            {% if can_manage %}
+                            <a href="{% url 'members:edit' member.pk %}" class="btn btn-xs" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:99px;padding:4px 12px;">Edit</a>
+                            {% endif %}
+                            {% if is_admin %}
+                            <a href="{% url 'members:delete' member.pk %}" class="btn btn-danger btn-xs" style="border-radius:99px;padding:4px 12px;">Delete</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}

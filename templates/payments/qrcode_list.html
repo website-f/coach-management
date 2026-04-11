@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+
+{% block title %}QR Codes | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}QR Codes{% endblock %}
+
+{% block content %}
+<div class="space-y">
+
+    <!-- Header -->
+    <div class="filter-bar" style="justify-content:space-between;">
+        <div>
+            <h3 style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px;">Payment QR Library</h3>
+            <p class="text-sm text-muted">Upload QR codes and link them to invoices or billing periods.</p>
+        </div>
+    </div>
+
+    <!-- Page injected table actions -->
+    <div class="page-table-actions" style="display:none;">
+        <a href="{% url 'payments:qrcode_create' %}" class="dt-button" style="background:var(--accent)!important;color:#fff!important;border-color:var(--accent-h)!important;">
+            <i class="fa-solid fa-plus"></i> Upload QR Code
+        </a>
+    </div>
+
+    <!-- Responsive Table -->
+    <div class="table-wrap">
+        <table class="tbl">
+            <thead>
+                <tr>
+                    <th style="width: 40px; text-align: left; padding-left: 24px;"><input type="checkbox" class="select-all"></th>
+                    <th>QR Code Details</th>
+                    <th>Invoice / Period</th>
+                    <th>Status</th>
+                    <th class="not-export-col">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for qr in qr_codes %}
+                <tr>
+                    <td style="padding-left: 24px; vertical-align: middle;"><input type="checkbox" class="row-checkbox" value="{{ qr.id }}"></td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div style="width:36px;height:36px;border-radius:10px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);display:flex;align-items:center;justify-content:center;font-size:16px;">
+                                <i class="fa-solid fa-qrcode"></i>
+                            </div>
+                            <div>
+                                <div class="tbl-name">{{ qr.label }}</div>
+                                <div class="tbl-sub">ID #{{ qr.id }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="tbl-name">{{ qr.invoice|default:"Not linked" }}</div>
+                        <div class="tbl-sub">{{ qr.payment_period|default:"-" }}</div>
+                    </td>
+                    <td>
+                        {% if qr.is_active %}
+                        <span class="badge badge-success">active</span>
+                        {% else %}
+                        <span class="badge badge-neutral">inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ qr.image.url }}" target="_blank" class="btn btn-xs" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:99px;padding:4px 12px;">
+                            <i class="fa-solid fa-expand"></i> View
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}

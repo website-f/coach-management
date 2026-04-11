@@ -1,0 +1,24 @@
+
+Create the client-facing portal for parents and students.
+
+**Create `components/ClientPortal.tsx`**:
+1.  **Props**: It will receive `user`, `student`, `onUpdateStudent`, and `onUpdateSelf`.
+2.  **Layout**: Create a main tabbed navigation for 'Home', '6-Month Progress', 'Payments', 'Store', and 'My Profile'.
+3.  **Home Tab**:
+    *   Display a main header with the student's name and avatar.
+    *   Show a "Professional Skills Breakdown" section with a `recharts` RadarChart visualizing the student's skills.
+    *   Include a "Proof of Improvement" section to display video thumbnails.
+    *   Show a "Subscription Fee" card and a "Training Schedule" card.
+4.  **Payments Tab**:
+    *   Show the "Current Outstanding" bill for the selected month. Use a dropdown to switch between billing months.
+    *   Implement the UI for uploading a payment proof image, which should update the student's payment status to `isPendingApproval`.
+    *   Display a payment history list.
+    *   Include a promotional section for setting up auto-pay.
+5.  **6-Month Progress Tab**:
+    *   Fetch and display the `ProgressReport` data for the student.
+    *   Design it to look like an official report card, showing attendance, skill proficiency matrix (using stars), and the coach's reflection.
+6.  **Store Tab**:
+    *   Display a grid of `Product` items available for purchase, showing the image, name, price, and stock status.
+7.  **My Profile Tab**:
+    *   Show the user's profile information.
+    *   Implement functionality to upload and change the user's avatar.

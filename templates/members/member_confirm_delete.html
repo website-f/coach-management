@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Member | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}Delete Member{% endblock %}
+
+{% block content %}
+<div style="max-width:480px;margin:0 auto;">
+    <div class="card" style="border-color:rgba(239,68,68,.3);">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+            <div style="width:46px;height:46px;border-radius:12px;background:rgba(239,68,68,.1);color:#f87171;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">
+                <i class="fa-solid fa-trash-can"></i>
+            </div>
+            <div>
+                <h2 style="font-size:18px;font-weight:700;color:var(--text);">Delete {{ object.full_name }}?</h2>
+                <p class="text-sm text-muted mt-1">This action cannot be undone.</p>
+            </div>
+        </div>
+        <p style="font-size:13.5px;color:var(--muted);line-height:1.7;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:20px;">
+            This permanently removes the member profile. Only administrators should perform this action.
+        </p>
+        <form method="post" style="display:flex;gap:10px;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-solid-danger flex-1" style="justify-content:center;">
+                <i class="fa-solid fa-trash-can"></i> Confirm Delete
+            </button>
+            <a href="{% url 'members:detail' object.pk %}" class="btn btn-ghost flex-1" style="justify-content:center;">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+
+{% block title %}Sessions | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}Sessions{% endblock %}
+
+{% block content %}
+<div class="space-y">
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <form method="get" class="filter-fields">
+            <div class="filter-field">
+                <label>Coach</label>
+                <select name="coach" id="coachFilter">
+                    <option value="">All coaches</option>
+                    {% for coach in coaches %}
+                    <option value="{{ coach.id }}" {% if request.GET.coach == coach.id|stringformat:"s" %}selected{% endif %}>{{ coach.get_full_name|default:coach.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-field">
+                <label>Session Date</label>
+                <input type="date" name="session_date" id="session_date" value="{{ request.GET.session_date }}">
+            </div>
+            <div class="filter-actions" style="margin-top:auto;">
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filter</button>
+                {% if request.GET.coach or request.GET.session_date %}
+                <a href="{% url 'sessions:list' %}" class="btn btn-ghost">Clear</a>
+                {% endif %}
+            </div>
+        </form>
+        </form>
+    </div>
+
+    <!-- Page injected table actions -->
+    {% if can_manage %}
+    <div class="page-table-actions" style="display:none;">
+        <a href="{% url 'sessions:create' %}" class="dt-button" style="background:var(--accent)!important;color:#fff!important;border-color:var(--accent-h)!important;">
+            <i class="fa-solid fa-plus"></i> Create Session
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Desktop/Mobile Responsive DataTables -->
+    <div class="table-wrap">
+        <table class="tbl">
+            <thead>
+                <tr>
+                    <th style="width: 40px; text-align: left; padding-left: 24px;"><input type="checkbox" class="select-all"></th>
+                    <th>Session and details</th>
+                    <th>Coach</th>
+                    <th>Court</th>
+                    <th>Attendance</th>
+                    <th class="not-export-col">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for session in sessions %}
+                <tr>
+                    <td style="padding-left: 24px; vertical-align: middle;"><input type="checkbox" class="row-checkbox" value="{{ session.id }}"></td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div style="width:36px;height:36px;border-radius:12px;background:rgba(22, 163, 74, 0.1);color:var(--success);display:flex;align-items:center;justify-content:center;font-size:16px;">
+                                <i class="fa-solid fa-calendar"></i>
+                            </div>
+                            <div>
+                                <div class="tbl-name">{{ session.title }}</div>
+                                <div class="tbl-sub">{{ session.session_date }} &nbsp;·&nbsp; {{ session.start_time|time:"H:i" }} – {{ session.end_time|time:"H:i" }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="muted">{{ session.coach|default:"Unassigned" }}</td>
+                    <td class="muted">{{ session.court }}</td>
+                    <td>
+                        <span class="badge badge-info">{{ session.attendance_records.count }} player(s)</span>
+                    </td>
+                    <td>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                            <a href="{% url 'sessions:detail' session.pk %}" class="btn btn-ghost btn-xs">View</a>
+                            {% if can_manage %}
+                            <a href="{% url 'sessions:edit' session.pk %}" class="btn btn-xs" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:99px;padding:4px 12px;">Edit</a>
+                            {% endif %}
+                            {% if can_mark_attendance %}
+                            <a href="{% url 'sessions:attendance' session.pk %}" class="btn btn-xs" style="background:var(--success);color:#fff;border-radius:99px;padding:4px 12px;">Attendance</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('select').not('[multiple]').select2({ theme:'default', allowClear:true });
+    });
+</script>
+{% endblock %}

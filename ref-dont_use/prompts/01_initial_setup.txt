@@ -1,0 +1,10 @@
+
+Create a new React application using TypeScript and Tailwind CSS.
+
+1.  **`index.html`**: Set up the basic HTML structure. Include a `div` with the id `root`. Add the Tailwind CSS CDN script. Add Google Fonts for 'Inter' and 'Bebas Neue'. Add a style tag to set the body font to 'Inter' and define a `.font-sporty` class for 'Bebas Neue'. Include a basic import map for `react`, `react-dom`, `@google/genai`, `lucide-react` and `recharts`.
+
+2.  **`index.tsx`**: This file should find the 'root' element and use `ReactDOM.createRoot` to render the main `App` component in `React.StrictMode`.
+
+3.  **`App.tsx`**: Create a simple functional component named `App` that renders a `div` containing the text "RSBE Pro Manager Initialized".
+
+This will serve as the foundation for the rest of the application.

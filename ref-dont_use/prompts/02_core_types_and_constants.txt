@@ -1,0 +1,22 @@
+
+Now, let's establish the data structure for the entire application.
+
+1.  **Create `types.ts`**: Define all the necessary TypeScript interfaces and enums. This should include:
+    *   `Role` enum (`ADMIN`, `COACH`, `CLIENT`).
+    *   `User` interface.
+    *   `Student` interface, including skills, attendance, payments, and video proofs.
+    *   `Application` interface for new student sign-ups.
+    *   `LandingPageContent` interface.
+    *   `ProgressReport` interface.
+    *   `TrainingClass` interface.
+    *   `Transaction` interface.
+    *   `SessionCompletion` interface for coach logs.
+    *   `LessonPlan` interface.
+    *   `Product` interface for the store.
+
+2.  **Create `constants.tsx`**: Populate this file with all the mock data needed to run the application.
+    *   Import all the types from `types.ts`.
+    *   Define and export `SKILLS_LIST`.
+    *   Create mock user objects for `MOCK_ADMIN`, `MOCK_COACH`, `MOCK_COACH_2`, `MOCK_CLIENT`, and `MOCK_TEST_CLIENT`.
+    *   Define `DEFAULT_LANDING_CONTENT`.
+    *   Create mock data arrays for `MOCK_APPLICATIONS`, `CLASSES`, `MOCK_SESSION_LOGS`, `MOCK_LESSON_PLANS`, `STUDENTS`, `PROGRESS_REPORTS`, `TRANSACTIONS`, and `PRODUCTS`. Ensure the data aligns with the defined types. For the student 'Siti Aminah' (s2), add a demo semi-annual report to the `PROGRESS_REPORTS` array.

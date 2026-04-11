@@ -1,0 +1,22 @@
+{
+    "name": "NYO Badminton Club Dashboard",
+    "short_name": "NYO Dash",
+    "description": "Dashboard for NYO Badminton Club Admin and Members",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0f0f11",
+    "theme_color": "#0f0f11",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "/static/icons/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/static/icons/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

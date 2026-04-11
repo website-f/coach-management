@@ -1,0 +1,14 @@
+
+Finally, let's add the configurations to make the application a Progressive Web App (PWA) and handle necessary permissions.
+
+1.  **Create `manifest.json`**:
+    *   Set up a basic web app manifest. Include `short_name`, `name`, `icons` (using a generic URL for the icon), `start_url`, `display`, `theme_color`, and `background_color`.
+
+2.  **Create `metadata.json`**:
+    *   Create this file to request frame permissions.
+    *   Add `"camera"` and `"microphone"` to the `requestFramePermissions` array.
+
+3.  **Update `index.html`**:
+    *   Ensure the `<head>` section includes the link to `manifest.json` and the necessary Apple PWA meta tags (`apple-mobile-web-app-capable`, etc.).
+
+This completes the reconstruction of the entire application.

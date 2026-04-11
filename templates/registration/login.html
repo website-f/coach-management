@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In | NYO Dashboard</title>
+    <script>(function(){var t=localStorage.getItem('nyo-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* Dark theme */
+        :root,
+        [data-theme="dark"] {
+            --bg:      #0f0f11;
+            --surface: #18181c;
+            --surface2:#1e1e24;
+            --border:  #2a2a35;
+            --border2: #33333f;
+            --text:    #f0f0f4;
+            --muted:   #8a8a9a;
+            --accent:  #4f6ef7;
+            --accent-h:#3b5bdb;
+            --danger:  #ef4444;
+            --radius:  12px;
+        }
+        /* Light theme */
+        [data-theme="light"] {
+            --bg:      #f4f4f8;
+            --surface: #ffffff;
+            --surface2:#f0f0f5;
+            --border:  #e2e2ec;
+            --border2: #d4d4e0;
+            --text:    #0f0f11;
+            --muted:   #6b6b82;
+            --accent:  #4f6ef7;
+            --accent-h:#3b5bdb;
+            --danger:  #dc2626;
+            --radius:  12px;
+        }
+        html, body { height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; transition: background .18s, color .18s; }
+
+        .login-wrap {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        /* Left panel */
+        .login-panel-left {
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 48px 52px;
+        }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand-icon {
+            width: 42px; height: 42px;
+            background: var(--accent);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 17px;
+        }
+        .brand-text small {
+            display: block; font-size: 10px; font-weight: 600;
+            letter-spacing: .12em; text-transform: uppercase;
+            color: var(--muted); margin-bottom: 2px;
+        }
+        .brand-text strong { font-size: 14px; font-weight: 700; color: var(--text); }
+
+        .panel-hero { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 0; }
+        .panel-hero h2 { font-size: 32px; font-weight: 700; line-height: 1.25; color: var(--text); max-width: 380px; }
+        .panel-hero p { margin-top: 16px; color: var(--muted); font-size: 14.5px; line-height: 1.7; max-width: 360px; }
+
+        .panel-features { display: flex; flex-direction: column; gap: 12px; margin-top: 32px; }
+        .feat-item { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13.5px; }
+        .feat-item i { color: var(--accent); font-size: 14px; width: 20px; text-align: center; }
+
+        .panel-footer { font-size: 12px; color: var(--muted); }
+
+        /* Right panel */
+        .login-panel-right {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 52px 36px;
+            background: var(--bg);
+        }
+        .login-form-box { width: 100%; max-width: 380px; }
+        .login-form-box .eyebrow {
+            font-size: 11px; font-weight: 600;
+            letter-spacing: .12em; text-transform: uppercase;
+            color: var(--muted); margin-bottom: 10px;
+        }
+        .login-form-box h1 { font-size: 26px; font-weight: 700; color: var(--text); margin-bottom: 32px; }
+
+        .form-group { display: flex; flex-direction: column; gap: 7px; margin-bottom: 18px; }
+        .form-label { font-size: 11.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; }
+        .form-control {
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 14px;
+            padding: 12px 14px;
+            outline: none;
+            transition: border-color .18s, box-shadow .18s;
+            width: 100%;
+        }
+        .form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,110,247,.15); }
+        .input-wrap { position: relative; }
+        .input-wrap .toggle-pw {
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 0;
+        }
+        .input-wrap .toggle-pw:hover { color: var(--text); }
+
+        .error-msg {
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(239,68,68,.1);
+            border: 1px solid rgba(239,68,68,.3);
+            border-radius: 10px;
+            padding: 11px 14px;
+            font-size: 13px;
+            color: #f87171;
+            margin-bottom: 18px;
+        }
+        .btn-login {
+            width: 100%;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius);
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 13px;
+            cursor: pointer;
+            transition: background .18s, transform .15s;
+            margin-top: 4px;
+        }
+        .btn-login:hover { background: var(--accent-h); }
+        .btn-login:active { transform: scale(.98); }
+
+        /* Responsive */
+        @media (max-width: 800px) {
+            .login-wrap { grid-template-columns: 1fr; }
+            .login-panel-left { display: none; }
+            .login-panel-right { padding: 40px 20px; min-height: 100vh; }
+            .login-form-box { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<div class="login-wrap">
+    <!-- Theme toggle (top-right fixed) -->
+    <button id="loginThemeToggle" title="Toggle theme" style="position:fixed;top:16px;right:16px;z-index:99;width:38px;height:38px;border-radius:9px;background:var(--surface);border:1px solid var(--border2);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:background .18s,color .18s;">
+        <i class="fa-solid fa-sun" id="loginThemeIcon"></i>
+    </button>
+
+    <!-- Left info panel -->
+    <div class="login-panel-left">
+        <div class="brand">
+            <div class="brand-icon"><i class="fa-solid fa-shuttlecock"></i></div>
+            <div class="brand-text">
+                <small>Badminton Club</small>
+                <strong>NYO Dashboard</strong>
+            </div>
+        </div>
+
+        <div class="panel-hero">
+            <h2>Run your club from one place.</h2>
+            <p>NYO Dashboard gives admins, coaches, and parents a unified view of club operations — from members and sessions to payments and invoices.</p>
+            <div class="panel-features">
+                <div class="feat-item"><i class="fa-solid fa-users"></i> Member management & profiles</div>
+                <div class="feat-item"><i class="fa-solid fa-calendar-days"></i> Training sessions & attendance</div>
+                <div class="feat-item"><i class="fa-solid fa-file-invoice-dollar"></i> Invoices & payment verification</div>
+                <div class="feat-item"><i class="fa-solid fa-chart-pie"></i> Analytics & finance overview</div>
+            </div>
+        </div>
+
+        <div class="panel-footer">© NYO Badminton Club · Dashboard System</div>
+    </div>
+
+    <!-- Right form panel -->
+    <div class="login-panel-right">
+        <div class="login-form-box">
+            <p class="eyebrow">Welcome back</p>
+            <h1>Sign in to continue</h1>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label" for="id_username">Username</label>
+                    <input class="form-control" type="text" name="username" id="id_username" placeholder="Enter username" required autofocus autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="id_password">Password</label>
+                    <div class="input-wrap">
+                        <input class="form-control" type="password" name="password" id="id_password" placeholder="Enter password" required autocomplete="current-password" style="padding-right:42px">
+                        <button type="button" class="toggle-pw" id="togglePw"><i class="fa-regular fa-eye" id="togglePwIcon"></i></button>
+                    </div>
+                </div>
+                {% if form.errors %}
+                <div class="error-msg">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    Invalid username or password. Please try again.
+                </div>
+                {% endif %}
+                <button type="submit" class="btn-login">Sign In</button>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    // Password toggle
+    document.getElementById('togglePw')?.addEventListener('click', function() {
+        const inp = document.getElementById('id_password');
+        const icon = document.getElementById('togglePwIcon');
+        if (inp.type === 'password') {
+            inp.type = 'text';
+            icon.className = 'fa-regular fa-eye-slash';
+        } else {
+            inp.type = 'password';
+            icon.className = 'fa-regular fa-eye';
+        }
+    });
+
+    // Theme toggle
+    var loginThemeToggle = document.getElementById('loginThemeToggle');
+    var loginThemeIcon   = document.getElementById('loginThemeIcon');
+    var html = document.documentElement;
+
+    function syncLoginIcon() {
+        var t = html.getAttribute('data-theme');
+        loginThemeIcon.className = t === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    }
+    syncLoginIcon();
+
+    loginThemeToggle.addEventListener('click', function() {
+        var current = html.getAttribute('data-theme');
+        var next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('nyo-theme', next);
+        syncLoginIcon();
+    });
+</script>
+</body>
+</html>
