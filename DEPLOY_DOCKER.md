@@ -1,60 +1,103 @@
-# Deploying With Docker On Your VPS
+# Deploying With Docker, Nginx, and HTTPS On Your VPS
 
 ## What this setup gives you
 
 - Django app in Docker
 - MySQL in Docker
+- Nginx reverse proxy in Docker
+- automatic Let's Encrypt HTTPS certificates
+- automatic certificate renewal checks
 - automatic startup migration
 - automatic static collection
 - automatic starter-data bootstrap
 - idempotent seed behavior
 
-When the containers start:
+When the stack starts:
 
-1. MySQL waits until healthy
-2. Django runs migrations
+1. MySQL starts
+2. Django waits for MySQL, then runs migrations
 3. Django collects static files
 4. Django checks whether the starter dataset exists
 5. If missing, it seeds the system accounts and sample data once
-6. Gunicorn starts the app
+6. Nginx opens ports `80` and `443`
+7. Certbot requests a Let's Encrypt certificate for your domain
+8. Nginx switches from bootstrap mode to full HTTPS mode as soon as the certificate exists
 
 If the starter data already exists, it is skipped.
 
-## Files added for Docker
+## Files in the Docker deployment layer
 
 - `Dockerfile`
 - `docker-compose.yml`
 - `docker/entrypoint.sh`
+- `docker/nginx/entrypoint.sh`
+- `docker/nginx/templates/bootstrap.conf.template`
+- `docker/nginx/templates/https.conf.template`
+- `docker/certbot/entrypoint.sh`
 - `.env.example`
 
-## First-time setup on VPS
+## Before you start
 
-1. Install Docker and Docker Compose plugin on the VPS.
-2. Copy the project to the server.
-3. Create your environment file:
+Make sure all of these are ready first:
+
+1. Your domain already points to the VPS public IP.
+2. Ports `80` and `443` are open on the VPS firewall.
+3. Docker and Docker Compose are installed on the VPS.
+
+Without DNS pointing correctly, Let's Encrypt cannot issue the certificate yet.
+
+## First-time setup
+
+1. Copy the project to the VPS.
+2. Create your environment file:
 
 ```bash
 cp .env.example .env
 ```
 
-4. Edit `.env` and change at least:
+3. Edit `.env` and change these values before first boot:
 
 - `SECRET_KEY`
+- `DOMAIN`
+- `WWW_DOMAIN` if you also want `www`
+- `LETSENCRYPT_EMAIL`
+- `ALLOWED_HOSTS`
+- `CSRF_TRUSTED_ORIGINS`
 - `DB_PASSWORD`
 - `MYSQL_ROOT_PASSWORD`
-- `ALLOWED_HOSTS`
 
-5. Start everything:
+4. Start the full stack:
 
 ```bash
 docker compose up -d --build
 ```
 
-6. Open the app:
+5. Watch the first boot:
+
+```bash
+docker compose logs -f db web nginx certbot
+```
+
+6. Open the site once the certificate is issued:
 
 ```text
-http://YOUR_SERVER_IP:8000
+https://your-domain.com
 ```
+
+## How HTTPS behaves
+
+- Nginx starts immediately on port `80`
+- while the certificate is being issued, Nginx serves the ACME challenge used by Let's Encrypt
+- once the certificate exists, Nginx reloads itself and starts serving `443`
+- after that, all HTTP traffic is redirected to HTTPS
+- certificate renewal checks continue automatically in the background
+
+If certificate issuance fails, check:
+
+- DNS points to the correct VPS IP
+- ports `80` and `443` are open
+- `DOMAIN` and `WWW_DOMAIN` are correct
+- `LETSENCRYPT_EMAIL` is valid
 
 ## Default seeded system logins
 
@@ -76,13 +119,13 @@ You can override the seeded passwords in `.env`:
 
 ## Common commands
 
-Start:
+Start or rebuild everything:
 
 ```bash
 docker compose up -d --build
 ```
 
-Stop:
+Stop everything:
 
 ```bash
 docker compose down
@@ -94,13 +137,19 @@ View logs:
 docker compose logs -f
 ```
 
-Recreate only the app:
+Restart only the web app:
 
 ```bash
 docker compose up -d --build web
 ```
 
-Reset everything including MySQL data:
+Restart only Nginx:
+
+```bash
+docker compose restart nginx
+```
+
+Reset everything including MySQL data and certificates:
 
 ```bash
 docker compose down -v
@@ -110,11 +159,4 @@ docker compose down -v
 
 - MySQL data is stored in the `mysql_data` Docker volume
 - uploaded QR codes and payment proofs are stored in the `media_data` Docker volume
-
-## Reverse proxy
-
-If you later put Nginx or Traefik in front of this app with HTTPS:
-
-- set `ENABLE_HTTPS=true`
-- set `CSRF_TRUSTED_ORIGINS=https://your-domain.com`
-- set `ALLOWED_HOSTS=your-domain.com`
+- Let's Encrypt certificates are stored in the `letsencrypt_certs` Docker volume

@@ -12,8 +12,8 @@ services:
       DB_HOST: db
       DB_PORT: 3306
       MEDIA_ROOT: /app/media
-    ports:
-      - "${WEB_PORT:-8000}:8000"
+    expose:
+      - "8000"
     depends_on:
       - db
     volumes:
@@ -42,6 +42,40 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: nyo-dashboard-nginx
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - certbot_www:/var/www/certbot
+      - letsencrypt_certs:/etc/letsencrypt
+      - ./docker/nginx/entrypoint.sh:/docker-entrypoint-custom.sh:ro
+      - ./docker/nginx/templates:/etc/nginx/templates:ro
+    entrypoint: ["/bin/sh", "/docker-entrypoint-custom.sh"]
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: nyo-dashboard-certbot
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - nginx
+    volumes:
+      - certbot_www:/var/www/certbot
+      - letsencrypt_certs:/etc/letsencrypt
+      - ./docker/certbot/entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+
 volumes:
   mysql_data:
   media_data:
+  certbot_www:
+  letsencrypt_certs:
