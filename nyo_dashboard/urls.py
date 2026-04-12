@@ -2,13 +2,12 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path, re_path
 
-from accounts.views import HomeRedirectView
 from nyo_dashboard.media_views import media_file_view
-from nyo_dashboard.views import HealthCheckView
+from nyo_dashboard.views import HealthCheckView, LandingPageView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("", HomeRedirectView.as_view(), name="home"),
+    path("", LandingPageView.as_view(), name="home"),
     path("health/", HealthCheckView.as_view(), name="health"),
     path("accounts/", include("accounts.urls")),
     path("members/", include("members.urls")),
