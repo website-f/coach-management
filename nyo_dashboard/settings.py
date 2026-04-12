@@ -1,22 +1,24 @@
 import os
 from pathlib import Path
 
-import dj_database_url
 from django.contrib.messages import constants as message_constants
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-RENDER = "RENDER" in os.environ
+def env_bool(key, default=False):
+    return os.environ.get(key, str(default)).lower() in {"1", "true", "yes", "on"}
+
+
+def env_list(key, default=""):
+    raw_value = os.environ.get(key, default)
+    return [item.strip() for item in raw_value.split(",") if item.strip()]
+
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "nyo-admin-dashboard-development-key")
-DEBUG = os.environ.get("DEBUG", "false" if RENDER else "true").lower() == "true"
+DEBUG = env_bool("DEBUG", False)
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost", "testserver"]
-render_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
-if render_hostname:
-    ALLOWED_HOSTS.append(render_hostname)
-extra_allowed_hosts = [host.strip() for host in os.environ.get("ALLOWED_HOSTS", "").split(",") if host.strip()]
-ALLOWED_HOSTS.extend(extra_allowed_hosts)
+ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "127.0.0.1,localhost,testserver")
+CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS", "")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -63,10 +65,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "nyo_dashboard.wsgi.application"
 
-database_url = os.environ.get("DATABASE_URL")
-if database_url:
+DB_ENGINE = os.environ.get("DB_ENGINE", "sqlite").lower()
+if DB_ENGINE == "mysql":
     DATABASES = {
-        "default": dj_database_url.parse(database_url, conn_max_age=600),
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": os.environ.get("DB_NAME", "nyo_dashboard"),
+            "USER": os.environ.get("DB_USER", "nyo_user"),
+            "PASSWORD": os.environ.get("DB_PASSWORD", "nyo_password"),
+            "HOST": os.environ.get("DB_HOST", "db"),
+            "PORT": int(os.environ.get("DB_PORT", "3306")),
+            "OPTIONS": {
+                "charset": "utf8mb4",
+            },
+        }
     }
 else:
     DATABASES = {
@@ -125,7 +137,7 @@ MESSAGE_TAGS = {
     message_constants.ERROR: "error",
 }
 
-if not DEBUG:
+if env_bool("ENABLE_HTTPS", False):
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True

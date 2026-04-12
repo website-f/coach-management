@@ -1,19 +1,19 @@
-from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 
-from members.models import Member
+from accounts.models import SystemFlag
 
-User = get_user_model()
+STARTER_DATA_FLAG = "starter_dataset_seeded"
 
 
 class Command(BaseCommand):
-    help = "Seed the system login accounts and demo data on a fresh database only."
+    help = "Seed the system login accounts and demo data if the starter dataset is missing."
 
     def handle(self, *args, **options):
-        if User.objects.exists() or Member.objects.exists():
-            self.stdout.write("Existing data detected. Skipping system bootstrap.")
+        if SystemFlag.objects.filter(key=STARTER_DATA_FLAG).exists():
+            self.stdout.write("Starter dataset already exists. Skipping bootstrap.")
             return
 
         call_command("seed_nyo_dashboard")
+        SystemFlag.objects.update_or_create(key=STARTER_DATA_FLAG, defaults={"value": "true"})
         self.stdout.write(self.style.SUCCESS("System login accounts and demo data bootstrapped."))

@@ -1,0 +1,47 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nyo-dashboard-web
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DB_ENGINE: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      MEDIA_ROOT: /app/media
+    ports:
+      - "${WEB_PORT:-8000}:8000"
+    depends_on:
+      - db
+    volumes:
+      - media_data:/app/media
+
+  db:
+    image: mysql:8.4
+    container_name: nyo-dashboard-db
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-nyo_dashboard}
+      MYSQL_USER: ${DB_USER:-nyo_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-nyo_password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
+  media_data:

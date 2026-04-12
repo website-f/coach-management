@@ -1,5 +1,6 @@
 from datetime import date
 from io import BytesIO
+import os
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
@@ -7,7 +8,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from PIL import Image, ImageDraw
 
-from accounts.models import UserProfile
+from accounts.models import SystemFlag, UserProfile
 from accounts.utils import (
     ROLE_ADMIN,
     ROLE_COACH,
@@ -21,6 +22,7 @@ from payments.models import Payment, QRCode
 from sessions.models import AttendanceRecord, TrainingSession
 
 User = get_user_model()
+STARTER_DATA_FLAG = "starter_dataset_seeded"
 
 
 def month_shift(source_date, delta):
@@ -60,7 +62,7 @@ class Command(BaseCommand):
 
         admin_user = self.create_user(
             username="admin",
-            password="Admin123!",
+            password=os.environ.get("SEED_ADMIN_PASSWORD", "Admin123!"),
             role=ROLE_ADMIN,
             email="admin@nyo.local",
             first_name="NYO",
@@ -69,7 +71,7 @@ class Command(BaseCommand):
         )
         coach_user = self.create_user(
             username="coach",
-            password="Coach123!",
+            password=os.environ.get("SEED_COACH_PASSWORD", "Coach123!"),
             role=ROLE_COACH,
             email="coach@nyo.local",
             first_name="Hafiz",
@@ -77,7 +79,7 @@ class Command(BaseCommand):
         )
         self.create_user(
             username="headcount",
-            password="Head123!",
+            password=os.environ.get("SEED_HEADCOUNT_PASSWORD", "Head123!"),
             role=ROLE_HEADCOUNT,
             email="headcount@nyo.local",
             first_name="Mina",
@@ -85,7 +87,7 @@ class Command(BaseCommand):
         )
         parent_user = self.create_user(
             username="parent",
-            password="Parent123!",
+            password=os.environ.get("SEED_PARENT_PASSWORD", "Parent123!"),
             role=ROLE_PARENT,
             email="parent@nyo.local",
             first_name="Sarah",
@@ -243,6 +245,7 @@ class Command(BaseCommand):
         self.assign_attendance(session_two, member_two, AttendanceRecord.STATUS_ABSENT, coach_user)
         self.assign_attendance(session_three, member_one, AttendanceRecord.STATUS_SCHEDULED, None)
         self.assign_attendance(session_three, member_two, AttendanceRecord.STATUS_SCHEDULED, None)
+        SystemFlag.objects.update_or_create(key=STARTER_DATA_FLAG, defaults={"value": "true"})
 
         self.stdout.write(self.style.SUCCESS("NYO Admin Dashboard demo data created."))
         self.stdout.write("Admin: admin / Admin123!")
@@ -256,7 +259,7 @@ class Command(BaseCommand):
             "first_name": first_name,
             "last_name": last_name,
             "is_superuser": is_superuser,
-            "is_staff": is_superuser,
+            "is_staff": is_superuser or role in {ROLE_ADMIN, ROLE_COACH, ROLE_HEADCOUNT},
         }
         user, created = User.objects.get_or_create(username=username, defaults=defaults)
         if created:
