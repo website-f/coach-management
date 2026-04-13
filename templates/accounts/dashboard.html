@@ -496,63 +496,92 @@
 
 {% block extra_js %}
 <script>
-    const chartDefaults = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: { labels: { color: '#8a8a9a', font: { family: 'Inter', size: 12 }, boxWidth: 12 } }
-        },
-        scales: {
-            x: {
-                ticks: { color: '#8a8a9a', font: { family: 'Inter', size: 11 } },
-                grid: { color: 'rgba(255,255,255,0.05)' },
-                border: { color: '#2a2a35' }
-            },
-            y: {
-                ticks: { color: '#8a8a9a', font: { family: 'Inter', size: 11 } },
-                grid: { color: 'rgba(255,255,255,0.05)' },
-                border: { color: '#2a2a35' }
+    document.addEventListener('DOMContentLoaded', function() {
+        const chartArea = document.querySelector('.chart-wrap');
+        if (!chartArea) return;
+
+        let chartBooted = false;
+
+        function chartDefaults() {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#8a8a9a', font: { family: 'Inter', size: 12 }, boxWidth: 12 } }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#8a8a9a', font: { family: 'Inter', size: 11 } },
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        border: { color: '#2a2a35' }
+                    },
+                    y: {
+                        ticks: { color: '#8a8a9a', font: { family: 'Inter', size: 11 } },
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        border: { color: '#2a2a35' }
+                    }
+                }
+            };
+        }
+
+        function applyAccentDataset(data) {
+            if (data.datasets) {
+                data.datasets = data.datasets.map((ds, i) => ({
+                    ...ds,
+                    backgroundColor: i === 0 ? 'rgba(79,110,247,0.18)' : 'rgba(99,210,130,0.18)',
+                    borderColor: i === 0 ? '#4f6ef7' : '#22c55e',
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    pointBackgroundColor: i === 0 ? '#4f6ef7' : '#22c55e',
+                    pointRadius: 4,
+                    tension: 0.4,
+                    fill: true
+                }));
             }
+            return data;
         }
-    };
 
-    function applyAccentDataset(data) {
-        if (data.datasets) {
-            data.datasets = data.datasets.map((ds, i) => ({
-                ...ds,
-                backgroundColor: i === 0 ? 'rgba(79,110,247,0.18)' : 'rgba(99,210,130,0.18)',
-                borderColor: i === 0 ? '#4f6ef7' : '#22c55e',
-                borderWidth: 2,
-                borderRadius: 6,
-                pointBackgroundColor: i === 0 ? '#4f6ef7' : '#22c55e',
-                pointRadius: 4,
-                tension: 0.4,
-                fill: true
-            }));
+        async function bootCharts() {
+            if (chartBooted) return;
+            chartBooted = true;
+            await window.ensureChartJs();
+
+            {% if show_revenue_chart %}
+            new Chart(document.getElementById('revenueChart'), {
+                type: 'bar',
+                data: applyAccentDataset(JSON.parse('{{ revenue_chart_data|escapejs }}')),
+                options: chartDefaults()
+            });
+            {% endif %}
+            {% if show_attendance_chart %}
+            new Chart(document.getElementById('attendanceChart'), {
+                type: 'line',
+                data: applyAccentDataset(JSON.parse('{{ attendance_chart_data|escapejs }}')),
+                options: chartDefaults()
+            });
+            {% endif %}
+            {% if show_growth_chart %}
+            new Chart(document.getElementById('growthChart'), {
+                type: 'line',
+                data: applyAccentDataset(JSON.parse('{{ growth_chart_data|escapejs }}')),
+                options: chartDefaults()
+            });
+            {% endif %}
         }
-        return data;
-    }
 
-    {% if show_revenue_chart %}
-    new Chart(document.getElementById('revenueChart'), {
-        type: 'bar',
-        data: applyAccentDataset(JSON.parse('{{ revenue_chart_data|escapejs }}')),
-        options: chartDefaults
+        if (window.nyoIsMobileViewport && 'IntersectionObserver' in window) {
+            const observer = new IntersectionObserver(function(entries) {
+                if (entries.some(function(entry) { return entry.isIntersecting; })) {
+                    bootCharts();
+                    observer.disconnect();
+                }
+            }, { rootMargin: '120px 0px' });
+            observer.observe(chartArea);
+        } else if ('requestIdleCallback' in window) {
+            requestIdleCallback(bootCharts, { timeout: 1500 });
+        } else {
+            setTimeout(bootCharts, 0);
+        }
     });
-    {% endif %}
-    {% if show_attendance_chart %}
-    new Chart(document.getElementById('attendanceChart'), {
-        type: 'line',
-        data: applyAccentDataset(JSON.parse('{{ attendance_chart_data|escapejs }}')),
-        options: chartDefaults
-    });
-    {% endif %}
-    {% if show_growth_chart %}
-    new Chart(document.getElementById('growthChart'), {
-        type: 'line',
-        data: applyAccentDataset(JSON.parse('{{ growth_chart_data|escapejs }}')),
-        options: chartDefaults
-    });
-    {% endif %}
 </script>
 {% endblock %}

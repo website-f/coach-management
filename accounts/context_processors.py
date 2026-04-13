@@ -22,7 +22,14 @@ def global_dashboard_context(request):
             status=AdmissionApplication.STATUS_PENDING
         ).count()
 
-        session_queryset = TrainingSession.objects.select_related("coach").order_by("session_date", "start_time")
+        session_queryset = TrainingSession.objects.select_related("coach").only(
+            "id",
+            "session_date",
+            "start_time",
+            "coach__first_name",
+            "coach__last_name",
+            "coach__username",
+        ).order_by("session_date", "start_time")
         if has_role(request.user, ROLE_COACH) and not has_role(request.user, ROLE_ADMIN):
             session_queryset = session_queryset.filter(coach=request.user)
 

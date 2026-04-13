@@ -333,7 +333,7 @@
                     <small>{{ feedback.training_session.session_date|date:"d M Y" }} | Coach {{ feedback.coach|default:"Coaching team" }}</small>
                     <p style="margin-top:10px;color:var(--text);line-height:1.8;">{{ feedback.feedback_text }}</p>
                     {% if feedback.video_proof %}
-                    <video controls preload="metadata">
+                    <video controls preload="none" playsinline>
                         <source src="{{ feedback.video_proof.url }}">
                         Your browser does not support HTML5 video.
                     </video>
@@ -353,72 +353,101 @@
 
 {% block extra_js %}
 <script>
-    const reportChartDefaults = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                labels: {
-                    color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#8a8a9a',
-                    font: { family: 'Inter', size: 12 }
-                }
-            }
-        }
-    };
+    document.addEventListener('DOMContentLoaded', function() {
+        const chartAnchor = document.getElementById('skillRadarChart') || document.getElementById('growthLineChart');
+        if (!chartAnchor) return;
 
-    const radarCtx = document.getElementById('skillRadarChart');
-    if (radarCtx) {
-        new Chart(radarCtx, {
-            type: 'radar',
-            data: JSON.parse('{{ radar_chart_data|escapejs }}'),
-            options: {
-                ...reportChartDefaults,
-                scales: {
-                    r: {
-                        suggestedMin: 0,
-                        suggestedMax: 100,
-                        ticks: { display: false },
-                        angleLines: { color: 'rgba(148, 163, 184, 0.20)' },
-                        grid: { color: 'rgba(148, 163, 184, 0.20)' },
-                        pointLabels: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#f0f0f4',
+        let chartsBooted = false;
+
+        function reportChartDefaults() {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#8a8a9a',
                             font: { family: 'Inter', size: 12 }
                         }
                     }
                 }
-            }
-        });
-    }
+            };
+        }
 
-    const growthCtx = document.getElementById('growthLineChart');
-    if (growthCtx) {
-        new Chart(growthCtx, {
-            type: 'line',
-            data: JSON.parse('{{ growth_chart_data|escapejs }}'),
-            options: {
-                ...reportChartDefaults,
-                scales: {
-                    x: {
-                        ticks: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#8a8a9a',
-                            font: { family: 'Inter', size: 11 }
-                        },
-                        grid: { color: 'rgba(148, 163, 184, 0.12)' },
-                        border: { color: 'rgba(148, 163, 184, 0.15)' }
-                    },
-                    y: {
-                        suggestedMin: 0,
-                        suggestedMax: 100,
-                        ticks: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#8a8a9a',
-                            font: { family: 'Inter', size: 11 }
-                        },
-                        grid: { color: 'rgba(148, 163, 184, 0.12)' },
-                        border: { color: 'rgba(148, 163, 184, 0.15)' }
+        async function bootReportCharts() {
+            if (chartsBooted) return;
+            chartsBooted = true;
+            await window.ensureChartJs();
+
+            const radarCtx = document.getElementById('skillRadarChart');
+            if (radarCtx) {
+                new Chart(radarCtx, {
+                    type: 'radar',
+                    data: JSON.parse('{{ radar_chart_data|escapejs }}'),
+                    options: {
+                        ...reportChartDefaults(),
+                        scales: {
+                            r: {
+                                suggestedMin: 0,
+                                suggestedMax: 100,
+                                ticks: { display: false },
+                                angleLines: { color: 'rgba(148, 163, 184, 0.20)' },
+                                grid: { color: 'rgba(148, 163, 184, 0.20)' },
+                                pointLabels: {
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#f0f0f4',
+                                    font: { family: 'Inter', size: 12 }
+                                }
+                            }
+                        }
                     }
-                }
+                });
             }
-        });
-    }
+
+            const growthCtx = document.getElementById('growthLineChart');
+            if (growthCtx) {
+                new Chart(growthCtx, {
+                    type: 'line',
+                    data: JSON.parse('{{ growth_chart_data|escapejs }}'),
+                    options: {
+                        ...reportChartDefaults(),
+                        scales: {
+                            x: {
+                                ticks: {
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#8a8a9a',
+                                    font: { family: 'Inter', size: 11 }
+                                },
+                                grid: { color: 'rgba(148, 163, 184, 0.12)' },
+                                border: { color: 'rgba(148, 163, 184, 0.15)' }
+                            },
+                            y: {
+                                suggestedMin: 0,
+                                suggestedMax: 100,
+                                ticks: {
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#8a8a9a',
+                                    font: { family: 'Inter', size: 11 }
+                                },
+                                grid: { color: 'rgba(148, 163, 184, 0.12)' },
+                                border: { color: 'rgba(148, 163, 184, 0.15)' }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        if (window.nyoIsMobileViewport && 'IntersectionObserver' in window) {
+            const observer = new IntersectionObserver(function(entries) {
+                if (entries.some(function(entry) { return entry.isIntersecting; })) {
+                    bootReportCharts();
+                    observer.disconnect();
+                }
+            }, { rootMargin: '120px 0px' });
+            observer.observe(chartAnchor);
+        } else if ('requestIdleCallback' in window) {
+            requestIdleCallback(bootReportCharts, { timeout: 1500 });
+        } else {
+            setTimeout(bootReportCharts, 0);
+        }
+    });
 </script>
 {% endblock %}

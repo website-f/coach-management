@@ -10,6 +10,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://code.jquery.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.datatables.net" crossorigin>
 
     <!-- PWA -->
     <link rel="manifest" href="/static/manifest.json">
@@ -18,20 +22,6 @@
 
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-
-    <!-- Select2 -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
-
-    <!-- Flatpickr -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- DataTables & Buttons & Responsive -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
 
     <!-- Theme init (before render to prevent flash) -->
     <script>
@@ -113,6 +103,7 @@
         }
 
         html, body { min-height: 100vh; overflow-x: clip; }
+        html { -webkit-text-size-adjust: 100%; }
 
         body {
             font-family: 'Inter', system-ui, sans-serif;
@@ -1137,6 +1128,50 @@
             background: var(--border);
             margin: 8px 8px;
         }
+
+        @media (max-width: 900px), (pointer: coarse), (prefers-reduced-motion: reduce) {
+            body::before,
+            body::after {
+                display: none;
+            }
+
+            .sidebar,
+            .top-header,
+            .card,
+            .card-inset,
+            .stat-card,
+            .user-card {
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+            }
+
+            .card:hover,
+            .stat-card:hover,
+            .list-item:hover,
+            .quick-nav-item:hover,
+            .ai-fab:hover,
+            .btn:hover {
+                transform: none;
+                box-shadow: none;
+            }
+
+            .anim-fade-in {
+                animation: none !important;
+                opacity: 1 !important;
+            }
+        }
+
+        @supports (content-visibility: auto) {
+            @media (max-width: 900px), (pointer: coarse) {
+                .page-content .card,
+                .page-content .stat-card,
+                .page-content .table-wrap,
+                .page-content .empty-state {
+                    content-visibility: auto;
+                    contain-intrinsic-size: 1px 260px;
+                }
+            }
+        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
@@ -1802,22 +1837,110 @@
 </script>
 {% endif %}
 
-<!-- jQuery + Select2 + Flatpickr -->
+<!-- jQuery -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
-<!-- DataTables + Buttons Export + Responsive -->
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
-<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
 
 <script>
     /* ── Theme Toggle ── */
     const html = document.documentElement;
     const themeBtn = document.getElementById('themeToggle');
+    const isMobileViewport = window.matchMedia('(max-width: 900px), (pointer: coarse)').matches;
+    const assetPromises = {};
+
+    function loadScriptOnce(src) {
+        if (assetPromises[src]) {
+            return assetPromises[src];
+        }
+        assetPromises[src] = new Promise(function(resolve, reject) {
+            var existing = document.querySelector('script[src="' + src + '"]');
+            if (existing && existing.dataset.loaded === '1') {
+                resolve();
+                return;
+            }
+            var script = existing || document.createElement('script');
+            script.src = src;
+            script.async = true;
+            script.onload = function() {
+                script.dataset.loaded = '1';
+                resolve();
+            };
+            script.onerror = reject;
+            if (!existing) {
+                document.body.appendChild(script);
+            }
+        });
+        return assetPromises[src];
+    }
+
+    function loadStyleOnce(href) {
+        if (assetPromises[href]) {
+            return assetPromises[href];
+        }
+        assetPromises[href] = new Promise(function(resolve, reject) {
+            var existing = document.querySelector('link[href="' + href + '"]');
+            if (existing) {
+                resolve();
+                return;
+            }
+            var link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = href;
+            link.onload = resolve;
+            link.onerror = reject;
+            document.head.appendChild(link);
+        });
+        return assetPromises[href];
+    }
+
+    function runDeferred(callback) {
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(callback, { timeout: 1200 });
+            return;
+        }
+        setTimeout(callback, 0);
+    }
+
+    async function ensureSelect2() {
+        if (!window.jQuery) return;
+        if (window.jQuery.fn && window.jQuery.fn.select2) return;
+        await loadStyleOnce('https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css');
+        await loadScriptOnce('https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js');
+    }
+
+    async function ensureFlatpickr() {
+        if (window.flatpickr) return;
+        await loadStyleOnce('https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css');
+        await loadScriptOnce('https://cdn.jsdelivr.net/npm/flatpickr');
+    }
+
+    async function ensureDataTables() {
+        if (!window.jQuery) return;
+        if (window.jQuery.fn && window.jQuery.fn.DataTable) return;
+        await Promise.all([
+            loadStyleOnce('https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css'),
+            loadStyleOnce('https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css'),
+            loadStyleOnce('https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css'),
+        ]);
+        await loadScriptOnce('https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js');
+        await loadScriptOnce('https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js');
+        await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+        await loadScriptOnce('https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js');
+        await loadScriptOnce('https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js');
+    }
+
+    async function ensureChartJs() {
+        if (window.Chart) return;
+        await loadScriptOnce('https://cdn.jsdelivr.net/npm/chart.js');
+    }
+
+    window.ensureSelect2 = ensureSelect2;
+    window.ensureFlatpickr = ensureFlatpickr;
+    window.ensureDataTables = ensureDataTables;
+    window.ensureChartJs = ensureChartJs;
+    window.nyoIsMobileViewport = isMobileViewport;
+    window.nyoLoadScriptOnce = loadScriptOnce;
+    window.nyoLoadStyleOnce = loadStyleOnce;
+    window.nyoRunDeferred = runDeferred;
 
     function applyTheme(theme) {
         html.setAttribute('data-theme', theme);
@@ -1913,13 +2036,18 @@
     }, 4500);
 
     /* ── Sticky Header Scroll ── */
+    let headerScrollFrame = null;
     window.addEventListener('scroll', function() {
-        var header = document.querySelector('.top-header');
-        if (header) {
-            if (window.scrollY > 10) header.classList.add('scrolled');
-            else header.classList.remove('scrolled');
-        }
-    });
+        if (headerScrollFrame) return;
+        headerScrollFrame = window.requestAnimationFrame(function() {
+            var header = document.querySelector('.top-header');
+            if (header) {
+                if (window.scrollY > 10) header.classList.add('scrolled');
+                else header.classList.remove('scrolled');
+            }
+            headerScrollFrame = null;
+        });
+    }, { passive: true });
 
     function syncScrollableTrack(container) {
         const track = container.querySelector('.quick-nav-track, .action-rail-track');
@@ -1950,17 +2078,94 @@
         });
     }
 
-    window.addEventListener('load', bindScrollableTracks);
+    function initFlatpickrInputs() {
+        if (isMobileViewport || !window.flatpickr) {
+            return;
+        }
+        document.querySelectorAll('input[type="date"]').forEach(function(el) {
+            if (el.dataset.pickerReady === '1') return;
+            el.dataset.pickerReady = '1';
+            var val = el.value;
+            if (window.flatpickr) flatpickr(el, { dateFormat: 'Y-m-d', defaultDate: val || null, allowInput: true });
+        });
+        document.querySelectorAll('input[type="time"]').forEach(function(el) {
+            if (el.dataset.pickerReady === '1') return;
+            el.dataset.pickerReady = '1';
+            var val = el.value;
+            if (window.flatpickr) flatpickr(el, { enableTime: true, noCalendar: true, dateFormat: 'H:i', defaultDate: val || null, allowInput: true, time_24hr: true });
+        });
+    }
+
+    function initEnhancedSelects() {
+        if (isMobileViewport || !window.$ || !$.fn.select2) {
+            return;
+        }
+
+        $('select[multiple]').each(function() {
+            var field = $(this);
+            if (field.data('select2')) return;
+            field.select2({
+                theme: 'default',
+                placeholder: field.attr('data-placeholder') || 'Select options...',
+                allowClear: true,
+                width: '100%'
+            });
+        });
+
+        $('select').not('[multiple]').each(function() {
+            var field = $(this);
+            if (field.data('select2')) return;
+            field.select2({
+                theme: 'default',
+                allowClear: true,
+                width: '100%',
+                placeholder: field.attr('data-placeholder') || (field.find('option:first').text() || 'Select...')
+            });
+        });
+    }
+
+    function initDataTables() {
+        if (isMobileViewport || !window.$ || !$.fn.DataTable) {
+            return;
+        }
+
+        var datatableInitialized = false;
+        $('.tbl').each(function() {
+            var tbl = $(this);
+            if (tbl.find('thead').length === 0 || tbl.find('tbody').length === 0) return;
+            if (tbl.hasClass('native-stack')) return;
+            if ($.fn.DataTable.isDataTable(this)) return;
+
+            tbl.DataTable({
+                dom: '<"dt-top-ctrl"fB><"table-responsive"t><"dt-bottom-ctrl"lip>',
+                pageLength: 20,
+                ordering: false,
+                responsive: false,
+                autoWidth: false,
+                buttons: [
+                    { extend: 'excelHtml5', text: '<i class="fa-solid fa-file-excel"></i> Export', className: 'dt-button' }
+                ],
+                language: {
+                    search: "",
+                    searchPlaceholder: "Search records...",
+                    lengthMenu: "Show _MENU_"
+                }
+            });
+            datatableInitialized = true;
+
+            var customActions = $('.page-table-actions').html();
+            if (customActions) {
+                tbl.closest('.dataTables_wrapper').find('.dt-buttons').append(customActions);
+                $('.page-table-actions').remove();
+            }
+        });
+
+        if (datatableInitialized) {
+            $('.pagination').hide();
+        }
+    }
 
     /* ── Flatpickr ── */
-    document.querySelectorAll('input[type="date"]').forEach(function(el) {
-        var val = el.value;
-        flatpickr(el, { dateFormat: 'Y-m-d', defaultDate: val || null, allowInput: true });
-    });
-    document.querySelectorAll('input[type="time"]').forEach(function(el) {
-        var val = el.value;
-        flatpickr(el, { enableTime: true, noCalendar: true, dateFormat: 'H:i', defaultDate: val || null, allowInput: true, time_24hr: true });
-    });
 
     /* ── PWA Service Worker ── */
     if ('serviceWorker' in navigator) {
@@ -1975,11 +2180,19 @@
     $(document).ready(function() {
         bindScrollableTracks();
 
-        $('select[multiple]').select2({
-            theme: 'default',
-            placeholder: 'Select options...',
-            allowClear: true
-        });
+        if (!isMobileViewport && document.querySelector('select')) {
+            runDeferred(async function() {
+                await ensureSelect2();
+                initEnhancedSelects();
+            });
+        }
+
+        if (!isMobileViewport && document.querySelector('input[type="date"], input[type="time"]')) {
+            runDeferred(async function() {
+                await ensureFlatpickr();
+                initFlatpickrInputs();
+            });
+        }
 
         // Make Checkboxes Intuitive Toggles manually inside explicit forms
         document.querySelectorAll('.form-group input[type="checkbox"]').forEach(function(cb) {
@@ -1995,14 +2208,15 @@
             }
         });
         
-        // Apply Glassmorphism Entrance Animations automatically
-        var animateTargets = document.querySelectorAll('.card, .stat-card, .table-wrap, .list-item');
-        var animDelay = 0;
-        animateTargets.forEach(function(el) {
-            el.classList.add('anim-fade-in');
-            if (animDelay < 0.3) { animDelay += 0.05; }
-            el.style.animationDelay = animDelay + 's';
-        });
+        if (!isMobileViewport) {
+            var animateTargets = document.querySelectorAll('.card, .stat-card, .table-wrap, .list-item');
+            var animDelay = 0;
+            animateTargets.forEach(function(el) {
+                el.classList.add('anim-fade-in');
+                if (animDelay < 0.3) { animDelay += 0.05; }
+                el.style.animationDelay = animDelay + 's';
+            });
+        }
 
         // ── Auto-Collapsible Filters ──
         document.querySelectorAll('.filter-bar').forEach(function(bar, idx) {
@@ -2036,42 +2250,20 @@
         });
 
         // ── DataTables Init ──
-        var datatableInitialized = false;
-        if ($('.tbl').length > 0) {
-            $('.tbl').each(function() {
-                var tbl = $(this);
-                if(tbl.find('thead').length === 0 || tbl.find('tbody').length === 0) return;
-                if (tbl.hasClass('native-stack')) return;
-                if ($.fn.DataTable.isDataTable(this)) return;
-                
-                tbl.DataTable({
-                    dom: '<"dt-top-ctrl"fB><"table-responsive"t><"dt-bottom-ctrl"lip>',
-                    pageLength: 20,
-                    ordering: false,
-                    responsive: false, // Desktop handles table perfectly, Mobile handles via .table-responsive scrolling
-                    autoWidth: false,
-                    buttons: [
-                        { extend: 'excelHtml5', text: '<i class="fa-solid fa-file-excel"></i> Export', className: 'dt-button' }
-                    ],
-                    language: {
-                        search: "",
-                        searchPlaceholder: "Search records...",
-                        lengthMenu: "Show _MENU_"
-                    }
-                });
-                datatableInitialized = true;
-
-                // Move custom page actions into table tops
-                var customActions = $('.page-table-actions').html();
-                if(customActions) {
-                    tbl.closest('.dataTables_wrapper').find('.dt-buttons').append(customActions);
-                    $('.page-table-actions').remove();
-                }
+        if (isMobileViewport) {
+            document.querySelectorAll('.page-table-actions').forEach(function(actions) {
+                actions.style.display = 'flex';
+                actions.style.flexWrap = 'wrap';
+                actions.style.gap = '10px';
+                actions.style.marginBottom = '14px';
             });
-            
-            if (datatableInitialized) {
-                $('.pagination').hide();
-            }
+        }
+
+        if (!isMobileViewport && document.querySelector('.tbl:not(.native-stack)')) {
+            runDeferred(async function() {
+                await ensureDataTables();
+                initDataTables();
+            });
         }
     });
 

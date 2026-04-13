@@ -7,6 +7,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Count, Q
 from django.forms import modelformset_factory
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -50,14 +51,7 @@ AttendanceFormSet = modelformset_factory(
 
 
 def visible_sessions_for_user(user):
-    queryset = TrainingSession.objects.select_related("coach", "created_by").prefetch_related(
-        "attendance_records__member",
-        "attendance_records__member__payment_plan",
-        "attendance_records__member__assigned_coach",
-        "attendance_records__member__parent_user",
-        "feedback_entries__member",
-        "feedback_entries__coach",
-    )
+    queryset = TrainingSession.objects.select_related("coach", "created_by")
     if has_role(user, ROLE_COACH) and not has_role(user, ROLE_ADMIN):
         return queryset.filter(coach=user)
     if has_role(user, ROLE_PARENT):
@@ -322,7 +316,18 @@ class SessionListView(LoginRequiredMixin, ListView):
             queryset = queryset.filter(coach_id=coach)
         if member:
             queryset = queryset.filter(attendance_records__member_id=member)
-        return queryset.distinct().order_by("session_date", "start_time")
+        return (
+            queryset.annotate(
+                attendee_count=Count("attendance_records", distinct=True),
+                pending_attendance_count=Count(
+                    "attendance_records",
+                    filter=Q(attendance_records__status=AttendanceRecord.STATUS_SCHEDULED),
+                    distinct=True,
+                ),
+            )
+            .distinct()
+            .order_by("session_date", "start_time")
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -333,7 +338,7 @@ class SessionListView(LoginRequiredMixin, ListView):
         calendar_events = []
         for training_session in sessions:
             is_past = training_session.session_date < today
-            attendee_count = training_session.attendance_records.count()
+            attendee_count = getattr(training_session, "attendee_count", 0)
             tone = "#94a3b8" if is_past else "#f5a623" if has_role(self.request.user, ROLE_ADMIN) else "#22c55e"
             calendar_events.append(
                 {
@@ -342,11 +347,6 @@ class SessionListView(LoginRequiredMixin, ListView):
                     "url": reverse("sessions:detail", kwargs={"pk": training_session.pk}),
                     "backgroundColor": tone,
                     "borderColor": tone,
-                    "extendedProps": {
-                        "court": training_session.court,
-                        "coach": training_session.coach.get_full_name() if training_session.coach else "Unassigned",
-                        "attendees": attendee_count,
-                    },
                 }
             )
 
@@ -365,11 +365,10 @@ class SessionListView(LoginRequiredMixin, ListView):
                 "selected_coach": self.request.GET.get("coach", "").strip(),
                 "selected_member": self.request.GET.get("member", "").strip(),
                 "month_total_sessions": len(sessions),
-                "month_total_players": sum(session.attendance_records.count() for session in sessions),
-                "month_pending_attendance": AttendanceRecord.objects.filter(
-                    training_session__in=sessions,
-                    status=AttendanceRecord.STATUS_SCHEDULED,
-                ).count(),
+                "month_total_players": sum(getattr(session, "attendee_count", 0) for session in sessions),
+                "month_pending_attendance": sum(
+                    getattr(session, "pending_attendance_count", 0) for session in sessions
+                ),
                 "month_start": month_start,
                 "month_end": month_end,
             }

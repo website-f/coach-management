@@ -199,7 +199,7 @@
                         <p style="font-size:13.5px;color:var(--text);line-height:1.8;margin-top:10px;">{{ feedback.feedback_text|truncatechars:180 }}</p>
                         {% if feedback.video_proof %}
                         <div style="margin-top:14px;border-radius:16px;overflow:hidden;background:#020617;border:1px solid var(--border);">
-                            <video controls preload="metadata" style="width:100%;display:block;max-height:240px;background:#000;">
+                            <video controls preload="none" playsinline style="width:100%;display:block;max-height:240px;background:#000;">
                                 <source src="{{ feedback.video_proof.url }}">
                             </video>
                         </div>

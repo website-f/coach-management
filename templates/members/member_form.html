@@ -27,15 +27,3 @@
     </div>
 </div>
 {% endblock %}
-
-{% block extra_js %}
-<script>
-$(document).ready(function() {
-    $('select').not('[multiple]').select2({
-        theme: 'default',
-        allowClear: true,
-        placeholder: function() { return $(this).find('option:first').text() || 'Select...'; }
-    });
-});
-</script>
-{% endblock %}

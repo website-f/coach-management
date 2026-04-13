@@ -113,19 +113,3 @@
     </div>
 </div>
 {% endblock %}
-
-{% block extra_js %}
-<script>
-$(document).ready(function() {
-    $('select[multiple]').select2({
-        theme: 'default',
-        placeholder: 'Select members...',
-        allowClear: true
-    });
-    $('select').not('[multiple]').select2({
-        theme: 'default',
-        allowClear: true
-    });
-});
-</script>
-{% endblock %}
