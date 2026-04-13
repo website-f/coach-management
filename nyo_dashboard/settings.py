@@ -19,6 +19,19 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "nyo-admin-dashboard-development-key")
 DEBUG = env_bool("DEBUG", False)
 
 ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "127.0.0.1,localhost,testserver")
+for internal_host in [
+    "127.0.0.1",
+    "localhost",
+    "testserver",
+    "web",
+]:
+    if internal_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(internal_host)
+
+for configured_host in [os.environ.get("DOMAIN", "").strip(), os.environ.get("WWW_DOMAIN", "").strip()]:
+    if configured_host and configured_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(configured_host)
+
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS", "")
 
 INSTALLED_APPS = [
