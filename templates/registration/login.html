@@ -1,375 +1,207 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In | NYO Admin Dashboard</title>
-    <script>(function(){var t=localStorage.getItem('nyo-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        :root,
-        [data-theme="dark"] {
-            --bg: #0f0f11;
-            --surface: #18181c;
-            --surface2: #1e1e24;
-            --border: #2a2a35;
-            --border2: #33333f;
-            --text: #f0f0f4;
-            --muted: #8a8a9a;
-            --accent: #4f6ef7;
-            --accent-h: #3b5bdb;
-            --danger: #ef4444;
-            --radius: 12px;
-        }
-        [data-theme="light"] {
-            --bg: #f4f4f8;
-            --surface: #ffffff;
-            --surface2: #f0f0f5;
-            --border: #e2e2ec;
-            --border2: #d4d4e0;
-            --text: #0f0f11;
-            --muted: #6b6b82;
-            --accent: #4f6ef7;
-            --accent-h: #3b5bdb;
-            --danger: #dc2626;
-            --radius: 12px;
-        }
-        html, body {
-            height: 100%;
-            font-family: "Inter", sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            -webkit-font-smoothing: antialiased;
-            transition: background .18s, color .18s;
-        }
-        .login-wrap {
-            min-height: 100vh;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-        }
-        .login-panel-left {
-            background: var(--surface);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 48px 52px;
-        }
-        .brand { display: flex; align-items: center; gap: 12px; }
-        .brand-icon {
-            width: 42px;
-            height: 42px;
-            background: var(--accent);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-size: 17px;
-        }
-        .brand-text small {
-            display: block;
-            font-size: 10px;
-            font-weight: 600;
-            letter-spacing: .12em;
-            text-transform: uppercase;
-            color: var(--muted);
-            margin-bottom: 2px;
-        }
-        .brand-text strong {
-            font-family: "Space Grotesk", sans-serif;
-            font-size: 16px;
-            letter-spacing: -0.03em;
-            color: var(--text);
-        }
-        .panel-hero {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 40px 0;
-        }
-        .panel-hero h2 {
-            font-size: 34px;
-            font-weight: 700;
-            line-height: 1.18;
-            color: var(--text);
-            max-width: 420px;
-        }
-        .panel-hero p {
-            margin-top: 16px;
-            color: var(--muted);
-            font-size: 14.5px;
-            line-height: 1.8;
-            max-width: 390px;
-        }
-        .panel-features {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-top: 32px;
-        }
-        .feat-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: var(--muted);
-            font-size: 13.5px;
-        }
-        .feat-item i {
-            color: var(--accent);
-            font-size: 14px;
-            width: 20px;
-            text-align: center;
-        }
-        .panel-footer { font-size: 12px; color: var(--muted); }
-        .login-panel-right {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 52px 36px;
-            background: var(--bg);
-        }
-        .login-form-box { width: 100%; max-width: 420px; }
-        .login-form-box .eyebrow {
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: .12em;
-            text-transform: uppercase;
-            color: var(--muted);
-            margin-bottom: 10px;
-        }
-        .login-form-box h1 {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--text);
-            margin-bottom: 10px;
-        }
-        .login-role-note {
-            margin: 0 0 22px;
-            color: var(--muted);
-            font-size: 13px;
-            line-height: 1.7;
-        }
-        .role-switch {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 22px;
-        }
-        .role-switch a {
-            padding: 8px 12px;
-            border-radius: 999px;
-            border: 1px solid var(--border2);
-            background: var(--surface);
-            color: var(--muted);
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .08em;
-        }
-        .role-switch a.active {
-            background: rgba(79,110,247,.12);
-            border-color: rgba(79,110,247,.28);
-            color: var(--accent);
-        }
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 7px;
-            margin-bottom: 18px;
-        }
-        .form-label {
-            font-size: 11.5px;
-            font-weight: 600;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: .07em;
-        }
-        .form-control {
-            background: var(--surface);
-            border: 1px solid var(--border2);
-            border-radius: var(--radius);
-            color: var(--text);
-            font-family: inherit;
-            font-size: 14px;
-            padding: 12px 14px;
-            outline: none;
-            transition: border-color .18s, box-shadow .18s;
-            width: 100%;
-        }
-        .form-control:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(79,110,247,.15);
-        }
-        .input-wrap { position: relative; }
-        .input-wrap .toggle-pw {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: var(--muted);
-            cursor: pointer;
-            font-size: 14px;
-            padding: 0;
-        }
-        .input-wrap .toggle-pw:hover { color: var(--text); }
-        .error-msg {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(239,68,68,.1);
-            border: 1px solid rgba(239,68,68,.3);
-            border-radius: 10px;
-            padding: 11px 14px;
-            font-size: 13px;
-            color: #f87171;
-            margin-bottom: 18px;
-        }
-        .btn-login {
-            width: 100%;
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            border-radius: var(--radius);
-            font-family: inherit;
-            font-size: 14px;
-            font-weight: 600;
-            padding: 13px;
-            cursor: pointer;
-            transition: background .18s, transform .15s;
-            margin-top: 4px;
-        }
-        .btn-login:hover { background: var(--accent-h); }
-        .btn-login:active { transform: scale(.98); }
-        .hint-box {
-            margin-top: 20px;
-            padding: 12px 14px;
-            border-radius: 10px;
-            background: var(--surface);
-            border: 1px solid var(--border2);
-            color: var(--muted);
-            font-size: 12.5px;
-            line-height: 1.7;
-        }
-        @media (max-width: 800px) {
-            .login-wrap { grid-template-columns: 1fr; }
-            .login-panel-left { display: none; }
-            .login-panel-right { padding: 40px 20px; min-height: 100vh; }
-            .login-form-box { max-width: 100%; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In | NYO Dashboard</title>
+  <script>(function(){var t=localStorage.getItem('nyo-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    :root,[data-theme="dark"]{
+      --bg:#0a0a0f;--surface:#13131a;--surface2:#1c1c25;
+      --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.12);
+      --text:#f0f0f4;--muted:#8a8a9a;--accent:#4f6ef7;--accent-h:#3b5bdb;
+      --danger:#ef4444;--r:14px;
+    }
+    [data-theme="light"]{
+      --bg:#f4f4f8;--surface:#ffffff;--surface2:#f0f0f5;
+      --border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.11);
+      --text:#0f0f11;--muted:#6b6b82;--accent:#4f6ef7;--accent-h:#3b5bdb;
+      --danger:#dc2626;--r:14px;
+    }
+    html,body{height:100%;font-family:"Inter",sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;transition:background .2s,color .2s;}
+
+    /* ── Theme toggle ── */
+    .theme-btn{position:fixed;top:16px;right:16px;z-index:99;width:36px;height:36px;border-radius:9px;background:var(--surface2);border:1px solid var(--border2);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .2s;}
+    .theme-btn:hover{background:var(--border);color:var(--text);}
+
+    /* ── Layout ── */
+    .wrap{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;}
+
+    /* ── Left panel ── */
+    .left{
+      background:var(--surface);border-right:1px solid var(--border);
+      display:flex;flex-direction:column;justify-content:space-between;
+      padding:48px 52px;position:relative;overflow:hidden;
+    }
+    .left::before{
+      content:"";position:absolute;top:-120px;left:-80px;
+      width:420px;height:420px;border-radius:50%;
+      background:radial-gradient(circle,rgba(79,110,247,.12) 0%,transparent 70%);
+      pointer-events:none;
+    }
+    .left-content{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;justify-content:center;padding:40px 0;}
+    .brand{display:flex;align-items:center;gap:12px;position:relative;z-index:1;}
+    .brand-ico{width:40px;height:40px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;}
+    .brand-text small{display:block;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;}
+    .brand-text strong{font-family:"Space Grotesk",sans-serif;font-size:15px;font-weight:700;color:var(--text);}
+    .left-content h2{font-family:"Space Grotesk",sans-serif;font-size:32px;font-weight:700;letter-spacing:-.03em;line-height:1.15;color:var(--text);max-width:380px;}
+    .left-content p{margin-top:14px;color:var(--muted);font-size:14px;line-height:1.8;max-width:360px;}
+    .feat-list{display:flex;flex-direction:column;gap:12px;margin-top:28px;}
+    .feat-item{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;}
+    .feat-item i{color:var(--accent);font-size:13px;width:18px;text-align:center;}
+    .left-foot{font-size:12px;color:var(--muted);position:relative;z-index:1;}
+
+    /* ── Right panel (form) ── */
+    .right{display:flex;align-items:center;justify-content:center;padding:52px 36px;background:var(--bg);}
+    .form-box{width:100%;max-width:400px;}
+    .eyebrow{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+    .form-box h1{font-family:"Space Grotesk",sans-serif;font-size:26px;font-weight:700;letter-spacing:-.03em;color:var(--text);margin-bottom:8px;}
+    .form-box .sub{color:var(--muted);font-size:13.5px;line-height:1.7;margin-bottom:28px;}
+
+    /* Form fields */
+    .field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+    .field label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;}
+    .input-wrap{position:relative;}
+    .input-ico{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none;}
+    .field input{
+      width:100%;background:var(--surface);border:1px solid var(--border2);
+      border-radius:var(--r);color:var(--text);font-family:inherit;font-size:14px;
+      padding:12px 42px;outline:none;
+      transition:border-color .18s,box-shadow .18s;
+    }
+    .field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,110,247,.14);}
+    .field .toggle-pw{
+      position:absolute;right:12px;top:50%;transform:translateY(-50%);
+      background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0;
+      transition:color .18s;
+    }
+    .field .toggle-pw:hover{color:var(--text);}
+
+    /* Error */
+    .err{display:flex;align-items:center;gap:9px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.28);border-radius:10px;padding:11px 14px;font-size:13px;color:#f87171;margin-bottom:16px;}
+
+    /* Submit */
+    .btn-submit{
+      width:100%;background:var(--accent);color:#fff;border:none;
+      border-radius:var(--r);font-family:inherit;font-size:14px;font-weight:600;
+      padding:13px;cursor:pointer;transition:background .18s,transform .15s;margin-top:4px;
+      display:flex;align-items:center;justify-content:center;gap:8px;
+    }
+    .btn-submit:hover{background:var(--accent-h);}
+    .btn-submit:active{transform:scale(.98);}
+
+    /* Footer note */
+    .form-note{margin-top:20px;padding:14px;border-radius:11px;background:var(--surface);border:1px solid var(--border2);color:var(--muted);font-size:12.5px;line-height:1.7;}
+    .form-note a{color:var(--accent);text-decoration:none;}
+    .form-note a:hover{text-decoration:underline;}
+    .back-link{display:inline-flex;align-items:center;gap:7px;margin-top:16px;color:var(--muted);font-size:13px;text-decoration:none;transition:color .18s;}
+    .back-link:hover{color:var(--text);}
+
+    /* Responsive */
+    @media(max-width:800px){
+      .wrap{grid-template-columns:1fr;}
+      .left{display:none;}
+      .right{padding:40px 20px;min-height:100vh;}
+      .form-box{max-width:100%;}
+    }
+  </style>
 </head>
 <body>
-<div class="login-wrap">
-    <button id="loginThemeToggle" title="Toggle theme" style="position:fixed;top:16px;right:16px;z-index:99;width:38px;height:38px;border-radius:9px;background:var(--surface);border:1px solid var(--border2);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:background .18s,color .18s;">
-        <i class="fa-solid fa-sun" id="loginThemeIcon"></i>
-    </button>
-    <div class="login-panel-left">
-        <div class="brand">
-            <div class="brand-icon"><i class="fa-solid fa-shuttlecock"></i></div>
-            <div class="brand-text">
-                <small>Badminton Club</small>
-                <strong>NYO Admin Dashboard</strong>
-            </div>
-        </div>
-        <div class="panel-hero">
-            <h2>Role-based access, one shared club system.</h2>
-            <p>The public landing now flows into this single sign-in screen, and from here each user lands in a workspace tailored to their job: admin, coach, headcount, or parent.</p>
-            <div class="panel-features">
-                <div class="feat-item"><i class="fa-solid fa-users"></i> Member management & profiles</div>
-                <div class="feat-item"><i class="fa-solid fa-calendar-days"></i> Training sessions & attendance</div>
-                <div class="feat-item"><i class="fa-solid fa-file-invoice-dollar"></i> Invoices & payment verification</div>
-                <div class="feat-item"><i class="fa-solid fa-chart-pie"></i> Role-aware dashboard flow</div>
-            </div>
-        </div>
-        <div class="panel-footer">© NYO Badminton Club · Dashboard System</div>
+<button class="theme-btn" id="themeBtn" aria-label="Toggle theme"><i class="fa-solid fa-sun" id="themeIco"></i></button>
+
+<div class="wrap">
+  <!-- Left: info panel -->
+  <div class="left">
+    <div class="brand">
+      <div class="brand-ico"><i class="fa-solid fa-shuttlecock"></i></div>
+      <div class="brand-text">
+        <small>Badminton Club</small>
+        <strong>NYO Dashboard</strong>
+      </div>
     </div>
-    <div class="login-panel-right">
-        <div class="login-form-box">
-            {% if request.GET.role == 'admin' %}
-            <p class="eyebrow">Admin access</p>
-            <h1>Sign in to manage the club</h1>
-            <p class="login-role-note">Open the finance queue, member CRM, KPI dashboard, and payment approvals from the admin workspace.</p>
-            {% elif request.GET.role == 'coach' %}
-            <p class="eyebrow">Coach access</p>
-            <h1>Sign in to run your squad</h1>
-            <p class="login-role-note">Go straight into your session flow, assigned members, invoices, and payment proofs tied to your players.</p>
-            {% elif request.GET.role == 'headcount' %}
-            <p class="eyebrow">Headcount access</p>
-            <h1>Sign in to manage attendance</h1>
-            <p class="login-role-note">Use the headcount workspace to monitor today’s sessions and update attendance quickly.</p>
-            {% else %}
-            <p class="eyebrow">Parent access</p>
-            <h1>Sign in to your family portal</h1>
-            <p class="login-role-note">View child profiles, outstanding invoices, and the QR payment proof flow from the parent workspace.</p>
-            {% endif %}
-            <div class="role-switch">
-                <a href="{% url 'accounts:login' %}?role=parent" class="{% if request.GET.role != 'admin' and request.GET.role != 'coach' and request.GET.role != 'headcount' %}active{% endif %}">Parent</a>
-                <a href="{% url 'accounts:login' %}?role=coach" class="{% if request.GET.role == 'coach' %}active{% endif %}">Coach</a>
-                <a href="{% url 'accounts:login' %}?role=headcount" class="{% if request.GET.role == 'headcount' %}active{% endif %}">Headcount</a>
-                <a href="{% url 'accounts:login' %}?role=admin" class="{% if request.GET.role == 'admin' %}active{% endif %}">Admin</a>
-            </div>
-            <form method="post">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label class="form-label" for="id_username">Username</label>
-                    <input class="form-control" type="text" name="username" id="id_username" placeholder="Enter username" required autofocus autocomplete="username">
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="id_password">Password</label>
-                    <div class="input-wrap">
-                        <input class="form-control" type="password" name="password" id="id_password" placeholder="Enter password" required autocomplete="current-password" style="padding-right:42px">
-                        <button type="button" class="toggle-pw" id="togglePw"><i class="fa-regular fa-eye" id="togglePwIcon"></i></button>
-                    </div>
-                </div>
-                {% if form.errors %}
-                <div class="error-msg">
-                    <i class="fa-solid fa-circle-exclamation"></i>
-                    Invalid username or password. Please try again.
-                </div>
-                {% endif %}
-                <button type="submit" class="btn-login">Sign In</button>
-            </form>
-            <div class="hint-box">
-                Use your assigned system credentials. The role hint above is only a guide for the intended flow; access is still controlled by your real Django account permissions.
-            </div>
-        </div>
+    <div class="left-content">
+      <h2>Your complete club management system.</h2>
+      <p>Sign in to access your workspace — tailored automatically to your role as admin, coach, attendance staff, or parent.</p>
+      <div class="feat-list">
+        <div class="feat-item"><i class="fa-solid fa-users"></i> Member management &amp; profiles</div>
+        <div class="feat-item"><i class="fa-solid fa-calendar-days"></i> Training sessions &amp; attendance</div>
+        <div class="feat-item"><i class="fa-solid fa-file-invoice-dollar"></i> Invoices &amp; payment verification</div>
+        <div class="feat-item"><i class="fa-solid fa-file-lines"></i> Progress reports &amp; report cards</div>
+        <div class="feat-item"><i class="fa-solid fa-wand-magic-sparkles"></i> AI session planner for coaches</div>
+      </div>
     </div>
+    <div class="left-foot">© NYO Badminton Club · Club Management System</div>
+  </div>
+
+  <!-- Right: form -->
+  <div class="right">
+    <div class="form-box">
+      <p class="eyebrow">Welcome back</p>
+      <h1>Sign in to your account</h1>
+      <p class="sub">Enter your credentials below. Your dashboard will be customised automatically based on your account role.</p>
+
+      {% if form.errors %}
+      <div class="err">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        Incorrect username or password. Please try again.
+      </div>
+      {% endif %}
+
+      <form method="post" autocomplete="on">
+        {% csrf_token %}
+        <div class="field">
+          <label for="id_username">Username</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-user input-ico"></i>
+            <input type="text" name="username" id="id_username" placeholder="Enter your username" required autofocus autocomplete="username">
+          </div>
+        </div>
+        <div class="field">
+          <label for="id_password">Password</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-lock input-ico"></i>
+            <input type="password" name="password" id="id_password" placeholder="Enter your password" required autocomplete="current-password" style="padding-right:42px;">
+            <button type="button" class="toggle-pw" id="togglePw"><i class="fa-regular fa-eye" id="pwIco"></i></button>
+          </div>
+        </div>
+        <button type="submit" class="btn-submit">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In
+        </button>
+      </form>
+
+      <div class="form-note">
+        Your role (Admin, Coach, Attendance, or Parent) is detected automatically. If you cannot log in, contact your club administrator.
+      </div>
+      <a href="/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to home</a>
+    </div>
+  </div>
 </div>
+
 <script>
-    document.getElementById('togglePw')?.addEventListener('click', function() {
-        const inp = document.getElementById('id_password');
-        const icon = document.getElementById('togglePwIcon');
-        if (inp.type === 'password') {
-            inp.type = 'text';
-            icon.className = 'fa-regular fa-eye-slash';
-        } else {
-            inp.type = 'password';
-            icon.className = 'fa-regular fa-eye';
-        }
-    });
-    var loginThemeToggle = document.getElementById('loginThemeToggle');
-    var loginThemeIcon = document.getElementById('loginThemeIcon');
-    var html = document.documentElement;
-    function syncLoginIcon() {
-        var t = html.getAttribute('data-theme');
-        loginThemeIcon.className = t === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-    }
-    syncLoginIcon();
-    loginThemeToggle.addEventListener('click', function() {
-        var current = html.getAttribute('data-theme');
-        var next = current === 'dark' ? 'light' : 'dark';
-        html.setAttribute('data-theme', next);
-        localStorage.setItem('nyo-theme', next);
-        syncLoginIcon();
-    });
+  // Password toggle
+  document.getElementById('togglePw')?.addEventListener('click', function() {
+    var inp = document.getElementById('id_password');
+    var ico = document.getElementById('pwIco');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    ico.className = inp.type === 'password' ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash';
+  });
+  // Theme
+  var html = document.documentElement;
+  var themeBtn = document.getElementById('themeBtn');
+  var themeIco = document.getElementById('themeIco');
+  function syncIco(t){ themeIco.className = t === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon'; }
+  syncIco(html.getAttribute('data-theme'));
+  themeBtn.addEventListener('click', function() {
+    var next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('nyo-theme', next);
+    syncIco(next);
+  });
 </script>
 </body>
 </html>

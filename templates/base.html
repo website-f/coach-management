@@ -1088,6 +1088,55 @@
         [data-theme="light"] select {
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b6b82' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
         }
+
+        /* ── Custom Scrollbar ── */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+        * { scrollbar-width: thin; scrollbar-color: var(--border2) transparent; }
+
+        /* ── Floating AI Planner FAB ── */
+        .ai-fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 150;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 12px 20px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #4f6ef7, #3b5bdb);
+            color: #fff;
+            font-family: inherit;
+            font-size: 13.5px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 8px 32px rgba(79,110,247,.4), 0 2px 8px rgba(0,0,0,.3);
+            transition: transform .2s, box-shadow .2s, opacity .2s;
+            letter-spacing: -.01em;
+        }
+        .ai-fab:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 14px 40px rgba(79,110,247,.5), 0 4px 12px rgba(0,0,0,.3);
+        }
+        .ai-fab:active { transform: scale(.97); }
+        .ai-fab i { font-size: 15px; }
+        .ai-fab .fab-label { white-space: nowrap; }
+        /* On mobile, shift above bottom nav */
+        @media (max-width: 1023px) {
+            .ai-fab { bottom: calc(var(--mob-nav-h) + 16px); }
+        }
+
+        /* ── Sidebar nav section divider ── */
+        .nav-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 8px 8px;
+        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
@@ -1117,52 +1166,99 @@
         </div>
 
         <nav class="sidebar-nav">
-            <div class="nav-section-label">Main</div>
+            <!-- ── ADMIN NAVIGATION ── -->
+            {% if current_role == 'admin' %}
+            <div class="nav-section-label">Overview</div>
             <a href="{% url 'accounts:dashboard' %}" class="nav-link {% nav_active '/accounts/dashboard/' %}">
                 <span class="icon"><i class="fa-solid fa-chart-pie"></i></span> Dashboard
             </a>
+
+            <div class="nav-section-label" style="margin-top:8px;">Club</div>
             <a href="{% url 'members:list' %}" class="nav-link {% nav_active_section '/members/' '/members/reports/' '/members/applications/' '/members/apply/' %}">
                 <span class="icon"><i class="fa-solid fa-users"></i></span> Members
             </a>
+            <a href="{% url 'members:application_list' %}" class="nav-link {% nav_active '/members/applications/' %}">
+                <span class="icon"><i class="fa-solid fa-user-plus"></i></span> Applications
+                {% if pending_applications %}<span class="nav-badge">{{ pending_applications }}</span>{% endif %}
+            </a>
+            <a href="{% url 'members:report_list' %}" class="nav-link {% nav_active '/members/reports/' %}">
+                <span class="icon"><i class="fa-solid fa-file-lines"></i></span> Progress Reports
+            </a>
+
+            <div class="nav-section-label" style="margin-top:8px;">Training</div>
             <a href="{% url 'sessions:list' %}" class="nav-link {% nav_active_path '/sessions/' '/plan/' '/sessions/syllabus/' %}">
                 <span class="icon"><i class="fa-solid fa-calendar-days"></i></span> Sessions
             </a>
-            {% if current_role == 'admin' or current_role == 'coach' %}
             <a href="{{ sidebar_planner_url }}" class="nav-link {% nav_active_contains '/plan/' %}">
                 <span class="icon"><i class="fa-solid fa-wand-magic-sparkles"></i></span> AI Planner
-                {% if sidebar_planner_session %}
-                <span class="nav-badge">Next</span>
-                {% endif %}
+                {% if sidebar_planner_session %}<span class="nav-badge">Next</span>{% endif %}
             </a>
-            {% endif %}
-            {% if request.user.is_authenticated %}
-            <a href="{% url 'accounts:notifications' %}" class="nav-link {% nav_active '/accounts/notifications/' %}">
-                <span class="icon"><i class="fa-solid fa-bell"></i></span> Notifications
-                {% if unread_notifications %}
-                <span class="nav-badge">{{ unread_notifications }}</span>
-                {% endif %}
+            <a href="{% url 'sessions:syllabus' %}" class="nav-link {% nav_active '/sessions/syllabus/' %}">
+                <span class="icon"><i class="fa-solid fa-book-open"></i></span> Syllabus
             </a>
-            {% endif %}
-            {% if current_role == 'admin' or current_role == 'coach' or current_role == 'parent' %}
-            <a href="{% url 'members:report_list' %}" class="nav-link {% nav_active '/members/reports/' %}">
-                <span class="icon"><i class="fa-solid fa-file-lines"></i></span> Reports
+
+            <div class="nav-section-label" style="margin-top:8px;">Finance</div>
+            <a href="{% url 'finance:overview' %}" class="nav-link {% nav_active_exact '/finance/' %}">
+                <span class="icon"><i class="fa-solid fa-sack-dollar"></i></span> Finance Overview
             </a>
-            {% endif %}
-            {% if current_role == 'admin' or current_role == 'coach' %}
-            <a href="{% url 'members:application_list' %}" class="nav-link {% nav_active '/members/applications/' %}">
-                <span class="icon"><i class="fa-solid fa-user-plus"></i></span> Applications
-                {% if pending_applications %}
-                <span class="nav-badge">{{ pending_applications }}</span>
-                {% endif %}
+            <a href="{% url 'finance:invoice_list' %}" class="nav-link {% nav_active '/finance/invoices/' %}">
+                <span class="icon"><i class="fa-solid fa-file-invoice-dollar"></i></span> Invoices
             </a>
-            {% endif %}
-            {% if request.user.is_authenticated %}
+            <a href="{% url 'payments:payment_history' %}" class="nav-link {% nav_active '/payments/history/' %}">
+                <span class="icon"><i class="fa-solid fa-money-check-dollar"></i></span> Payments
+            </a>
+            <a href="{% url 'payments:pending_reviews' %}" class="nav-link {% nav_active '/payments/pending-reviews/' %}">
+                <span class="icon"><i class="fa-solid fa-receipt"></i></span> Payment Reviews
+                {% if pending_payment_reviews %}<span class="nav-badge">{{ pending_payment_reviews }}</span>{% endif %}
+            </a>
+            <a href="{% url 'payments:qrcode_list' %}" class="nav-link {% nav_active '/payments/qr-codes/' %}">
+                <span class="icon"><i class="fa-solid fa-qrcode"></i></span> QR Codes
+            </a>
+
+            <div class="nav-section-label" style="margin-top:8px;">System</div>
+            <a href="{% url 'accounts:coaches' %}" class="nav-link {% nav_active '/accounts/coaches/' %}">
+                <span class="icon"><i class="fa-solid fa-user-tie"></i></span> Coach Accounts
+            </a>
             <a href="{% url 'finance:product_list' %}" class="nav-link {% nav_active '/finance/store/' %}">
                 <span class="icon"><i class="fa-solid fa-bag-shopping"></i></span> Store
             </a>
+            <a href="{% url 'accounts:website' %}" class="nav-link {% nav_active '/accounts/website/' %}">
+                <span class="icon"><i class="fa-solid fa-globe"></i></span> Website Settings
+            </a>
+            <a href="{% url 'accounts:notifications' %}" class="nav-link {% nav_active '/accounts/notifications/' %}">
+                <span class="icon"><i class="fa-solid fa-bell"></i></span> Notifications
+                {% if unread_notifications %}<span class="nav-badge">{{ unread_notifications }}</span>{% endif %}
+            </a>
             {% endif %}
 
-            {% if current_role == 'admin' or current_role == 'coach' %}
+            <!-- ── COACH NAVIGATION ── -->
+            {% if current_role == 'coach' %}
+            <div class="nav-section-label">Overview</div>
+            <a href="{% url 'accounts:dashboard' %}" class="nav-link {% nav_active '/accounts/dashboard/' %}">
+                <span class="icon"><i class="fa-solid fa-chart-pie"></i></span> Dashboard
+            </a>
+
+            <div class="nav-section-label" style="margin-top:8px;">My Squad</div>
+            <a href="{% url 'members:list' %}" class="nav-link {% nav_active_section '/members/' '/members/reports/' '/members/applications/' %}">
+                <span class="icon"><i class="fa-solid fa-users-viewfinder"></i></span> My Players
+            </a>
+            <a href="{% url 'members:report_list' %}" class="nav-link {% nav_active '/members/reports/' %}">
+                <span class="icon"><i class="fa-solid fa-file-lines"></i></span> Progress Reports
+            </a>
+            <a href="{% url 'members:application_list' %}" class="nav-link {% nav_active '/members/applications/' %}">
+                <span class="icon"><i class="fa-solid fa-user-plus"></i></span> Applications
+                {% if pending_applications %}<span class="nav-badge">{{ pending_applications }}</span>{% endif %}
+            </a>
+
+            <div class="nav-section-label" style="margin-top:8px;">Training</div>
+            <a href="{% url 'sessions:list' %}" class="nav-link {% nav_active_path '/sessions/' '/plan/' %}">
+                <span class="icon"><i class="fa-solid fa-calendar-days"></i></span> Sessions
+            </a>
+            <a href="{{ sidebar_planner_url }}" class="nav-link {% nav_active_contains '/plan/' %}">
+                <span class="icon"><i class="fa-solid fa-wand-magic-sparkles"></i></span> AI Planner
+                {% if sidebar_planner_session %}<span class="nav-badge">Next</span>{% endif %}
+            </a>
+
             <div class="nav-section-label" style="margin-top:8px;">Finance</div>
             <a href="{% url 'finance:invoice_list' %}" class="nav-link {% nav_active '/finance/invoices/' %}">
                 <span class="icon"><i class="fa-solid fa-file-invoice-dollar"></i></span> Invoices
@@ -1170,37 +1266,69 @@
             <a href="{% url 'payments:payment_history' %}" class="nav-link {% nav_active '/payments/history/' %}">
                 <span class="icon"><i class="fa-solid fa-money-check-dollar"></i></span> Payments
             </a>
-            {% if current_role == 'admin' %}
-            <a href="{% url 'sessions:syllabus' %}" class="nav-link {% nav_active '/sessions/syllabus/' %}">
-                <span class="icon"><i class="fa-solid fa-book-open"></i></span> Syllabus
+
+            <div class="nav-section-label" style="margin-top:8px;">General</div>
+            <a href="{% url 'finance:product_list' %}" class="nav-link {% nav_active '/finance/store/' %}">
+                <span class="icon"><i class="fa-solid fa-bag-shopping"></i></span> Store
             </a>
-            <a href="{% url 'payments:qrcode_list' %}" class="nav-link {% nav_active '/payments/qr-codes/' %}">
-                <span class="icon"><i class="fa-solid fa-qrcode"></i></span> QR Codes
-            </a>
-            <a href="{% url 'payments:pending_reviews' %}" class="nav-link {% nav_active '/payments/pending-reviews/' %}">
-                <span class="icon"><i class="fa-solid fa-receipt"></i></span> Reviews
-                {% if pending_payment_reviews %}
-                <span class="nav-badge">{{ pending_payment_reviews }}</span>
-                {% endif %}
+            <a href="{% url 'accounts:notifications' %}" class="nav-link {% nav_active '/accounts/notifications/' %}">
+                <span class="icon"><i class="fa-solid fa-bell"></i></span> Notifications
+                {% if unread_notifications %}<span class="nav-badge">{{ unread_notifications }}</span>{% endif %}
             </a>
             {% endif %}
-            {% endif %}
-            {% if current_role == 'admin' %}
-            <div class="nav-section-label" style="margin-top:8px;">Admin</div>
-            <a href="{% url 'accounts:coaches' %}" class="nav-link {% nav_active '/accounts/coaches/' %}">
-                <span class="icon"><i class="fa-solid fa-user-tie"></i></span> Coach Accounts
-            </a>
-            <a href="{% url 'finance:overview' %}" class="nav-link {% nav_active_exact '/finance/' %}">
-                <span class="icon"><i class="fa-solid fa-sack-dollar"></i></span> Finance Overview
-            </a>
-            <a href="{% url 'accounts:website' %}" class="nav-link {% nav_active '/accounts/website/' %}">
-                <span class="icon"><i class="fa-solid fa-globe"></i></span> Website
-            </a>
-            {% endif %}
+
+            <!-- ── PARENT NAVIGATION ── -->
             {% if current_role == 'parent' %}
+            <div class="nav-section-label">Overview</div>
+            <a href="{% url 'accounts:dashboard' %}" class="nav-link {% nav_active '/accounts/dashboard/' %}">
+                <span class="icon"><i class="fa-solid fa-chart-pie"></i></span> Dashboard
+            </a>
+
+            <div class="nav-section-label" style="margin-top:8px;">My Children</div>
+            <a href="{% url 'members:list' %}" class="nav-link {% nav_active_section '/members/' %}">
+                <span class="icon"><i class="fa-solid fa-children"></i></span> Children Profiles
+            </a>
+            <a href="{% url 'members:report_list' %}" class="nav-link {% nav_active '/members/reports/' %}">
+                <span class="icon"><i class="fa-solid fa-file-lines"></i></span> Progress Reports
+            </a>
+            <a href="{% url 'sessions:list' %}" class="nav-link {% nav_active_path '/sessions/' %}">
+                <span class="icon"><i class="fa-solid fa-calendar-days"></i></span> Session Schedule
+            </a>
+
             <div class="nav-section-label" style="margin-top:8px;">Payments</div>
             <a href="{% url 'payments:my_payments' %}" class="nav-link {% nav_active '/payments/my-payments/' %}">
                 <span class="icon"><i class="fa-solid fa-credit-card"></i></span> My Payments
+            </a>
+
+            <div class="nav-section-label" style="margin-top:8px;">General</div>
+            <a href="{% url 'finance:product_list' %}" class="nav-link {% nav_active '/finance/store/' %}">
+                <span class="icon"><i class="fa-solid fa-bag-shopping"></i></span> Store
+            </a>
+            <a href="{% url 'accounts:notifications' %}" class="nav-link {% nav_active '/accounts/notifications/' %}">
+                <span class="icon"><i class="fa-solid fa-bell"></i></span> Notifications
+                {% if unread_notifications %}<span class="nav-badge">{{ unread_notifications }}</span>{% endif %}
+            </a>
+            {% endif %}
+
+            <!-- ── HEADCOUNT NAVIGATION ── -->
+            {% if current_role == 'headcount' %}
+            <div class="nav-section-label">Overview</div>
+            <a href="{% url 'accounts:dashboard' %}" class="nav-link {% nav_active '/accounts/dashboard/' %}">
+                <span class="icon"><i class="fa-solid fa-chart-pie"></i></span> Dashboard
+            </a>
+
+            <div class="nav-section-label" style="margin-top:8px;">Attendance</div>
+            <a href="{% url 'sessions:list' %}" class="nav-link {% nav_active_path '/sessions/' %}">
+                <span class="icon"><i class="fa-solid fa-calendar-days"></i></span> Sessions
+            </a>
+
+            <div class="nav-section-label" style="margin-top:8px;">General</div>
+            <a href="{% url 'finance:product_list' %}" class="nav-link {% nav_active '/finance/store/' %}">
+                <span class="icon"><i class="fa-solid fa-bag-shopping"></i></span> Store
+            </a>
+            <a href="{% url 'accounts:notifications' %}" class="nav-link {% nav_active '/accounts/notifications/' %}">
+                <span class="icon"><i class="fa-solid fa-bell"></i></span> Notifications
+                {% if unread_notifications %}<span class="nav-badge">{{ unread_notifications }}</span>{% endif %}
             </a>
             {% endif %}
         </nav>
@@ -1365,6 +1493,14 @@
         {% endif %}
     </div>
 </div>
+
+<!-- ── AI Planner Floating Button (admin & coach only) ── -->
+{% if current_role == 'admin' or current_role == 'coach' %}
+<a href="{{ sidebar_planner_url }}" class="ai-fab" title="Open AI Session Planner">
+    <i class="fa-solid fa-wand-magic-sparkles"></i>
+    <span class="fab-label">AI Planner</span>
+</a>
+{% endif %}
 
 <!-- jQuery + Select2 + Flatpickr -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>

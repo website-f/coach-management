@@ -3,11 +3,12 @@ from django.contrib import admin
 from django.urls import include, path, re_path
 
 from nyo_dashboard.media_views import media_file_view
-from nyo_dashboard.views import HealthCheckView, LandingPageView
+from nyo_dashboard.views import HealthCheckView, LandingPageView, PublicStoreView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", LandingPageView.as_view(), name="home"),
+    path("store/", PublicStoreView.as_view(), name="public_store"),
     path("health/", HealthCheckView.as_view(), name="health"),
     path("accounts/", include("accounts.urls")),
     path("members/", include("members.urls")),
