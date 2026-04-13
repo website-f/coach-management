@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from decimal import Decimal
 
 from django.contrib.messages import constants as message_constants
 
@@ -136,6 +137,16 @@ MESSAGE_TAGS = {
     message_constants.WARNING: "warning",
     message_constants.ERROR: "error",
 }
+
+EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "no-reply@nyo.local")
+DEFAULT_REGISTRATION_FEE = Decimal(os.environ.get("DEFAULT_REGISTRATION_FEE", "120.00"))
+DEFAULT_MONTHLY_FEE = Decimal(os.environ.get("DEFAULT_MONTHLY_FEE", "180.00"))
 
 if env_bool("ENABLE_HTTPS", False):
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

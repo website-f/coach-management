@@ -1,19 +1,25 @@
+import calendar
+import json
+from datetime import date
+
 from django import forms
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.forms import modelformset_factory
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
-from accounts.mixins import AdminOrCoachRequiredMixin, HeadcountOrAboveRequiredMixin
+from accounts.mixins import AdminOrCoachRequiredMixin, AdminRequiredMixin, HeadcountOrAboveRequiredMixin
+from accounts.notifications import notify_users
 from accounts.utils import ROLE_ADMIN, ROLE_COACH, ROLE_HEADCOUNT, ROLE_PARENT, has_role
-from accounts.models import UserProfile
-from sessions.forms import TrainingSessionForm
-from sessions.models import AttendanceRecord, TrainingSession
+from members.models import Member
+from sessions.forms import SessionFeedbackForm, TrainingSessionForm
+from sessions.models import AttendanceRecord, SessionFeedback, TrainingSession
+from sessions.video_utils import compress_session_feedback_video
 
 User = get_user_model()
 
@@ -26,7 +32,13 @@ AttendanceFormSet = modelformset_factory(
 
 
 def visible_sessions_for_user(user):
-    queryset = TrainingSession.objects.select_related("coach").prefetch_related("attendance_records__member")
+    queryset = TrainingSession.objects.select_related("coach", "created_by").prefetch_related(
+        "attendance_records__member",
+        "attendance_records__member__assigned_coach",
+        "attendance_records__member__parent_user",
+        "feedback_entries__member",
+        "feedback_entries__coach",
+    )
     if has_role(user, ROLE_COACH) and not has_role(user, ROLE_ADMIN):
         return queryset.filter(coach=user)
     if has_role(user, ROLE_PARENT):
@@ -34,29 +46,180 @@ def visible_sessions_for_user(user):
     return queryset
 
 
+def visible_members_for_session_filters(user):
+    queryset = Member.objects.select_related("assigned_coach", "parent_user").order_by("full_name")
+    if has_role(user, ROLE_COACH) and not has_role(user, ROLE_ADMIN):
+        return queryset.filter(assigned_coach=user)
+    if has_role(user, ROLE_PARENT):
+        return queryset.filter(parent_user=user)
+    return queryset
+
+
+def resolve_month_anchor(raw_value):
+    if raw_value:
+        try:
+            year_str, month_str = raw_value.split("-")
+            return date(int(year_str), int(month_str), 1)
+        except (TypeError, ValueError):
+            pass
+    return timezone.localdate().replace(day=1)
+
+
+def month_bounds(anchor):
+    _, days_in_month = calendar.monthrange(anchor.year, anchor.month)
+    return anchor, anchor.replace(day=days_in_month)
+
+
+def shift_month(anchor, delta):
+    month_index = anchor.month - 1 + delta
+    year = anchor.year + month_index // 12
+    month = month_index % 12 + 1
+    return date(year, month, 1)
+
+
+def summarize_session_dates(training_sessions):
+    session_dates = [
+        session.session_date.strftime("%d %b %Y")
+        for session in sorted(training_sessions, key=lambda item: (item.session_date, item.start_time))
+    ]
+    if len(session_dates) <= 4:
+        return ", ".join(session_dates)
+    return f"{', '.join(session_dates[:4])}, +{len(session_dates) - 4} more"
+
+
+def notify_schedule_participants(training_sessions, updated=False):
+    sessions = list(training_sessions)
+    if not sessions:
+        return
+
+    primary_session = sessions[0]
+    roster = Member.objects.filter(attendance_records__training_session__in=sessions).select_related("parent_user").distinct()
+    coach = primary_session.coach
+    coach_name = "To be assigned"
+    if coach:
+        coach_name = coach.get_full_name() or coach.username
+    parent_users = [member.parent_user for member in roster if member.parent_user_id]
+    title = "Session updated" if updated else "New session scheduled"
+    message = (
+        f"{primary_session.title} is scheduled on {summarize_session_dates(sessions)} at "
+        f"{primary_session.start_time.strftime('%H:%M')} on Court {primary_session.court}."
+    )
+    email_subject = title
+    email_message = (
+        f"{primary_session.title}\n"
+        f"Coach: {coach_name}\n"
+        f"Dates: {summarize_session_dates(sessions)}\n"
+        f"Time: {primary_session.start_time.strftime('%H:%M')} - {primary_session.end_time.strftime('%H:%M')}\n"
+        f"Court: {primary_session.court}\n"
+        "Please check the dashboard calendar for the latest schedule."
+    )
+    notify_users(
+        [coach],
+        title=title,
+        message=message,
+        url=reverse("sessions:list"),
+        email_subject=email_subject,
+        email_message=email_message,
+    )
+    notify_users(
+        parent_users,
+        title=title,
+        message=message,
+        url=reverse("sessions:list"),
+        email_subject=email_subject,
+        email_message=email_message,
+    )
+
+
+def notify_feedback_ready(feedback_entry):
+    member = feedback_entry.member
+    session = feedback_entry.training_session
+    coach_name = feedback_entry.coach.get_full_name() if feedback_entry.coach else "Your coach"
+    notify_users(
+        [member.parent_user],
+        title="New session feedback available",
+        message=f"{coach_name} uploaded feedback for {member.full_name} after {session.title}.",
+        url=reverse("members:detail", kwargs={"pk": member.pk}),
+        email_subject=f"New feedback for {member.full_name}",
+        email_message=(
+            f"{coach_name} uploaded feedback for {member.full_name}.\n"
+            f"Session: {session.title}\n"
+            f"Date: {session.session_date:%d %b %Y}\n"
+            "Log in to the dashboard to review the feedback and video proof."
+        ),
+    )
+
+
 class SessionListView(LoginRequiredMixin, ListView):
     model = TrainingSession
     template_name = "sessions/session_list.html"
     context_object_name = "sessions"
-    paginate_by = 10
+
+    def get_month_anchor(self):
+        return resolve_month_anchor(self.request.GET.get("month"))
 
     def get_queryset(self):
         queryset = visible_sessions_for_user(self.request.user)
         coach = self.request.GET.get("coach", "").strip()
-        session_date = self.request.GET.get("session_date", "").strip()
+        member = self.request.GET.get("member", "").strip()
+        month_start, month_end = month_bounds(self.get_month_anchor())
+        queryset = queryset.filter(session_date__range=(month_start, month_end))
         if coach:
             queryset = queryset.filter(coach_id=coach)
-        if session_date:
-            queryset = queryset.filter(session_date=session_date)
-        return queryset
+        if member:
+            queryset = queryset.filter(attendance_records__member_id=member)
+        return queryset.distinct().order_by("session_date", "start_time")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["can_manage"] = has_role(self.request.user, ROLE_ADMIN, ROLE_COACH)
-        context["can_mark_attendance"] = has_role(
-            self.request.user, ROLE_ADMIN, ROLE_COACH, ROLE_HEADCOUNT
+        month_anchor = self.get_month_anchor()
+        month_start, month_end = month_bounds(month_anchor)
+        sessions = list(context["sessions"])
+        today = timezone.localdate()
+        calendar_events = []
+        for training_session in sessions:
+            is_past = training_session.session_date < today
+            attendee_count = training_session.attendance_records.count()
+            tone = "#94a3b8" if is_past else "#f5a623" if has_role(self.request.user, ROLE_ADMIN) else "#22c55e"
+            calendar_events.append(
+                {
+                    "title": f"{training_session.start_time.strftime('%H:%M')} {training_session.title}",
+                    "start": training_session.session_date.isoformat(),
+                    "url": reverse("sessions:detail", kwargs={"pk": training_session.pk}),
+                    "backgroundColor": tone,
+                    "borderColor": tone,
+                    "extendedProps": {
+                        "court": training_session.court,
+                        "coach": training_session.coach.get_full_name() if training_session.coach else "Unassigned",
+                        "attendees": attendee_count,
+                    },
+                }
+            )
+
+        context.update(
+            {
+                "can_plan": has_role(self.request.user, ROLE_ADMIN),
+                "can_mark_attendance": has_role(self.request.user, ROLE_ADMIN, ROLE_COACH, ROLE_HEADCOUNT),
+                "coaches": User.objects.filter(profile__role=ROLE_COACH).order_by("first_name", "username"),
+                "members": visible_members_for_session_filters(self.request.user),
+                "calendar_events_json": json.dumps(calendar_events),
+                "calendar_initial_date": month_anchor.isoformat(),
+                "calendar_month_label": month_anchor.strftime("%B %Y"),
+                "prev_month": shift_month(month_anchor, -1).strftime("%Y-%m"),
+                "next_month": shift_month(month_anchor, 1).strftime("%Y-%m"),
+                "selected_month": month_anchor.strftime("%Y-%m"),
+                "selected_coach": self.request.GET.get("coach", "").strip(),
+                "selected_member": self.request.GET.get("member", "").strip(),
+                "month_total_sessions": len(sessions),
+                "month_total_players": sum(session.attendance_records.count() for session in sessions),
+                "month_pending_attendance": AttendanceRecord.objects.filter(
+                    training_session__in=sessions,
+                    status=AttendanceRecord.STATUS_SCHEDULED,
+                ).count(),
+                "month_start": month_start,
+                "month_end": month_end,
+            }
         )
-        context["coaches"] = User.objects.filter(profile__role=UserProfile.ROLE_COACH).order_by("first_name", "username")
         return context
 
 
@@ -70,14 +233,50 @@ class SessionDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["can_manage"] = has_role(self.request.user, ROLE_ADMIN, ROLE_COACH)
+        records = list(
+            self.object.attendance_records.select_related(
+                "member",
+                "member__assigned_coach",
+                "member__parent_user",
+            ).order_by("member__full_name")
+        )
+        feedback_map = {
+            feedback.member_id: feedback
+            for feedback in self.object.feedback_entries.select_related("member", "coach")
+        }
+        present_count = sum(1 for record in records if record.status == AttendanceRecord.STATUS_PRESENT)
+        late_count = sum(1 for record in records if record.status == AttendanceRecord.STATUS_LATE)
+        absent_count = sum(1 for record in records if record.status == AttendanceRecord.STATUS_ABSENT)
+        scheduled_count = sum(1 for record in records if record.status == AttendanceRecord.STATUS_SCHEDULED)
+        can_feedback = has_role(self.request.user, ROLE_ADMIN) or (
+            has_role(self.request.user, ROLE_COACH) and self.object.coach_id == self.request.user.id
+        )
+        context["can_plan"] = has_role(self.request.user, ROLE_ADMIN)
         context["can_mark_attendance"] = has_role(
             self.request.user, ROLE_ADMIN, ROLE_COACH, ROLE_HEADCOUNT
+        )
+        context["can_feedback"] = can_feedback
+        context["attendance_summary"] = [
+            {"label": "Present", "value": present_count, "tone": "success"},
+            {"label": "Late", "value": late_count, "tone": "warning"},
+            {"label": "Absent", "value": absent_count, "tone": "danger"},
+            {"label": "Unmarked", "value": scheduled_count, "tone": "info"},
+        ]
+        context["attendance_rows"] = records
+        context["feedback_rows"] = [
+            {
+                "record": record,
+                "feedback": feedback_map.get(record.member_id),
+            }
+            for record in records
+        ]
+        context["feedback_entries"] = self.object.feedback_entries.select_related("member", "coach").order_by(
+            "member__full_name"
         )
         return context
 
 
-class SessionCreateView(AdminOrCoachRequiredMixin, CreateView):
+class SessionCreateView(AdminRequiredMixin, CreateView):
     model = TrainingSession
     form_class = TrainingSessionForm
     template_name = "sessions/session_form.html"
@@ -91,18 +290,24 @@ class SessionCreateView(AdminOrCoachRequiredMixin, CreateView):
     def form_valid(self, form):
         form.instance.created_by = self.request.user
         response = super().form_valid(form)
-        messages.success(self.request, "Session created successfully.")
+        created_sessions = form.created_sessions or [self.object]
+        notify_schedule_participants(created_sessions, updated=False)
+        session_count = len(created_sessions)
+        if session_count > 1:
+            messages.success(self.request, f"{session_count} recurring sessions created and notifications were sent.")
+        else:
+            messages.success(self.request, "Session created successfully and notifications were sent.")
         return response
 
 
-class SessionUpdateView(AdminOrCoachRequiredMixin, UpdateView):
+class SessionUpdateView(AdminRequiredMixin, UpdateView):
     model = TrainingSession
     form_class = TrainingSessionForm
     template_name = "sessions/session_form.html"
     success_url = reverse_lazy("sessions:list")
 
     def get_queryset(self):
-        return visible_sessions_for_user(self.request.user)
+        return TrainingSession.objects.select_related("coach").prefetch_related("attendance_records__member")
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -111,7 +316,8 @@ class SessionUpdateView(AdminOrCoachRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        messages.success(self.request, "Session updated successfully.")
+        notify_schedule_participants([self.object], updated=True)
+        messages.success(self.request, "Session updated successfully and the schedule alerts were refreshed.")
         return response
 
 
@@ -154,4 +360,71 @@ class AttendanceUpdateView(HeadcountOrAboveRequiredMixin, View):
             return redirect("sessions:detail", pk=training_session.pk)
         return self.render_page(request, training_session, formset)
 
-# Create your views here.
+
+class SessionFeedbackUpsertView(AdminOrCoachRequiredMixin, View):
+    template_name = "sessions/feedback_form.html"
+
+    def get_training_session(self):
+        return get_object_or_404(visible_sessions_for_user(self.request.user), pk=self.kwargs["session_pk"])
+
+    def get_member(self, training_session):
+        record = get_object_or_404(
+            training_session.attendance_records.select_related("member"),
+            member_id=self.kwargs["member_pk"],
+        )
+        return record.member
+
+    def get_feedback(self, training_session, member):
+        return SessionFeedback.objects.filter(training_session=training_session, member=member).first()
+
+    def can_manage_feedback(self, training_session):
+        return has_role(self.request.user, ROLE_ADMIN) or (
+            has_role(self.request.user, ROLE_COACH) and training_session.coach_id == self.request.user.id
+        )
+
+    def render_page(self, request, training_session, member, form, feedback):
+        return render(
+            request,
+            self.template_name,
+            {
+                "training_session": training_session,
+                "member": member,
+                "form": form,
+                "feedback": feedback,
+                "is_edit": bool(feedback and feedback.pk),
+            },
+        )
+
+    def get(self, request, *args, **kwargs):
+        training_session = self.get_training_session()
+        if not self.can_manage_feedback(training_session):
+            messages.error(request, "Only admin or the assigned coach can submit feedback for this session.")
+            return redirect("sessions:detail", pk=training_session.pk)
+        member = self.get_member(training_session)
+        feedback = self.get_feedback(training_session, member)
+        form = SessionFeedbackForm(instance=feedback)
+        return self.render_page(request, training_session, member, form, feedback)
+
+    def post(self, request, *args, **kwargs):
+        training_session = self.get_training_session()
+        if not self.can_manage_feedback(training_session):
+            messages.error(request, "Only admin or the assigned coach can submit feedback for this session.")
+            return redirect("sessions:detail", pk=training_session.pk)
+        if training_session.session_date > timezone.localdate():
+            messages.warning(request, "Feedback can only be uploaded after the session date.")
+            return redirect("sessions:detail", pk=training_session.pk)
+
+        member = self.get_member(training_session)
+        feedback = self.get_feedback(training_session, member)
+        form = SessionFeedbackForm(request.POST, request.FILES, instance=feedback)
+        if form.is_valid():
+            feedback_entry = form.save(commit=False)
+            feedback_entry.training_session = training_session
+            feedback_entry.member = member
+            feedback_entry.coach = training_session.coach or request.user
+            feedback_entry.save()
+            compress_session_feedback_video(feedback_entry)
+            notify_feedback_ready(feedback_entry)
+            messages.success(request, f"Feedback saved for {member.full_name}.")
+            return redirect("sessions:detail", pk=training_session.pk)
+        return self.render_page(request, training_session, member, form, feedback)

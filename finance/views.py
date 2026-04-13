@@ -2,17 +2,18 @@ import csv
 from decimal import Decimal
 
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.urls import reverse_lazy
 from django.utils import timezone
-from django.views.generic import CreateView, ListView, TemplateView, UpdateView
+from django.views.generic import CreateView, DeleteView, ListView, TemplateView, UpdateView
 
 from accounts.decorators import role_required
 from accounts.mixins import AdminOrCoachRequiredMixin, AdminRequiredMixin
 from accounts.utils import ROLE_ADMIN, ROLE_COACH, has_role
-from finance.forms import InvoiceForm
-from finance.models import Invoice
+from finance.forms import InvoiceForm, ProductForm
+from finance.models import Invoice, Product
 from payments.models import Payment
 
 
@@ -21,6 +22,13 @@ def visible_invoices_for_user(user):
     if has_role(user, ROLE_COACH) and not has_role(user, ROLE_ADMIN):
         return queryset.filter(member__assigned_coach=user)
     return queryset
+
+
+def visible_products_for_user(user):
+    queryset = Product.objects.select_related("created_by", "updated_by")
+    if has_role(user, ROLE_ADMIN):
+        return queryset
+    return queryset.filter(is_active=True)
 
 
 class FinanceOverviewView(AdminRequiredMixin, TemplateView):
@@ -70,11 +78,12 @@ class InvoiceListView(AdminOrCoachRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context["statuses"] = Invoice.STATUS_CHOICES
         context["is_admin"] = has_role(self.request.user, ROLE_ADMIN)
+        context["can_manage"] = has_role(self.request.user, ROLE_ADMIN)
         context["members"] = visible_invoices_for_user(self.request.user).values_list("member_id", "member__full_name").distinct()
         return context
 
 
-class InvoiceCreateView(AdminOrCoachRequiredMixin, CreateView):
+class InvoiceCreateView(AdminRequiredMixin, CreateView):
     model = Invoice
     form_class = InvoiceForm
     template_name = "finance/invoice_form.html"
@@ -92,14 +101,11 @@ class InvoiceCreateView(AdminOrCoachRequiredMixin, CreateView):
         return response
 
 
-class InvoiceUpdateView(AdminOrCoachRequiredMixin, UpdateView):
+class InvoiceUpdateView(AdminRequiredMixin, UpdateView):
     model = Invoice
     form_class = InvoiceForm
     template_name = "finance/invoice_form.html"
     success_url = reverse_lazy("finance:invoice_list")
-
-    def get_queryset(self):
-        return visible_invoices_for_user(self.request.user)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -112,14 +118,83 @@ class InvoiceUpdateView(AdminOrCoachRequiredMixin, UpdateView):
         return response
 
 
+class ProductListView(LoginRequiredMixin, ListView):
+    model = Product
+    template_name = "finance/product_list.html"
+    context_object_name = "products"
+    paginate_by = 12
+
+    def get_queryset(self):
+        queryset = visible_products_for_user(self.request.user)
+        availability = self.request.GET.get("availability", "").strip()
+        search = self.request.GET.get("q", "").strip()
+        if availability:
+            queryset = queryset.filter(availability=availability)
+        if search:
+            queryset = queryset.filter(name__icontains=search)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["availability_choices"] = Product.AVAILABILITY_CHOICES
+        context["can_manage"] = has_role(self.request.user, ROLE_ADMIN)
+        return context
+
+
+class ProductCreateView(AdminRequiredMixin, CreateView):
+    model = Product
+    form_class = ProductForm
+    template_name = "finance/product_form.html"
+    success_url = reverse_lazy("finance:product_list")
+
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        form.instance.updated_by = self.request.user
+        response = super().form_valid(form)
+        messages.success(self.request, "Product created successfully.")
+        return response
+
+
+class ProductUpdateView(AdminRequiredMixin, UpdateView):
+    model = Product
+    form_class = ProductForm
+    template_name = "finance/product_form.html"
+    success_url = reverse_lazy("finance:product_list")
+
+    def form_valid(self, form):
+        form.instance.updated_by = self.request.user
+        response = super().form_valid(form)
+        messages.success(self.request, "Product updated successfully.")
+        return response
+
+
+class ProductDeleteView(AdminRequiredMixin, DeleteView):
+    model = Product
+    template_name = "finance/product_confirm_delete.html"
+    success_url = reverse_lazy("finance:product_list")
+
+    def form_valid(self, form):
+        messages.success(self.request, "Product deleted successfully.")
+        return super().form_valid(form)
+
+
 @role_required(ROLE_ADMIN)
 def export_finance_csv(request):
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = 'attachment; filename="finance-report.csv"'
     writer = csv.writer(response)
-    writer.writerow(["Member", "Period", "Amount", "Status", "Due Date"])
+    writer.writerow(["Member", "Type", "Period", "Amount", "Status", "Due Date"])
     for invoice in Invoice.objects.select_related("member").order_by("-period"):
-        writer.writerow([invoice.member.full_name, invoice.period, invoice.amount, invoice.status, invoice.due_date])
+        writer.writerow(
+            [
+                invoice.member.full_name,
+                invoice.get_invoice_type_display(),
+                invoice.period,
+                invoice.amount,
+                invoice.status,
+                invoice.due_date,
+            ]
+        )
     return response
 
 # Create your views here.

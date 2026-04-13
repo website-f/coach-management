@@ -76,4 +76,40 @@ class AttendanceRecord(models.Model):
     def __str__(self):
         return f"{self.member} - {self.training_session} ({self.get_status_display()})"
 
+
+class SessionFeedback(models.Model):
+    training_session = models.ForeignKey(
+        TrainingSession,
+        on_delete=models.CASCADE,
+        related_name="feedback_entries",
+    )
+    member = models.ForeignKey(
+        "members.Member",
+        on_delete=models.CASCADE,
+        related_name="session_feedback_entries",
+    )
+    coach = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="session_feedback_entries",
+    )
+    feedback_text = models.TextField()
+    video_proof = models.FileField(upload_to="session_feedback_videos/", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-training_session__session_date", "member__full_name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["training_session", "member"],
+                name="unique_feedback_per_member_per_session",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.member.full_name} feedback for {self.training_session.title}"
+
 # Create your models here.

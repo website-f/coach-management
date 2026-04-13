@@ -39,7 +39,6 @@
                 {% endif %}
             </div>
         </form>
-        </form>
     </div>
 
     <!-- Page injected table actions -->
@@ -59,6 +58,7 @@
                     <th style="width: 40px; text-align: left; padding-left: 24px;"><input type="checkbox" class="select-all"></th>
                     <th>Member Profile</th>
                     <th>Membership</th>
+                    <th>Level</th>
                     <th>Coach</th>
                     <th>Status</th>
                     <th class="not-export-col">Action</th>
@@ -80,6 +80,7 @@
                         </div>
                     </td>
                     <td class="muted">{{ member.get_membership_type_display }}</td>
+                    <td><span class="badge badge-info">{{ member.get_skill_level_display }}</span></td>
                     <td class="muted">{{ member.assigned_coach|default:"Unassigned" }}</td>
                     <td><span class="badge {{ member.status|status_badge }}">{{ member.get_status_display|lower }}</span></td>
                     <td>

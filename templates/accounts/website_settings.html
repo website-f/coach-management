@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Website Settings | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}Website Settings{% endblock %}
+
+{% block content %}
+<div class="space-y">
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
+            <div style="max-width:760px;">
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;">Landing CMS</p>
+                <h2 style="font-size:28px;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1.1;">Control the public entry flow without leaving the dashboard.</h2>
+                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">This page mirrors the original website editor flow from the reference app. Update the hero copy, social links, and public registration options, then check the live landing page preview.</p>
+            </div>
+            <a href="/" target="_blank" rel="noreferrer" class="btn btn-primary">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Preview Landing Page
+            </a>
+        </div>
+    </div>
+
+    <form method="post" class="space-y">
+        {% csrf_token %}
+        <div class="grid-2">
+            <div class="card">
+                <div class="section-header">
+                    <span class="section-title">Hero Content</span>
+                </div>
+                <div class="form-grid mt-3">
+                    <div class="form-group" style="grid-column:1 / -1;">
+                        <label for="{{ form.announcement_text.id_for_label }}">Announcement banner</label>
+                        {{ form.announcement_text }}
+                        {% if form.announcement_text.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.announcement_text.errors|join:", " }}</p>{% endif %}
+                    </div>
+                    <div class="form-group" style="grid-column:1 / -1;">
+                        <label for="{{ form.hero_title.id_for_label }}">Hero title</label>
+                        {{ form.hero_title }}
+                        {% if form.hero_title.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.hero_title.errors|join:", " }}</p>{% endif %}
+                    </div>
+                    <div class="form-group" style="grid-column:1 / -1;">
+                        <label for="{{ form.hero_subtitle.id_for_label }}">Hero subtitle</label>
+                        {{ form.hero_subtitle }}
+                        {% if form.hero_subtitle.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.hero_subtitle.errors|join:", " }}</p>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.primary_cta_text.id_for_label }}">Primary CTA text</label>
+                        {{ form.primary_cta_text }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.secondary_cta_text.id_for_label }}">Secondary CTA text</label>
+                        {{ form.secondary_cta_text }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-header">
+                    <span class="section-title">Social & Contact</span>
+                </div>
+                <div class="form-grid mt-3">
+                    <div class="form-group">
+                        <label for="{{ form.contact_email.id_for_label }}">Contact email</label>
+                        {{ form.contact_email }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.instagram_link.id_for_label }}">Instagram URL</label>
+                        {{ form.instagram_link }}
+                    </div>
+                    <div class="form-group" style="grid-column:1 / -1;">
+                        <label for="{{ form.tiktok_link.id_for_label }}">TikTok URL</label>
+                        {{ form.tiktok_link }}
+                    </div>
+                </div>
+
+                <div class="card-inset mt-3">
+                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Live snapshot</p>
+                    <h3 style="font-size:22px;font-weight:700;color:var(--text);margin-top:8px;">{{ object.hero_title }}</h3>
+                    <p class="text-sm text-muted" style="line-height:1.8;margin-top:8px;">{{ object.hero_subtitle }}</p>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;">
+                        <span class="badge badge-info">{{ object.primary_cta_text }}</span>
+                        <span class="badge badge-neutral">{{ object.secondary_cta_text }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="card">
+                <div class="section-header">
+                    <span class="section-title">Programs</span>
+                </div>
+                <div class="form-group mt-3">
+                    <label for="{{ form.available_programs_text.id_for_label }}">Available programs</label>
+                    {{ form.available_programs_text }}
+                    <p class="text-sm text-muted">One program per line. These appear on the landing page and application form.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-header">
+                    <span class="section-title">Locations</span>
+                </div>
+                <div class="form-group mt-3">
+                    <label for="{{ form.available_locations_text.id_for_label }}">Available locations</label>
+                    {{ form.available_locations_text }}
+                    <p class="text-sm text-muted">One location per line so parents can select the right venue during application.</p>
+                </div>
+            </div>
+        </div>
+
+        {% if form.non_field_errors %}
+        <div class="card" style="border-color:rgba(239,68,68,.35);">
+            <p class="text-sm" style="color:var(--danger);">{{ form.non_field_errors|join:", " }}</p>
+        </div>
+        {% endif %}
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;">
+            <a href="/" target="_blank" rel="noreferrer" class="btn btn-ghost">Open public site</a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fa-solid fa-floppy-disk"></i> Save Website Settings
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

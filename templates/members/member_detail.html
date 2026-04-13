@@ -5,111 +5,238 @@
 {% block page_heading %}Member Profile{% endblock %}
 
 {% block content %}
-<div class="grid-2">
+<div class="space-y">
 
-    <!-- Profile Card -->
-    <div class="card" style="height:fit-content;">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:20px;">
-            <div style="display:flex;align-items:center;gap:14px;">
-                <div style="width:52px;height:52px;border-radius:12px;background:rgba(79,110,247,.15);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;flex-shrink:0;">
+    <div class="card">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:16px;">
+                <div style="width:60px;height:60px;border-radius:16px;background:rgba(79,110,247,.15);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;flex-shrink:0;">
                     {{ member.full_name|first|upper }}
                 </div>
                 <div>
-                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px;">Member</p>
-                    <h2 style="font-size:20px;font-weight:700;color:var(--text);">{{ member.full_name }}</h2>
+                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Member profile</p>
+                    <h2 style="font-size:28px;font-weight:700;color:var(--text);letter-spacing:-.03em;">{{ member.full_name }}</h2>
+                    <p class="text-sm text-muted" style="margin-top:6px;">Coach: {{ member.assigned_coach|default:"Unassigned" }} · Membership: {{ member.get_membership_type_display }}</p>
                 </div>
             </div>
             <span class="badge {{ member.status|status_badge }}">{{ member.get_status_display }}</span>
         </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-            <div class="card-inset">
-                <p class="text-xs text-muted" style="margin-bottom:4px;">Date of Birth</p>
-                <p style="font-weight:600;color:var(--text);font-size:13.5px;">{{ member.date_of_birth }}</p>
-            </div>
-            <div class="card-inset">
-                <p class="text-xs text-muted" style="margin-bottom:4px;">Contact</p>
-                <p style="font-weight:600;color:var(--text);font-size:13.5px;">{{ member.contact_number }}</p>
-            </div>
-            <div class="card-inset">
-                <p class="text-xs text-muted" style="margin-bottom:4px;">Emergency Contact</p>
-                <p style="font-weight:600;color:var(--text);font-size:13.5px;">{{ member.emergency_contact_name }}</p>
-                <p class="text-sm text-muted">{{ member.emergency_contact_phone }}</p>
-            </div>
-            <div class="card-inset">
-                <p class="text-xs text-muted" style="margin-bottom:4px;">Membership</p>
-                <p style="font-weight:600;color:var(--text);font-size:13.5px;">{{ member.get_membership_type_display }}</p>
-            </div>
-            <div class="card-inset">
-                <p class="text-xs text-muted" style="margin-bottom:4px;">Coach</p>
-                <p style="font-weight:600;color:var(--text);font-size:13.5px;">{{ member.assigned_coach|default:"Unassigned" }}</p>
-            </div>
-            <div class="card-inset">
-                <p class="text-xs text-muted" style="margin-bottom:4px;">Parent Account</p>
-                <p style="font-weight:600;color:var(--text);font-size:13.5px;">{{ member.parent_user|default:"Not linked" }}</p>
-            </div>
-        </div>
-
-        {% if member.notes %}
-        <div class="card-inset mt-3">
-            <p class="text-xs text-muted" style="margin-bottom:6px;">Notes</p>
-            <p style="font-size:13.5px;color:var(--text);line-height:1.6;">{{ member.notes }}</p>
-        </div>
-        {% endif %}
     </div>
 
-    <!-- Right Column -->
-    <div class="space-y">
-        <!-- Attendance History -->
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Attendance History</span>
-            </div>
-            <div class="space-y">
-                {% for record in attendance_history %}
-                <div class="card-inset">
-                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-                        <div>
-                            <p style="font-weight:600;font-size:13.5px;color:var(--text);">{{ record.training_session.title }}</p>
-                            <p class="text-sm text-muted mt-1">{{ record.training_session.session_date }} &nbsp;·&nbsp; {{ record.training_session.court }}</p>
-                        </div>
-                        <span class="badge {{ record.status|status_badge }}">{{ record.get_status_display }}</span>
-                    </div>
+    <div class="stat-cards">
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Attendance Rate</p>
+                    <p class="stat-value">{{ attendance_rate }}%</p>
                 </div>
-                {% empty %}
-                <div class="empty-state" style="padding:24px 0;">
-                    <i class="fa-regular fa-calendar-xmark"></i>
-                    <p>No attendance recorded yet.</p>
-                </div>
-                {% endfor %}
+                <div class="stat-icon"><i class="fa-solid fa-chart-line"></i></div>
             </div>
         </div>
-
-        <!-- Invoices -->
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Recent Invoices</span>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Outstanding Balance</p>
+                    <p class="stat-value">RM {{ outstanding_balance }}</p>
+                </div>
+                <div class="stat-icon" style="background:rgba(245,158,11,.12);color:#fbbf24;"><i class="fa-solid fa-wallet"></i></div>
             </div>
-            <div class="space-y">
-                {% for invoice in invoices %}
-                <div class="card-inset">
-                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-                        <div>
-                            <p style="font-weight:600;font-size:13.5px;color:var(--text);">{{ invoice.period|date:"F Y" }}</p>
-                            <p class="text-sm text-muted mt-1">Due {{ invoice.due_date }} &nbsp;·&nbsp; RM {{ invoice.amount }}</p>
-                        </div>
-                        <span class="badge {{ invoice.status|status_badge }}">{{ invoice.get_status_display }}</span>
-                    </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Latest Invoice</p>
+                    <p class="stat-value" style="font-size:22px;">{% if latest_invoice %}{{ latest_invoice.period|date:"M Y" }}{% else %}None{% endif %}</p>
                 </div>
-                {% empty %}
-                <div class="empty-state" style="padding:24px 0;">
-                    <i class="fa-regular fa-file-alt"></i>
-                    <p>No invoices linked yet.</p>
-                </div>
-                {% endfor %}
+                <div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-file-invoice-dollar"></i></div>
             </div>
         </div>
     </div>
 
+    <div class="grid-2">
+        <div class="card" style="height:fit-content;">
+            <div class="section-header">
+                <span class="section-title">Profile Details</span>
+                {% if can_manage %}
+                <a href="{% url 'members:edit' member.pk %}" class="section-link">Edit profile</a>
+                {% endif %}
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div class="card-inset">
+                    <p class="text-xs text-muted" style="margin-bottom:4px;">Date of Birth</p>
+                    <p style="font-weight:600;color:var(--text);font-size:13.5px;">{{ member.date_of_birth }}</p>
+                </div>
+                <div class="card-inset">
+                    <p class="text-xs text-muted" style="margin-bottom:4px;">Contact</p>
+                    <p style="font-weight:600;color:var(--text);font-size:13.5px;">{{ member.contact_number }}</p>
+                </div>
+                <div class="card-inset">
+                    <p class="text-xs text-muted" style="margin-bottom:4px;">Current Level</p>
+                    <p style="font-weight:600;color:var(--text);font-size:13.5px;">{{ member.get_skill_level_display }}</p>
+                </div>
+                <div class="card-inset">
+                    <p class="text-xs text-muted" style="margin-bottom:4px;">Emergency Contact</p>
+                    <p style="font-weight:600;color:var(--text);font-size:13.5px;">{{ member.emergency_contact_name }}</p>
+                    <p class="text-sm text-muted">{{ member.emergency_contact_phone }}</p>
+                </div>
+                <div class="card-inset">
+                    <p class="text-xs text-muted" style="margin-bottom:4px;">Parent Account</p>
+                    <p style="font-weight:600;color:var(--text);font-size:13.5px;">{{ member.parent_user|default:"Not linked" }}</p>
+                </div>
+            </div>
+
+            {% if can_update_level %}
+            <div class="card-inset mt-3">
+                <form method="post" action="{% url 'members:level_update' member.pk %}" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+                    {% csrf_token %}
+                    <div style="flex:1;min-width:220px;">
+                        <label for="{{ level_form.skill_level.id_for_label }}" class="text-xs text-muted" style="display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em;">Adjust Level</label>
+                        {{ level_form.skill_level }}
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-xs">Save Level</button>
+                </form>
+                <p class="text-sm text-muted" style="margin-top:8px;">Coach or admin can update the level after monitoring performance and attendance.</p>
+            </div>
+            {% endif %}
+
+            {% if member.notes %}
+            <div class="card-inset mt-3">
+                <p class="text-xs text-muted" style="margin-bottom:6px;">Notes</p>
+                <p style="font-size:13.5px;color:var(--text);line-height:1.7;">{{ member.notes }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="space-y">
+            {% if latest_report %}
+            <div class="card">
+                <div class="section-header">
+                    <span class="section-title">Latest Progress Report</span>
+                    <a href="{% url 'members:report_detail' latest_report.pk %}" class="section-link">Open report</a>
+                </div>
+                <div class="card-inset mt-3">
+                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+                        <div>
+                            <p style="font-weight:600;font-size:14px;color:var(--text);">{{ latest_report.period_label }}</p>
+                            <p class="text-sm text-muted mt-1">Attendance {{ latest_report.attendance_rate }}% · {{ latest_report.get_overall_status_display }}</p>
+                        </div>
+                        <span class="badge {% if latest_report.is_published %}badge-success{% else %}badge-neutral{% endif %}">{% if latest_report.is_published %}Published{% else %}Draft{% endif %}</span>
+                    </div>
+                    {% if latest_report.coach_reflection %}
+                    <p style="font-size:13.5px;color:var(--text);line-height:1.8;margin-top:12px;">{{ latest_report.coach_reflection|truncatechars:180 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="card">
+                <div class="section-header">
+                    <span class="section-title">Upcoming Sessions</span>
+                    <a href="{% url 'sessions:list' %}" class="section-link">Open schedule</a>
+                </div>
+                <div class="space-y">
+                    {% for session in upcoming_sessions %}
+                    <a href="{% url 'sessions:detail' session.pk %}" class="list-item">
+                        <div>
+                            <p class="list-item-title">{{ session.title }}</p>
+                            <p class="list-item-sub">{{ session.session_date }} · {{ session.start_time|time:"H:i" }} · Court {{ session.court }}</p>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-muted" style="font-size:11px;flex-shrink:0;"></i>
+                    </a>
+                    {% empty %}
+                    <div class="empty-state" style="padding:24px 0;">
+                        <i class="fa-regular fa-calendar-xmark"></i>
+                        <p>No upcoming sessions linked yet.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-header">
+                    <span class="section-title">Attendance History</span>
+                </div>
+                <div class="space-y">
+                    {% for record in attendance_history %}
+                    <div class="card-inset">
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                            <div>
+                                <p style="font-weight:600;font-size:13.5px;color:var(--text);">{{ record.training_session.title }}</p>
+                                <p class="text-sm text-muted mt-1">{{ record.training_session.session_date }} · {{ record.training_session.court }}</p>
+                            </div>
+                            <span class="badge {{ record.status|status_badge }}">{{ record.get_status_display }}</span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state" style="padding:24px 0;">
+                        <i class="fa-regular fa-calendar-xmark"></i>
+                        <p>No attendance recorded yet.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-header">
+                    <span class="section-title">Recent Session Feedback</span>
+                </div>
+                <div class="space-y">
+                    {% for feedback in recent_feedback %}
+                    <div class="card-inset">
+                        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                            <div>
+                                <p style="font-weight:700;font-size:13.5px;color:var(--text);">{{ feedback.training_session.title }}</p>
+                                <p class="text-sm text-muted mt-1">{{ feedback.training_session.session_date }} · {{ feedback.coach|default:"Coach" }}</p>
+                            </div>
+                            <span class="badge badge-info">{{ member.get_skill_level_display }}</span>
+                        </div>
+                        <p style="font-size:13.5px;color:var(--text);line-height:1.8;margin-top:10px;">{{ feedback.feedback_text|truncatechars:180 }}</p>
+                        {% if feedback.video_proof %}
+                        <div style="margin-top:14px;border-radius:16px;overflow:hidden;background:#020617;border:1px solid var(--border);">
+                            <video controls preload="metadata" style="width:100%;display:block;max-height:240px;background:#000;">
+                                <source src="{{ feedback.video_proof.url }}">
+                            </video>
+                        </div>
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+                            <a href="{{ feedback.video_proof.url }}" target="_blank" class="btn btn-ghost btn-xs">Open Video</a>
+                            <a href="{{ feedback.video_proof.url }}" download class="btn btn-primary btn-xs">Download Compressed Video</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <div class="empty-state" style="padding:24px 0;">
+                        <i class="fa-regular fa-message"></i>
+                        <p>No session feedback published yet.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="section-header">
+            <span class="section-title">Recent Invoices</span>
+        </div>
+        <div class="space-y">
+            {% for invoice in invoices %}
+            <div class="card-inset">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                    <div>
+                        <p style="font-weight:600;font-size:13.5px;color:var(--text);">{{ invoice.period|date:"F Y" }}</p>
+                        <p class="text-sm text-muted mt-1">Due {{ invoice.due_date }} · RM {{ invoice.amount }}</p>
+                    </div>
+                    <span class="badge {{ invoice.status|status_badge }}">{{ invoice.get_status_display }}</span>
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-state" style="padding:24px 0;">
+                <i class="fa-regular fa-file-alt"></i>
+                <p>No invoices linked yet.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
 </div>
 {% endblock %}

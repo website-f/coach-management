@@ -19,6 +19,16 @@ STATUS_BADGE_CLASSES = {
     "late":                 "badge-info",
     "absent":               "badge-danger",
     "scheduled":            "badge-neutral",
+    "elite":                "badge-success",
+    "advanced":             "badge-info",
+    "developing":           "badge-warning",
+    "foundation":           "badge-neutral",
+    "ready":                "badge-success",
+    "preorder":             "badge-warning",
+    "sold out":             "badge-danger",
+    "sold_out":             "badge-danger",
+    "draft":                "badge-neutral",
+    "published":            "badge-success",
 }
 
 
@@ -26,6 +36,17 @@ STATUS_BADGE_CLASSES = {
 def nav_active(context, url_prefix):
     request = context["request"]
     path = request.path
+    if path == url_prefix or path.startswith(url_prefix):
+        return "active"
+    return ""
+
+
+@register.simple_tag(takes_context=True)
+def nav_active_section(context, url_prefix, *excluded_prefixes):
+    request = context["request"]
+    path = request.path
+    if any(path == excluded or path.startswith(excluded) for excluded in excluded_prefixes):
+        return ""
     if path == url_prefix or path.startswith(url_prefix):
         return "active"
     return ""

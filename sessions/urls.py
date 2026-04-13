@@ -4,6 +4,7 @@ from sessions.views import (
     AttendanceUpdateView,
     SessionCreateView,
     SessionDetailView,
+    SessionFeedbackUpsertView,
     SessionListView,
     SessionUpdateView,
 )
@@ -16,4 +17,5 @@ urlpatterns = [
     path("<int:pk>/", SessionDetailView.as_view(), name="detail"),
     path("<int:pk>/edit/", SessionUpdateView.as_view(), name="edit"),
     path("<int:pk>/attendance/", AttendanceUpdateView.as_view(), name="attendance"),
+    path("<int:session_pk>/feedback/<int:member_pk>/", SessionFeedbackUpsertView.as_view(), name="feedback"),
 ]

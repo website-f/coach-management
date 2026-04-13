@@ -6,26 +6,120 @@
 
 {% block content %}
 <div class="space-y">
-
-    <!-- Info Header -->
-    <div class="card" style="display:flex;align-items:center;gap:14px;">
-        <div style="width:44px;height:44px;border-radius:10px;background:rgba(79,110,247,.12);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">
-            <i class="fa-solid fa-credit-card"></i>
+    <div class="card" style="display:flex;justify-content:space-between;gap:22px;flex-wrap:wrap;align-items:flex-start;">
+        <div style="max-width:760px;">
+            <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.14em;margin-bottom:8px;">Parent Payment Flow</p>
+            <h2 style="font-size:28px;font-weight:700;color:var(--text);letter-spacing:-.03em;">Outstanding invoice, QR payment, proof upload, staff verification.</h2>
+            <p class="text-sm text-muted" style="margin-top:12px;line-height:1.8;">This page mirrors the live onboarding and monthly billing flow. Registration fees, first-month fees, QR payment, proof upload, and verification all stay in one portal.</p>
         </div>
-        <div>
-            <h2 style="font-size:16px;font-weight:700;color:var(--text);">Outstanding and Historical Invoices</h2>
-            <p class="text-sm text-muted mt-1">Scan the QR code, transfer the exact amount, and upload proof for verification.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <span class="badge badge-warning">{{ pending_invoice_count }} pending review</span>
+            <span class="badge badge-info">{{ children|length }} linked child{{ children|length|pluralize:"ren" }}</span>
         </div>
     </div>
 
-    <!-- Invoice Cards -->
+    {% if onboarding_invoices %}
+    <div class="card" style="border-color:rgba(245,158,11,.3);background:linear-gradient(135deg, rgba(245,158,11,.12), rgba(79,110,247,.05));">
+        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
+            <div style="max-width:760px;">
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.14em;margin-bottom:8px;">Onboarding Payment Prompt</p>
+                <h3 style="font-size:24px;font-weight:700;color:var(--text);letter-spacing:-.03em;">
+                    {% if show_onboarding_prompt %}Welcome back. Complete the starter fees to activate the training journey.{% else %}Starter fees are still waiting for payment.{% endif %}
+                </h3>
+                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">The registration fee and first monthly fee are generated automatically when the student is approved and assigned to a coach. Clear these first so sessions, attendance tracking, and coach feedback stay active.</p>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                {% for invoice in onboarding_invoices %}
+                <span class="badge badge-warning">{{ invoice.get_invoice_type_display }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="stat-cards">
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Outstanding Balance</p>
+                    <p class="stat-value">RM {{ outstanding_total }}</p>
+                </div>
+                <div class="stat-icon"><i class="fa-solid fa-wallet"></i></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Pending Verification</p>
+                    <p class="stat-value">{{ pending_invoice_count }}</p>
+                </div>
+                <div class="stat-icon" style="background:rgba(245,158,11,.12);color:#fbbf24;"><i class="fa-solid fa-clock"></i></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Paid Invoices</p>
+                    <p class="stat-value">{{ paid_invoice_count }}</p>
+                </div>
+                <div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-circle-check"></i></div>
+            </div>
+        </div>
+    </div>
+
+    {% if child_summaries %}
+    <div class="card">
+        <div class="section-header">
+            <span class="section-title">Family Snapshot</span>
+            <a href="{% url 'members:list' %}" class="section-link">Open linked profiles</a>
+        </div>
+        <div class="grid-2 mt-3">
+            {% for child in child_summaries %}
+            <a href="{% url 'members:detail' child.member.pk %}" class="card-inset" style="display:block;">
+                <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
+                    <div>
+                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Child</p>
+                        <p style="font-size:18px;font-weight:700;color:var(--text);margin-top:4px;">{{ child.member.full_name }}</p>
+                        <p class="text-sm text-muted" style="margin-top:6px;">Attendance rate: {{ child.attendance_rate }}% · {{ child.member.get_skill_level_display }}</p>
+                    </div>
+                    {% if child.latest_invoice %}
+                    <span class="badge {{ child.latest_invoice.status|status_badge }}">{{ child.latest_invoice.get_status_display }}</span>
+                    {% else %}
+                    <span class="badge badge-neutral">No Invoice</span>
+                    {% endif %}
+                </div>
+                <p class="text-sm text-muted" style="margin-top:12px;">Outstanding total: <strong style="color:var(--text);">RM {{ child.outstanding_total }}</strong></p>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if featured_invoice %}
+    <div class="card">
+        <div class="section-header">
+            <span class="section-title">Next Invoice To Action</span>
+        </div>
+        <div class="card-inset">
+            <div style="display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;align-items:flex-start;">
+                <div>
+                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Priority invoice</p>
+                    <h3 style="font-size:24px;font-weight:700;color:var(--text);margin-top:6px;">{{ featured_invoice.member.full_name }} · {{ featured_invoice.get_invoice_type_display }}</h3>
+                    <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">{{ featured_invoice.period|date:"F Y" }} · Due {{ featured_invoice.due_date }} · Amount RM {{ featured_invoice.amount }}<br>Use the invoice card below to scan the QR and submit payment proof.</p>
+                </div>
+                <span class="badge {{ featured_invoice.status|status_badge }}">{{ featured_invoice.get_status_display }}</span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     {% for invoice in invoices %}
     <div class="card">
         <div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:16px;">
             <div>
                 <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;">{{ invoice.member.full_name }}</p>
-                <h3 style="font-size:20px;font-weight:700;color:var(--text);">{{ invoice.period|date:"F Y" }}</h3>
-                <p class="text-sm text-muted mt-2">Amount: <strong style="color:var(--text);">RM {{ invoice.amount }}</strong> &nbsp;·&nbsp; Due {{ invoice.due_date }}</p>
+                <h3 style="font-size:20px;font-weight:700;color:var(--text);">{{ invoice.get_invoice_type_display }}</h3>
+                <p class="text-sm text-muted mt-2">{{ invoice.period|date:"F Y" }}{% if invoice.description %} · {{ invoice.description }}{% endif %}<br>Amount: <strong style="color:var(--text);">RM {{ invoice.amount }}</strong> · Due {{ invoice.due_date }}</p>
                 {% if invoice.latest_payment and invoice.latest_payment.status == 'rejected' %}
                 <div style="margin-top:10px;display:flex;align-items:center;gap:8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:8px;padding:9px 12px;">
                     <i class="fa-solid fa-circle-xmark" style="color:#f87171;font-size:13px;"></i>
@@ -48,19 +142,17 @@
         </div>
     </div>
 
-    <!-- Pay Now Modal -->
     <div id="invoice-modal-{{ invoice.pk }}" data-modal class="modal-overlay">
-        <div class="modal-box" style="max-width:740px;">
+        <div class="modal-box" style="max-width:760px;">
             <div class="modal-header">
                 <div>
                     <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px;">{{ invoice.member.full_name }}</p>
-                    <h3 class="modal-title">{{ invoice.period|date:"F Y" }} Payment</h3>
+                    <h3 class="modal-title">{{ invoice.get_invoice_type_display }} Payment</h3>
                 </div>
                 <button type="button" class="modal-close" data-modal-close><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
-                    <!-- QR Code -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;" class="payment-modal-grid">
                     <div class="card-inset">
                         <p style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">1. Scan QR Code</p>
                         {% if invoice.active_qr_code %}
@@ -69,16 +161,15 @@
                         {% else %}
                         <div style="border:1.5px dashed var(--border2);border-radius:10px;padding:28px 16px;text-align:center;">
                             <i class="fa-solid fa-qrcode" style="font-size:32px;color:var(--border2);display:block;margin-bottom:8px;"></i>
-                            <p class="text-sm text-muted">No QR code uploaded. Contact admin or coach.</p>
+                            <p class="text-sm text-muted">No QR code uploaded. Contact admin.</p>
                         </div>
                         {% endif %}
                     </div>
 
-                    <!-- Submit Proof -->
                     <div class="card-inset">
-                        <p style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">2. Transfer Amount</p>
+                        <p style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">2. Transfer Exact Amount</p>
                         <p style="font-size:28px;font-weight:800;color:var(--text);margin-bottom:6px;">RM {{ invoice.amount }}</p>
-                        <p class="text-sm text-muted" style="margin-bottom:18px;">Scan QR, transfer exactly this amount, then upload proof below.</p>
+                        <p class="text-sm text-muted" style="margin-bottom:18px;">Scan the QR, transfer the exact amount, then upload the proof image below for verification.</p>
                         <form method="post" enctype="multipart/form-data" action="{% url 'payments:submit_payment' invoice.pk %}" class="space-y">
                             {% csrf_token %}
                             <div class="form-group">
@@ -94,7 +185,6 @@
             </div>
         </div>
     </div>
-
     {% empty %}
     <div class="card">
         <div class="empty-state">
@@ -110,9 +200,8 @@
 
 {% block extra_js %}
 <script>
-// Responsive modal grid
 function fixModalGrid() {
-    document.querySelectorAll('.modal-body [style*="grid-template-columns"]').forEach(el => {
+    document.querySelectorAll('.payment-modal-grid').forEach(function(el) {
         if (window.innerWidth < 600) {
             el.style.gridTemplateColumns = '1fr';
         } else {

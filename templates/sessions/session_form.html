@@ -5,25 +5,108 @@
 
 {% block content %}
 <div class="form-centered">
-    <div class="card">
-        <form method="post" class="form-grid">
-            {% csrf_token %}
-            {% for field in form %}
-            <div class="form-group {% if field.name == 'notes' or field.name == 'members' %}full{% endif %}">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}
-                <p class="text-xs text-muted" style="margin-top:4px;">{{ field.help_text }}</p>
-                {% endif %}
-                {% if field.errors %}
-                <p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ field.errors|join:", " }}</p>
-                {% endif %}
+    <div class="card" style="max-width:1040px;">
+        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;margin-bottom:20px;">
+            <div>
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Admin Schedule Planner</p>
+                <h2 style="font-size:28px;font-weight:700;color:var(--text);">
+                    {% if form.instance.pk %}Update Session Plan{% else %}Build Session Plan{% endif %}
+                </h2>
+                <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;max-width:760px;">
+                    Set the coach, roster, court, and timing once. For recurring schedules, choose the weekdays for the selected month and the system will generate each weekly session automatically.
+                </p>
             </div>
-            {% endfor %}
-            <div class="full" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;">
+            <a href="{% url 'sessions:list' %}" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Back to calendar</a>
+        </div>
+
+        <form method="post" class="space-y">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="card-inset" style="border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.08);">
+                <p style="font-size:13px;color:var(--danger);">{{ form.non_field_errors|join:", " }}</p>
+            </div>
+            {% endif %}
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+                    {{ form.title }}
+                    {% if form.title.errors %}<p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ form.title.errors|join:", " }}</p>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.coach.id_for_label }}">{{ form.coach.label }}</label>
+                    {{ form.coach }}
+                    {% if form.coach.errors %}<p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ form.coach.errors|join:", " }}</p>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.session_date.id_for_label }}">{{ form.session_date.label }}</label>
+                    {{ form.session_date }}
+                    {% if form.session_date.errors %}<p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ form.session_date.errors|join:", " }}</p>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.court.id_for_label }}">{{ form.court.label }}</label>
+                    {{ form.court }}
+                    {% if form.court.errors %}<p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ form.court.errors|join:", " }}</p>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.start_time.id_for_label }}">{{ form.start_time.label }}</label>
+                    {{ form.start_time }}
+                    {% if form.start_time.errors %}<p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ form.start_time.errors|join:", " }}</p>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.end_time.id_for_label }}">{{ form.end_time.label }}</label>
+                    {{ form.end_time }}
+                    {% if form.end_time.errors %}<p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ form.end_time.errors|join:", " }}</p>{% endif %}
+                </div>
+            </div>
+
+            <div class="card-inset">
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Schedule Mode</p>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label for="{{ form.schedule_mode.id_for_label }}">{{ form.schedule_mode.label }}</label>
+                        {{ form.schedule_mode }}
+                        <p class="text-sm text-muted" style="margin-top:6px;">Choose a one-time plan or generate the same weekly slot across the whole month.</p>
+                        {% if form.schedule_mode.errors %}<p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ form.schedule_mode.errors|join:", " }}</p>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label>{{ form.recurring_weekdays.label }}</label>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:8px;">
+                            {% for checkbox in form.recurring_weekdays %}
+                            <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;background:var(--surface);border:1px solid var(--border);cursor:pointer;">
+                                {{ checkbox.tag }}
+                                <span>{{ checkbox.choice_label }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        <p class="text-sm text-muted" style="margin-top:6px;">For example, choose Friday and Saturday to create every Friday and Saturday in the selected month.</p>
+                        {% if form.recurring_weekdays.errors %}<p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ form.recurring_weekdays.errors|join:", " }}</p>{% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group full">
+                    <label for="{{ form.members.id_for_label }}">Assigned Members</label>
+                    {{ form.members }}
+                    <p class="text-sm text-muted" style="margin-top:6px;">Selected players will appear in attendance and receive schedule notifications through their linked parent accounts.</p>
+                    {% if form.members.errors %}<p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ form.members.errors|join:", " }}</p>{% endif %}
+                </div>
+            </div>
+
+            <div class="form-group full">
+                <label for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
+                {{ form.notes }}
+                <p class="text-sm text-muted" style="margin-top:6px;">Use notes for match focus, equipment reminders, or attendance instructions.</p>
+                {% if form.notes.errors %}<p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ form.notes.errors|join:", " }}</p>{% endif %}
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px;">
                 <a href="{% url 'sessions:list' %}" class="btn btn-ghost" style="border-radius:99px;justify-content:center;padding:12px;font-size:14.5px;">Cancel</a>
                 <button type="submit" class="btn btn-primary" style="border-radius:99px;justify-content:center;padding:12px;font-size:14.5px;">
-                    <i class="fa-solid fa-check"></i> Save Session
+                    <i class="fa-solid fa-check"></i>
+                    {% if form.instance.pk %}Save Changes{% else %}Create Session Plan{% endif %}
                 </button>
             </div>
         </form>

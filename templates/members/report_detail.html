@@ -1,0 +1,424 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+
+{% block title %}Progress Report | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}Progress Report{% endblock %}
+
+{% block content %}
+<style>
+    .report-shell { display: grid; gap: 20px; }
+    .report-hero {
+        position: relative;
+        overflow: hidden;
+        padding: 28px;
+        border-radius: 28px;
+        border: 1px solid var(--border);
+        background:
+            radial-gradient(circle at top right, rgba(34, 197, 94, 0.12), transparent 30%),
+            linear-gradient(180deg, rgba(79,110,247,0.12), rgba(79,110,247,0.03));
+    }
+    .report-hero::after {
+        content: "";
+        position: absolute;
+        inset: auto -80px -80px auto;
+        width: 240px;
+        height: 240px;
+        border-radius: 999px;
+        background: rgba(79, 110, 247, 0.08);
+        filter: blur(10px);
+    }
+    .report-hero-grid {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        gap: 18px;
+        grid-template-columns: minmax(0, 1.3fr) minmax(220px, 0.8fr);
+        align-items: start;
+    }
+    .report-hero h2 {
+        font-size: clamp(34px, 4vw, 48px);
+        line-height: 1.02;
+        letter-spacing: -0.05em;
+        color: var(--text);
+        margin-bottom: 10px;
+    }
+    .report-hero p { color: var(--muted); max-width: 700px; }
+    .report-metrics {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .report-metric {
+        padding: 18px;
+        border-radius: 22px;
+        border: 1px solid var(--border);
+        background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    }
+    .report-metric .icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        margin-bottom: 14px;
+    }
+    .report-metric span {
+        display: block;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        color: var(--muted);
+        margin-bottom: 8px;
+    }
+    .report-metric strong {
+        display: block;
+        font-size: clamp(28px, 4vw, 42px);
+        line-height: 1;
+        letter-spacing: -0.05em;
+        color: var(--text);
+    }
+    .report-grid {
+        display: grid;
+        gap: 20px;
+        grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.45fr);
+    }
+    .report-card {
+        padding: 24px;
+        border-radius: 24px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+    }
+    .report-card h3 {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 6px;
+    }
+    .report-card p.section-copy {
+        color: var(--muted);
+        margin-bottom: 18px;
+    }
+    .report-chart {
+        position: relative;
+        min-height: 340px;
+    }
+    .report-list {
+        display: grid;
+        gap: 12px;
+    }
+    .report-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+    }
+    .report-row strong {
+        display: block;
+        color: var(--text);
+        margin-bottom: 4px;
+    }
+    .report-row small {
+        color: var(--muted);
+        line-height: 1.7;
+    }
+    .report-row .score {
+        font-size: 24px;
+        font-weight: 800;
+        color: var(--text);
+        letter-spacing: -0.04em;
+        white-space: nowrap;
+    }
+    .report-note {
+        padding: 18px 20px;
+        border-radius: 20px;
+        border-left: 4px solid #4f6ef7;
+        background: rgba(79, 110, 247, 0.08);
+        color: var(--text);
+        line-height: 1.85;
+    }
+    .report-feedback-list {
+        display: grid;
+        gap: 16px;
+    }
+    .report-feedback-item {
+        padding: 18px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+    }
+    .report-feedback-item video {
+        width: 100%;
+        margin-top: 14px;
+        border-radius: 16px;
+        background: #000;
+    }
+    .report-feedback-item a.download {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 12px;
+        color: #4f6ef7;
+        font-weight: 700;
+        text-decoration: none;
+    }
+    .report-pill-group {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+    }
+    .report-empty {
+        padding: 22px;
+        border-radius: 20px;
+        border: 1px dashed var(--border2);
+        color: var(--muted);
+        text-align: center;
+        background: var(--surface2);
+    }
+    @media (max-width: 1120px) {
+        .report-hero-grid,
+        .report-grid,
+        .report-metrics {
+            grid-template-columns: 1fr;
+        }
+    }
+    @media (max-width: 720px) {
+        .report-hero,
+        .report-card { padding: 20px; border-radius: 22px; }
+        .report-row { flex-direction: column; }
+        .report-chart { min-height: 280px; }
+    }
+</style>
+
+<div class="report-shell">
+    <section class="report-hero">
+        <div class="report-hero-grid">
+            <div>
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px;">Student Progress Report</p>
+                <h2>{{ report.member.full_name }}</h2>
+                <p>{{ report.period_label }} | Coach {{ report.coach|default:"Coaching team" }} | {{ report.member.get_skill_level_display }} level player</p>
+                <div class="report-pill-group">
+                    <span class="badge {{ report.overall_status|status_badge }}">{{ report.get_overall_status_display }}</span>
+                    <span class="badge {% if report.is_published %}badge-success{% else %}badge-neutral{% endif %}">
+                        {% if report.is_published %}Published{% else %}Draft{% endif %}
+                    </span>
+                    <span class="badge badge-info">{{ report.total_sessions }} session(s)</span>
+                    {% if can_manage %}
+                    <a href="{% url 'members:report_edit' report.pk %}" class="btn btn-primary"><i class="fa-solid fa-pen"></i> Edit Report</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="report-note">
+                "{{ report.coach_reflection|default:'Coach reflection will appear here once it has been added.' }}"
+            </div>
+        </div>
+    </section>
+
+    <section class="report-metrics">
+        <article class="report-metric" style="border-color:rgba(245,166,35,0.24);background:linear-gradient(180deg, rgba(245,166,35,0.10), rgba(245,166,35,0.02));">
+            <span class="icon" style="background:rgba(245,166,35,0.16);color:#f5a623;"><i class="fa-solid fa-trophy"></i></span>
+            <span>Overall Score</span>
+            <strong>{{ overall_score }}</strong>
+        </article>
+        <article class="report-metric" style="border-color:rgba(79,110,247,0.24);background:linear-gradient(180deg, rgba(79,110,247,0.10), rgba(79,110,247,0.02));">
+            <span class="icon" style="background:rgba(79,110,247,0.16);color:#4f6ef7;"><i class="fa-regular fa-star"></i></span>
+            <span>Current Grade</span>
+            <strong>{{ grade_label }}</strong>
+        </article>
+        <article class="report-metric" style="border-color:rgba(34,197,94,0.24);background:linear-gradient(180deg, rgba(34,197,94,0.10), rgba(34,197,94,0.02));">
+            <span class="icon" style="background:rgba(34,197,94,0.16);color:#16a34a;"><i class="fa-solid fa-bullseye"></i></span>
+            <span>Goal Reached</span>
+            <strong>{{ goal_reached }}%</strong>
+        </article>
+        <article class="report-metric" style="border-color:rgba(168,85,247,0.24);background:linear-gradient(180deg, rgba(168,85,247,0.10), rgba(168,85,247,0.02));">
+            <span class="icon" style="background:rgba(168,85,247,0.16);color:#a855f7;"><i class="fa-solid fa-bolt"></i></span>
+            <span>This Cycle</span>
+            <strong>{{ score_delta_label }}</strong>
+        </article>
+    </section>
+
+    <section class="report-grid">
+        <article class="report-card">
+            <h3>Skill Breakdown</h3>
+            <p class="section-copy">Current assessment across the core badminton skill set.</p>
+            <div class="report-chart">
+                <canvas id="skillRadarChart"></canvas>
+            </div>
+        </article>
+
+        <article class="report-card">
+            <h3>Growth Trajectory</h3>
+            <p class="section-copy">Overall report score over time.</p>
+            <div class="report-chart">
+                <canvas id="growthLineChart"></canvas>
+            </div>
+        </article>
+    </section>
+
+    <section class="report-grid" style="grid-template-columns:repeat(2, minmax(0, 1fr));">
+        <article class="report-card">
+            <h3>Strength Areas</h3>
+            <p class="section-copy">Current standout areas in the latest evaluation.</p>
+            <div class="report-list">
+                {% for row in strength_rows %}
+                <div class="report-row">
+                    <div>
+                        <strong>{{ row.skill }}</strong>
+                        <small>{{ row.note|default:"Performance is trending positively in this area." }}</small>
+                    </div>
+                    <div class="score">{{ row.score }}%</div>
+                </div>
+                {% endfor %}
+            </div>
+        </article>
+
+        <article class="report-card">
+            <h3>Focus Plan</h3>
+            <p class="section-copy">Priority items for the next training block.</p>
+            <div class="report-list">
+                {% for row in focus_rows %}
+                <div class="report-row">
+                    <div>
+                        <strong>{{ row.skill }}</strong>
+                        <small>{{ row.note|default:"Coach will keep building this area with targeted repetitions and match play feedback." }}</small>
+                    </div>
+                    <div class="score">{{ row.score }}%</div>
+                </div>
+                {% endfor %}
+            </div>
+        </article>
+    </section>
+
+    <section class="report-grid" style="grid-template-columns:minmax(0, 0.95fr) minmax(0, 1.45fr);">
+        <article class="report-card">
+            <h3>Attendance Details</h3>
+            <p class="section-copy">Training participation during this report period.</p>
+            <div class="report-list">
+                <div class="report-row">
+                    <div>
+                        <strong>Attendance Rate</strong>
+                        <small>Present and late counts combined.</small>
+                    </div>
+                    <div class="score">{{ report.attendance_rate }}%</div>
+                </div>
+                <div class="report-row">
+                    <div>
+                        <strong>Classes Attended</strong>
+                        <small>Sessions marked present or late.</small>
+                    </div>
+                    <div class="score">{{ attended_sessions }}</div>
+                </div>
+                <div class="report-row">
+                    <div>
+                        <strong>Sessions Missed</strong>
+                        <small>Recorded absences in this cycle.</small>
+                    </div>
+                    <div class="score">{{ absent_sessions }}</div>
+                </div>
+            </div>
+        </article>
+
+        <article class="report-card">
+            <h3>Coach Feedback And Video Proof</h3>
+            <p class="section-copy">Session-by-session notes and supporting training clips inside this report period.</p>
+            <div class="report-feedback-list">
+                {% for feedback in feedback_entries %}
+                <div class="report-feedback-item">
+                    <strong>{{ feedback.training_session.title }}</strong>
+                    <small>{{ feedback.training_session.session_date|date:"d M Y" }} | Coach {{ feedback.coach|default:"Coaching team" }}</small>
+                    <p style="margin-top:10px;color:var(--text);line-height:1.8;">{{ feedback.feedback_text }}</p>
+                    {% if feedback.video_proof %}
+                    <video controls preload="metadata">
+                        <source src="{{ feedback.video_proof.url }}">
+                        Your browser does not support HTML5 video.
+                    </video>
+                    <a href="{{ feedback.video_proof.url }}" download class="download">
+                        <i class="fa-solid fa-download"></i> Download Video
+                    </a>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div class="report-empty">No session feedback entries were attached to this report period yet.</div>
+                {% endfor %}
+            </div>
+        </article>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const reportChartDefaults = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                labels: {
+                    color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#8a8a9a',
+                    font: { family: 'Inter', size: 12 }
+                }
+            }
+        }
+    };
+
+    const radarCtx = document.getElementById('skillRadarChart');
+    if (radarCtx) {
+        new Chart(radarCtx, {
+            type: 'radar',
+            data: JSON.parse('{{ radar_chart_data|escapejs }}'),
+            options: {
+                ...reportChartDefaults,
+                scales: {
+                    r: {
+                        suggestedMin: 0,
+                        suggestedMax: 100,
+                        ticks: { display: false },
+                        angleLines: { color: 'rgba(148, 163, 184, 0.20)' },
+                        grid: { color: 'rgba(148, 163, 184, 0.20)' },
+                        pointLabels: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#f0f0f4',
+                            font: { family: 'Inter', size: 12 }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    const growthCtx = document.getElementById('growthLineChart');
+    if (growthCtx) {
+        new Chart(growthCtx, {
+            type: 'line',
+            data: JSON.parse('{{ growth_chart_data|escapejs }}'),
+            options: {
+                ...reportChartDefaults,
+                scales: {
+                    x: {
+                        ticks: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#8a8a9a',
+                            font: { family: 'Inter', size: 11 }
+                        },
+                        grid: { color: 'rgba(148, 163, 184, 0.12)' },
+                        border: { color: 'rgba(148, 163, 184, 0.15)' }
+                    },
+                    y: {
+                        suggestedMin: 0,
+                        suggestedMax: 100,
+                        ticks: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#8a8a9a',
+                            font: { family: 'Inter', size: 11 }
+                        },
+                        grid: { color: 'rgba(148, 163, 184, 0.12)' },
+                        border: { color: 'rgba(148, 163, 184, 0.15)' }
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

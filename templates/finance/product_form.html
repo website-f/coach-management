@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}{% if object %}Edit Product{% else %}New Product{% endif %} | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}{% if object %}Edit Product{% else %}Add Product{% endif %}{% endblock %}
+
+{% block content %}
+<div class="space-y">
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
+            <div style="max-width:740px;">
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;">Store Management</p>
+                <h2 style="font-size:28px;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1.1;">{% if object %}Update the product catalog entry.{% else %}Add a new item to the club store.{% endif %}</h2>
+                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">Use this form to control visibility, pricing, stock, and the product image shown to parents and staff.</p>
+            </div>
+            <a href="{% url 'finance:product_list' %}" class="btn btn-ghost">Back to store</a>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="space-y">
+        {% csrf_token %}
+        <div class="grid-2">
+            <div class="card">
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column:1 / -1;">
+                        <label for="{{ form.name.id_for_label }}">Product name</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.name.errors|join:", " }}</p>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.price.id_for_label }}">Price</label>
+                        {{ form.price }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.stock.id_for_label }}">Stock</label>
+                        {{ form.stock }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.availability.id_for_label }}">Availability</label>
+                        {{ form.availability }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.is_active.id_for_label }}">Visible in store</label>
+                        {{ form.is_active }}
+                    </div>
+                    <div class="form-group" style="grid-column:1 / -1;">
+                        <label for="{{ form.description.id_for_label }}">Description</label>
+                        {{ form.description }}
+                    </div>
+                    <div class="form-group" style="grid-column:1 / -1;">
+                        <label for="{{ form.image.id_for_label }}">Product image</label>
+                        {{ form.image }}
+                        {% if form.image.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.image.errors|join:", " }}</p>{% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-header">
+                    <span class="section-title">Preview</span>
+                </div>
+                {% if object and object.image %}
+                <img src="{{ object.image.url }}" alt="{{ object.name }}" style="width:100%;height:260px;object-fit:cover;border-radius:18px;margin-top:14px;">
+                {% else %}
+                <div style="height:260px;border-radius:18px;margin-top:14px;background:linear-gradient(135deg, rgba(245,166,35,.18), rgba(79,110,247,.12));display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:44px;">
+                    <i class="fa-solid fa-bag-shopping"></i>
+                </div>
+                {% endif %}
+                <div class="card-inset mt-3">
+                    <p class="text-xs text-muted" style="margin-bottom:4px;">Store visibility</p>
+                    <p style="font-weight:600;color:var(--text);">{% if object and not object.is_active %}Hidden from non-admin users{% else %}Visible to authenticated users{% endif %}</p>
+                    <p class="text-sm text-muted" style="margin-top:6px;">Products marked inactive stay editable for admins but disappear from the browsing catalog.</p>
+                </div>
+            </div>
+        </div>
+
+        {% if form.non_field_errors %}
+        <div class="card" style="border-color:rgba(239,68,68,.35);">
+            <p class="text-sm" style="color:var(--danger);">{{ form.non_field_errors|join:", " }}</p>
+        </div>
+        {% endif %}
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;">
+            <a href="{% url 'finance:product_list' %}" class="btn btn-ghost">Cancel</a>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Product</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

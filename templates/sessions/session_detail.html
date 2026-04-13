@@ -6,24 +6,23 @@
 
 {% block content %}
 <div class="space-y">
-
-    <!-- Session Header -->
     <div class="card">
         <div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:16px;">
             <div>
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Training Session</p>
-                <h2 style="font-size:22px;font-weight:700;color:var(--text);">{{ training_session.title }}</h2>
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Training session</p>
+                <h2 style="font-size:28px;font-weight:700;color:var(--text);letter-spacing:-.03em;">{{ training_session.title }}</h2>
                 <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;">
                     <span class="text-sm text-muted"><i class="fa-regular fa-calendar" style="margin-right:5px;color:var(--accent);"></i>{{ training_session.session_date }}</span>
-                    <span class="text-sm text-muted"><i class="fa-regular fa-clock" style="margin-right:5px;color:var(--accent);"></i>{{ training_session.start_time|time:"H:i" }} – {{ training_session.end_time|time:"H:i" }}</span>
+                    <span class="text-sm text-muted"><i class="fa-regular fa-clock" style="margin-right:5px;color:var(--accent);"></i>{{ training_session.start_time|time:"H:i" }} - {{ training_session.end_time|time:"H:i" }}</span>
                     <span class="text-sm text-muted"><i class="fa-solid fa-location-dot" style="margin-right:5px;color:var(--accent);"></i>Court {{ training_session.court }}</span>
+                    <span class="text-sm text-muted"><i class="fa-solid fa-user-tie" style="margin-right:5px;color:var(--accent);"></i>{{ training_session.coach|default:"Unassigned coach" }}</span>
                 </div>
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;">
                 {% if can_mark_attendance %}
                 <a href="{% url 'sessions:attendance' training_session.pk %}" class="btn btn-success"><i class="fa-solid fa-check-circle"></i> Mark Attendance</a>
                 {% endif %}
-                {% if can_manage %}
+                {% if can_plan %}
                 <a href="{% url 'sessions:edit' training_session.pk %}" class="btn" style="background:rgba(79,110,247,.1);color:var(--accent);border:1px solid rgba(79,110,247,.25);"><i class="fa-solid fa-pen"></i> Edit Session</a>
                 {% endif %}
             </div>
@@ -31,37 +30,88 @@
 
         {% if training_session.notes %}
         <div class="card-inset mt-3">
-            <p class="text-xs text-muted" style="margin-bottom:6px;">Notes</p>
+            <p class="text-xs text-muted" style="margin-bottom:6px;">Session brief</p>
             <p style="font-size:13.5px;color:var(--text);line-height:1.7;">{{ training_session.notes }}</p>
         </div>
         {% endif %}
     </div>
 
-    <!-- Assigned Players -->
+    <div class="stat-cards">
+        {% for item in attendance_summary %}
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">{{ item.label }}</p>
+                    <p class="stat-value">{{ item.value }}</p>
+                </div>
+                <div class="stat-icon">
+                    {% if item.tone == 'success' %}
+                    <i class="fa-solid fa-circle-check"></i>
+                    {% elif item.tone == 'warning' %}
+                    <i class="fa-solid fa-clock"></i>
+                    {% elif item.tone == 'danger' %}
+                    <i class="fa-solid fa-circle-xmark"></i>
+                    {% else %}
+                    <i class="fa-solid fa-clipboard-check"></i>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
     <div class="card">
         <div class="section-header">
-            <span class="section-title">Assigned Players</span>
-            <span class="badge badge-info">{{ training_session.attendance_records.count }} total</span>
+            <span class="section-title">Roster, Attendance, and Feedback</span>
         </div>
         <div class="overflow-x">
             <table class="tbl">
                 <thead>
                     <tr>
                         <th>Player</th>
-                        <th>Coach</th>
-                        <th>Status</th>
+                        <th>Attendance</th>
+                        <th>Feedback</th>
+                        <th>Video</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for record in training_session.attendance_records.all %}
+                    {% for row in feedback_rows %}
                     <tr>
-                        <td class="tbl-name">{{ record.member.full_name }}</td>
-                        <td class="muted">{{ record.member.assigned_coach|default:"Unassigned" }}</td>
-                        <td><span class="badge {{ record.status|status_badge }}">{{ record.get_status_display }}</span></td>
+                        <td>
+                            <div class="tbl-name">{{ row.record.member.full_name }}</div>
+                            <div class="tbl-sub">Coach: {{ row.record.member.assigned_coach|default:"Unassigned" }}</div>
+                        </td>
+                        <td><span class="badge {{ row.record.status|status_badge }}">{{ row.record.get_status_display }}</span></td>
+                        <td>
+                            {% if row.feedback %}
+                            <div class="tbl-name">Uploaded</div>
+                            <div class="tbl-sub">{{ row.feedback.updated_at|date:"d M Y H:i" }}</div>
+                            {% else %}
+                            <span class="badge badge-neutral">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if row.feedback and row.feedback.video_proof %}
+                            <a href="{{ row.feedback.video_proof.url }}" class="btn btn-ghost btn-xs" target="_blank">Open video</a>
+                            {% else %}
+                            <span class="text-sm text-muted">No file</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                {% if can_feedback %}
+                                <a href="{% url 'sessions:feedback' training_session.pk row.record.member.pk %}" class="btn btn-xs" style="background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.25);border-radius:99px;padding:4px 12px;">
+                                    {% if row.feedback %}Update Feedback{% else %}Add Feedback{% endif %}
+                                </a>
+                                {% endif %}
+                                <a href="{% url 'members:detail' row.record.member.pk %}" class="btn btn-ghost btn-xs">Profile</a>
+                            </div>
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="3">
+                        <td colspan="5">
                             <div class="empty-state">
                                 <i class="fa-regular fa-users"></i>
                                 <p>No players assigned to this session yet.</p>
@@ -74,5 +124,66 @@
         </div>
     </div>
 
+    <div class="grid-2">
+        <div class="card">
+            <div class="section-header">
+                <span class="section-title">Published Feedback</span>
+            </div>
+            <div class="space-y">
+                {% for feedback in feedback_entries %}
+                <div class="card-inset">
+                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+                        <div>
+                            <p style="font-weight:700;font-size:14px;color:var(--text);">{{ feedback.member.full_name }}</p>
+                            <p class="text-sm text-muted" style="margin-top:6px;">By {{ feedback.coach|default:"Coach" }} · {{ feedback.updated_at|date:"d M Y H:i" }}</p>
+                        </div>
+                        {% if feedback.video_proof %}
+                        <a href="{{ feedback.video_proof.url }}" class="btn btn-ghost btn-xs" target="_blank">Video Proof</a>
+                        {% endif %}
+                    </div>
+                    <p style="font-size:13.5px;color:var(--text);line-height:1.8;margin-top:12px;">{{ feedback.feedback_text|truncatechars:220 }}</p>
+                    {% if feedback.video_proof %}
+                    <div style="margin-top:14px;border-radius:16px;overflow:hidden;background:#020617;border:1px solid var(--border);">
+                        <video controls preload="metadata" style="width:100%;display:block;max-height:260px;background:#000;">
+                            <source src="{{ feedback.video_proof.url }}">
+                        </video>
+                    </div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+                        <a href="{{ feedback.video_proof.url }}" target="_blank" class="btn btn-ghost btn-xs">Open Video</a>
+                        <a href="{{ feedback.video_proof.url }}" download class="btn btn-primary btn-xs">Download Compressed Video</a>
+                    </div>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    <i class="fa-regular fa-file-lines"></i>
+                    <p>No coach feedback has been uploaded for this session yet.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card" style="height:fit-content;">
+            <div class="section-header">
+                <span class="section-title">Workflow Notes</span>
+            </div>
+            <div class="space-y">
+                <div class="card-inset">
+                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Attendance flow</p>
+                    <p style="font-size:14px;color:var(--text);line-height:1.7;">Headcount, coach, and admin can update attendance directly from this session hub. The attendance history then appears inside each student profile.</p>
+                </div>
+                <div class="card-inset">
+                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Coach follow-up</p>
+                    <p style="font-size:14px;color:var(--text);line-height:1.7;">After the session date passes, the assigned coach can upload a written recap and optional video proof for each student from the roster table above.</p>
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    {% if can_mark_attendance %}
+                    <a href="{% url 'sessions:attendance' training_session.pk %}" class="btn btn-primary"><i class="fa-solid fa-clipboard-check"></i> Update Attendance</a>
+                    {% endif %}
+                    <a href="{% url 'sessions:list' %}" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Back To Sessions</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

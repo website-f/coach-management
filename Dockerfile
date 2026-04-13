@@ -9,6 +9,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     default-libmysqlclient-dev \
+    ffmpeg \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 

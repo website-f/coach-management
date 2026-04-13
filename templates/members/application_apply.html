@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apply | NYO Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        :root {
+            --bg: #07111f;
+            --panel: rgba(10, 24, 42, 0.82);
+            --line: rgba(255, 255, 255, 0.08);
+            --text: #f8fafc;
+            --muted: #9cb0c6;
+            --gold: #f5a623;
+            --gold-soft: rgba(245, 166, 35, 0.16);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Inter", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(56, 189, 248, 0.16), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(245, 166, 35, 0.14), transparent 24%),
+                linear-gradient(180deg, #091525 0%, #050b15 100%);
+        }
+        a { color: inherit; text-decoration: none; }
+        .container { width: min(1160px, calc(100% - 32px)); margin: 0 auto; }
+        .topbar {
+            padding: 20px 0 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: "Space Grotesk", sans-serif;
+        }
+        .brand-mark {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--gold), #ffd36e);
+            color: #07111f;
+        }
+        .brand-copy small {
+            display: block;
+            font-size: 11px;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-family: "Inter", sans-serif;
+            font-weight: 700;
+        }
+        .brand-copy strong { font-size: 20px; letter-spacing: -.03em; }
+        .top-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 18px;
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gold), #ffd36e);
+            color: #07111f;
+        }
+        .btn-secondary {
+            border-color: var(--line);
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text);
+        }
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+            gap: 26px;
+            padding: 18px 0 42px;
+        }
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 32px;
+            padding: 28px;
+            backdrop-filter: blur(18px);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+        }
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: var(--gold-soft);
+            border: 1px solid rgba(245, 166, 35, 0.22);
+            color: #ffd88a;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+        }
+        h1 {
+            margin: 18px 0 0;
+            font-family: "Space Grotesk", sans-serif;
+            font-size: clamp(36px, 6vw, 62px);
+            letter-spacing: -.05em;
+            line-height: .96;
+        }
+        .lead { margin-top: 18px; color: var(--muted); line-height: 1.9; font-size: 16px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .field { display: flex; flex-direction: column; gap: 8px; }
+        .field label {
+            font-size: 11px;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-weight: 800;
+        }
+        .field input,
+        .field select,
+        .field textarea {
+            width: 100%;
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,.08);
+            background: rgba(6, 15, 28, 0.7);
+            color: var(--text);
+            padding: 15px 16px;
+            font: inherit;
+            outline: none;
+        }
+        .field textarea { min-height: 120px; resize: vertical; }
+        .field.full { grid-column: 1 / -1; }
+        .help, .errorlist { margin: 0; padding: 0; list-style: none; font-size: 13px; }
+        .help { color: var(--muted); line-height: 1.7; }
+        .errorlist { color: #fca5a5; }
+        .pill-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+        .pill {
+            padding: 9px 14px;
+            border-radius: 999px;
+            background: rgba(255,255,255,.04);
+            border: 1px solid var(--line);
+            font-size: 13px;
+            color: var(--text);
+        }
+        .side-block + .side-block { margin-top: 18px; }
+        .side-block h3 {
+            margin: 0 0 10px;
+            font-size: 18px;
+            letter-spacing: -.03em;
+        }
+        .side-block p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.8;
+            font-size: 14px;
+        }
+        .success {
+            margin-top: 18px;
+            padding: 16px 18px;
+            border-radius: 20px;
+            background: rgba(34, 197, 94, 0.14);
+            border: 1px solid rgba(34, 197, 94, 0.26);
+            color: #d1fae5;
+        }
+        @media (max-width: 920px) {
+            .layout,
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="topbar">
+            <a href="/" class="brand">
+                <div class="brand-mark"><i class="fa-solid fa-shuttlecock"></i></div>
+                <div class="brand-copy">
+                    <small>Badminton Club System</small>
+                    <strong>NYO Admin Dashboard</strong>
+                </div>
+            </a>
+            <div class="top-actions">
+                <a href="/" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i> Back To Landing</a>
+                <a href="/accounts/login/?role=admin" class="btn btn-primary"><i class="fa-solid fa-arrow-right-to-bracket"></i> Staff Sign In</a>
+            </div>
+        </div>
+
+        <div class="layout">
+            <section class="panel">
+                <div class="eyebrow"><i class="fa-solid fa-user-plus"></i> Admission Funnel</div>
+                <h1>Apply to join {{ landing_content.hero_title }}.</h1>
+                <p class="lead">This form brings the original admission flow into the live system. Submit the student details and answer the level assessment once, then our admin or coach team can review, auto-assign the right coach, and continue the child profile setup from inside the dashboard.</p>
+
+                {% if submitted %}
+                <div class="success">
+                    <strong style="display:block;margin-bottom:4px;">Application received.</strong>
+                    We’ve saved the request and it is now in the staff review queue.
+                </div>
+                {% endif %}
+
+                <form method="post" style="margin-top:24px;">
+                    {% csrf_token %}
+                    <div class="grid">
+                        <div class="field">
+                            <label for="{{ form.student_name.id_for_label }}">Student full name</label>
+                            {{ form.student_name }}
+                            {{ form.student_name.errors }}
+                        </div>
+                        <div class="field">
+                            <label for="{{ form.date_of_birth.id_for_label }}">Date of birth</label>
+                            {{ form.date_of_birth }}
+                            {{ form.date_of_birth.errors }}
+                        </div>
+                        <div class="field">
+                            <label for="{{ form.guardian_name.id_for_label }}">Guardian name</label>
+                            {{ form.guardian_name }}
+                            {{ form.guardian_name.errors }}
+                        </div>
+                        <div class="field">
+                            <label for="{{ form.guardian_email.id_for_label }}">Guardian email</label>
+                            {{ form.guardian_email }}
+                            {{ form.guardian_email.errors }}
+                        </div>
+                        <div class="field">
+                            <label for="{{ form.contact_number.id_for_label }}">Contact number</label>
+                            {{ form.contact_number }}
+                            {{ form.contact_number.errors }}
+                        </div>
+                        <div class="field">
+                            <label for="{{ form.desired_username.id_for_label }}">Preferred portal username</label>
+                            {{ form.desired_username }}
+                            {{ form.desired_username.errors }}
+                        </div>
+                        <div class="field">
+                            <label for="{{ form.preferred_program.id_for_label }}">Preferred program</label>
+                            {{ form.preferred_program }}
+                            {{ form.preferred_program.errors }}
+                        </div>
+                        <div class="field">
+                            <label for="{{ form.preferred_location.id_for_label }}">Preferred location</label>
+                            {{ form.preferred_location }}
+                            {{ form.preferred_location.errors }}
+                        </div>
+                        <div class="field">
+                            <label for="{{ form.playing_experience.id_for_label }}">Playing experience</label>
+                            {{ form.playing_experience }}
+                            {{ form.playing_experience.errors }}
+                        </div>
+                        <div class="field">
+                            <label for="{{ form.training_frequency.id_for_label }}">Training frequency</label>
+                            {{ form.training_frequency }}
+                            {{ form.training_frequency.errors }}
+                        </div>
+                        <div class="field full">
+                            <label for="{{ form.primary_goal.id_for_label }}">Main training goal</label>
+                            {{ form.primary_goal }}
+                            <p class="help">We use these answers to recommend a starting level: basic, intermediate, or advanced.</p>
+                            {{ form.primary_goal.errors }}
+                        </div>
+                        <div class="field full">
+                            <label for="{{ form.notes.id_for_label }}">Extra notes</label>
+                            {{ form.notes }}
+                            <p class="help">Share skill level, goals, or anything the coach should know before reviewing the application.</p>
+                            {{ form.notes.errors }}
+                        </div>
+                    </div>
+
+                    {% if form.non_field_errors %}
+                    <div class="errorlist" style="margin-top:14px;">{{ form.non_field_errors }}</div>
+                    {% endif %}
+
+                    <div style="display:flex;justify-content:flex-end;margin-top:22px;">
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Submit Application</button>
+                    </div>
+                </form>
+            </section>
+
+            <aside class="panel">
+                <div class="side-block">
+                    <h3>Current intake rhythm</h3>
+                    <p>{{ landing_content.announcement_text }}</p>
+                </div>
+                <div class="side-block">
+                    <h3>Available programs</h3>
+                    <div class="pill-row">
+                        {% for program in landing_content.available_programs %}
+                        <span class="pill">{{ program }}</span>
+                        {% empty %}
+                        <span class="pill">General Training</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="side-block">
+                    <h3>Available locations</h3>
+                    <div class="pill-row">
+                        {% for location in landing_content.available_locations %}
+                        <span class="pill">{{ location }}</span>
+                        {% empty %}
+                        <span class="pill">Main Hall</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="side-block">
+                    <h3>What happens next</h3>
+                    <p>1. Staff reviews the application. 2. The level assessment recommends the best starting group. 3. Approved submissions are auto-assigned to a suitable coach and onboarding invoices are generated. 4. Parent billing and session visibility then flow into the same portal.</p>
+                </div>
+                <div class="side-block">
+                    <h3>Need help?</h3>
+                    <p>
+                        {% if landing_content.contact_email %}
+                        Contact <a href="mailto:{{ landing_content.contact_email }}" style="color:#ffd88a;">{{ landing_content.contact_email }}</a>
+                        {% else %}
+                        Reach the club administrator for assistance with intake and portal setup.
+                        {% endif %}
+                    </p>
+                </div>
+            </aside>
+        </div>
+    </div>
+</body>
+</html>

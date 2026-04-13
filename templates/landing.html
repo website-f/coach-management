@@ -1,565 +1,469 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RSBE Academy - The Future of Badminton</title>
-    
-    <!-- Fonts -->
+    <title>NYO Admin Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    
-    <!-- Icons -->
-    <link rel="apple-touch-icon" href="/static/icons/icon-192x192.png">
-
     <style>
         :root {
-            --bg-base: #000000;
-            --bg-elevated: rgba(28, 28, 30, 0.4);
-            --bg-glass: rgba(255, 255, 255, 0.04);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            
-            --text-primary: #ffffff;
-            --text-secondary: #86868b;
-            --text-tertiary: #515154;
-            
-            --accent: #ffffff;
-            --accent-hover: #e0e0e0;
-            
-            --radius-lg: 32px;
-            --radius-md: 20px;
-            --radius-sm: 12px;
-            --radius-pill: 999px;
-            
-            --ease-apple: cubic-bezier(0.25, 1, 0.5, 1);
+            --bg: #07111f;
+            --panel: rgba(10, 24, 42, 0.78);
+            --line: rgba(255, 255, 255, 0.08);
+            --text: #f8fafc;
+            --muted: #a6b5c8;
+            --gold: #f5a623;
+            --gold-soft: rgba(245, 166, 35, 0.16);
+            --teal: #38bdf8;
+            --shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
         }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-base);
-            color: var(--text-primary);
-            overflow-x: hidden;
-            line-height: 1.4;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Inter", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(245, 166, 35, 0.14), transparent 24%),
+                linear-gradient(180deg, #091525 0%, #050b15 100%);
         }
-
-        /* ── Core Layout & Utilities ── */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 24px;
-        }
-
-        /* ── Glass Nav ── */
-        header {
-            position: fixed;
+        a { color: inherit; text-decoration: none; }
+        .container { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
+        .topbar {
+            position: sticky;
             top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 1000;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px);
-            border-bottom: 1px solid var(--glass-border);
-            padding: 16px 0;
-            transition: background 0.3s var(--ease-apple);
+            z-index: 20;
+            backdrop-filter: blur(18px);
+            background: rgba(7, 17, 31, 0.72);
+            border-bottom: 1px solid var(--line);
         }
-        
-        .nav-inner {
+        .topbar-inner {
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
+            gap: 18px;
+            padding: 16px 0;
+            flex-wrap: wrap;
         }
-
-        .logo {
-            font-size: 20px;
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .brand-mark {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--gold), #ffd36e);
+            color: #07111f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 18px 32px rgba(245, 166, 35, 0.22);
+        }
+        .brand-copy small {
+            display: block;
+            font-size: 11px;
             font-weight: 700;
-            letter-spacing: -0.6px;
-            color: var(--text-primary);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted);
         }
-
-        .nav-links {
-            display: flex;
-            gap: 32px;
+        .brand-copy strong {
+            display: block;
+            font-family: "Space Grotesk", sans-serif;
+            font-size: 18px;
+            letter-spacing: -0.03em;
         }
-
-        .nav-link {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 500;
-            letter-spacing: -0.2px;
-            transition: color 0.3s ease;
-        }
-
-        .nav-link:hover {
-            color: var(--text-primary);
-        }
-
-        .btn-glass {
-            background: var(--bg-glass);
-            border: 1px solid var(--glass-border);
-            color: var(--text-primary);
-            padding: 8px 20px;
-            border-radius: var(--radius-pill);
-            font-size: 13px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s var(--ease-apple);
-            cursor: pointer;
-        }
-
-        .btn-glass:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .btn-solid {
-            background: var(--text-primary);
-            color: var(--bg-base);
-            padding: 16px 32px;
-            border-radius: var(--radius-pill);
-            font-size: 15px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s var(--ease-apple);
+        .top-links { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn {
+            border-radius: 999px;
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            letter-spacing: -0.3px;
+            gap: 8px;
+            padding: 13px 20px;
+            font-size: 14px;
+            font-weight: 700;
+            border: 1px solid transparent;
         }
-
-        .btn-solid:hover {
-            background: var(--accent-hover);
-            transform: scale(1.02);
-            box-shadow: 0 8px 24px rgba(255, 255, 255, 0.15);
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gold), #ffd36e);
+            color: #07111f;
+            box-shadow: 0 18px 32px rgba(245, 166, 35, 0.24);
         }
-
-        /* ── Hero Section ── */
-        .hero {
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: var(--line);
+            color: var(--text);
+        }
+        .hero { padding: 82px 0 40px; }
+        .hero-grid,
+        .role-grid,
+        .feature-grid,
+        .stat-grid,
+        .meta-grid {
+            display: grid;
+            gap: 18px;
+        }
+        .hero-grid { grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr); }
+        .role-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .feature-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .meta-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .panel,
+        .role-card,
+        .feature-card,
+        .stat-card {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow);
+        }
+        .panel {
+            border-radius: 34px;
+            padding: 30px;
+        }
+        .hero-main {
             position: relative;
             overflow: hidden;
-            padding: 0 24px;
         }
-
-        .hero-bg-img {
+        .hero-main::before {
+            content: "";
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url('https://images.unsplash.com/photo-1626225967045-9c76db7b62a9?auto=format&fit=crop&q=80&w=2000');
-            background-size: cover;
-            background-position: center;
+            inset: 0;
+            background:
+                linear-gradient(120deg, rgba(255,255,255,0.05), transparent 30%),
+                url("https://images.unsplash.com/photo-1626225967045-9c76db7b62a9?auto=format&fit=crop&q=80&w=1600") center/cover;
             opacity: 0.15;
-            z-index: -2;
-            mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+            mix-blend-mode: screen;
         }
-
-        /* Abstract glow without harsh gradients */
-        .hero-glow {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 800px;
-            height: 800px;
-            transform: translate(-50%, -50%);
-            background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0) 70%);
-            z-index: -1;
-            pointer-events: none;
+        .hero-content { position: relative; z-index: 1; }
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: var(--gold-soft);
+            border: 1px solid rgba(245, 166, 35, 0.22);
+            color: #ffd88a;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
         }
-
-        .hero h1 {
-            font-size: clamp(56px, 10vw, 120px);
-            font-weight: 700;
-            letter-spacing: -0.04em;
-            line-height: 1.05;
-            margin-bottom: 24px;
-            color: #fff;
-            opacity: 0;
-            transform: translateY(20px);
-            animation: appleFadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        h1, h2 {
+            margin: 0;
+            font-family: "Space Grotesk", sans-serif;
+            letter-spacing: -0.05em;
         }
-
-        .hero p {
-            font-size: clamp(18px, 2.5vw, 24px);
-            color: var(--text-secondary);
-            font-weight: 400;
-            letter-spacing: -0.01em;
-            max-width: 640px;
-            margin-bottom: 48px;
-            line-height: 1.5;
-            opacity: 0;
-            transform: translateY(20px);
-            animation: appleFadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+        h1 {
+            font-size: clamp(42px, 7vw, 78px);
+            line-height: 0.96;
+            margin-top: 18px;
         }
-
+        h2 { font-size: clamp(28px, 4vw, 42px); }
+        .lead,
+        .section-head p,
+        .side-card p,
+        .feature-card p,
+        .role-card p {
+            color: var(--muted);
+            line-height: 1.8;
+        }
+        .lead { margin-top: 20px; max-width: 680px; font-size: 17px; }
         .hero-actions {
-            opacity: 0;
-            transform: translateY(20px);
-            animation: appleFadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
             display: flex;
-            gap: 16px;
             flex-wrap: wrap;
-            justify-content: center;
+            gap: 12px;
+            margin-top: 26px;
         }
-
-        /* ── Features Section ── */
-        .section {
-            padding: 160px 0;
+        .side-stack { display: grid; gap: 14px; }
+        .side-card,
+        .role-card,
+        .feature-card,
+        .stat-card {
+            border-radius: 28px;
+            padding: 22px;
         }
-
-        .section-header {
-            text-align: center;
-            margin-bottom: 80px;
+        .kicker {
+            color: var(--gold);
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-bottom: 10px;
         }
-
-        .section-header h2 {
-            font-size: clamp(36px, 5vw, 56px);
-            font-weight: 700;
-            letter-spacing: -0.03em;
-            margin-bottom: 20px;
-            color: #fff;
-        }
-
-        .section-header p {
+        .role-card h3,
+        .feature-card h3,
+        .stat-card h3 {
+            margin: 0;
             font-size: 20px;
-            color: var(--text-secondary);
-            font-weight: 400;
-            letter-spacing: -0.01em;
-            max-width: 560px;
-            margin: 0 auto;
+            letter-spacing: -0.03em;
         }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 24px;
-        }
-
-        .feature-card {
-            background: var(--bg-glass);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-lg);
-            padding: 48px 40px;
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        .section { padding: 22px 0 0; }
+        .section-head {
             display: flex;
-            flex-direction: column;
-            gap: 24px;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: end;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
         }
-
-        .feature-card:hover {
-            transform: translateY(-4px) scale(1.01);
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.15);
+        .pill-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+        .pill {
+            padding: 9px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,.04);
+            font-size: 13px;
         }
-
+        .role-icon,
         .feature-icon {
             width: 48px;
             height: 48px;
-            color: var(--text-primary);
-            font-size: 28px;
+            border-radius: 16px;
             display: flex;
-            align-items: flex-start;
-            justify-content: flex-start;
-        }
-
-        .feature-title {
-            font-size: 22px;
-            font-weight: 600;
-            letter-spacing: -0.02em;
-        }
-
-        .feature-desc {
-            color: var(--text-secondary);
-            font-size: 16px;
-            line-height: 1.6;
-            letter-spacing: -0.01em;
-        }
-
-        /* ── Spotlight / Big Image Showcase ── */
-        .spotlight {
-            padding: 100px 0;
-            margin-bottom: 60px;
-        }
-
-        .spotlight-inner {
-            background: var(--bg-glass);
-            border: 1px solid var(--glass-border);
-            border-radius: 40px;
-            padding: 80px 40px;
-            text-align: center;
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 500px;
+            margin-bottom: 16px;
+            font-size: 18px;
+            background: rgba(56, 189, 248, 0.12);
+            color: #89ddff;
         }
-
-        .spotlight-bg {
-            position: absolute;
-            inset: 0;
-            background-image: url('https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&q=80&w=1200');
-            background-size: cover;
-            background-position: center;
-            opacity: 0.2;
-            z-index: 0;
-            filter: grayscale(100%) contrast(1.2);
-            transition: opacity 0.5s ease;
+        .stat-value {
+            font-size: 36px;
+            font-family: "Space Grotesk", sans-serif;
+            letter-spacing: -0.05em;
+            margin-top: 4px;
         }
-        
-        .spotlight-inner:hover .spotlight-bg {
-            opacity: 0.3;
-        }
-
-        .spotlight-content {
-            position: relative;
-            z-index: 1;
-            max-width: 600px;
-        }
-
-        .spotlight-inner h2 {
-            font-size: clamp(40px, 6vw, 64px);
-            font-weight: 700;
-            letter-spacing: -0.04em;
-            margin-bottom: 20px;
-            color: #fff;
-        }
-
-        .spotlight-inner p {
-            font-size: 20px;
-            color: #ccc;
-            margin-bottom: 40px;
-            letter-spacing: -0.01em;
-        }
-
-        /* ── Footer ── */
-        footer {
-            border-top: 1px solid var(--glass-border);
-            padding: 60px 0 40px;
-            text-align: center;
-        }
-
-        .footer-logo {
-            font-weight: 600;
-            color: var(--text-primary);
-            font-size: 16px;
-            letter-spacing: -0.02em;
-            margin-bottom: 24px;
-        }
-
-        .footer-links {
-            display: flex;
-            gap: 32px;
-            justify-content: center;
-            margin-bottom: 40px;
-        }
-
-        .footer-link {
-            color: var(--text-secondary);
-            text-decoration: none;
+        .footer {
+            padding: 48px 0 56px;
+            border-top: 1px solid var(--line);
+            margin-top: 34px;
+            color: var(--muted);
             font-size: 13px;
-            transition: color 0.3s ease;
         }
-
-        .footer-link:hover {
-            color: var(--text-primary);
+        .footer-inner {
+            display: flex;
+            justify-content: space-between;
+            gap: 18px;
+            flex-wrap: wrap;
+            align-items: center;
         }
-
-        .copyright {
-            color: var(--text-tertiary);
-            font-size: 12px;
-        }
-
-        /* ── Animations ── */
-        @keyframes appleFadeUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .reveal {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .reveal.active {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* ── Responsive ── */
-        @media (max-width: 768px) {
-            .nav-links {
-                display: none;
-            }
-            .section {
-                padding: 100px 0;
-            }
-            .feature-card {
-                padding: 32px 24px;
-            }
-            .spotlight-inner {
-                padding: 60px 24px;
-                border-radius: 32px;
+        .footer-links { display: flex; gap: 18px; flex-wrap: wrap; }
+        @media (max-width: 960px) {
+            .hero-grid,
+            .role-grid,
+            .feature-grid,
+            .stat-grid,
+            .meta-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
-
-    <header id="mainNav">
-        <div class="container nav-inner">
-            <a href="/" class="logo">
-                <i class="fa-solid fa-shuttlecock"></i> RSBE
-            </a>
-            <div class="nav-links">
-                <a href="#features" class="nav-link">Features</a>
-                <a href="#action" class="nav-link">Get Started</a>
-            </div>
-            <div>
-                <a href="{% url 'accounts:login' %}" class="btn-glass">Sign In</a>
+<header class="topbar">
+    <div class="container topbar-inner">
+        <div class="brand">
+            <div class="brand-mark"><i class="fa-solid fa-shuttlecock"></i></div>
+            <div class="brand-copy">
+                <small>Badminton Club System</small>
+                <strong>NYO Admin Dashboard</strong>
             </div>
         </div>
-    </header>
-
-    <main>
-        <section class="hero">
-            <div class="hero-bg-img"></div>
-            <div class="hero-glow"></div>
-            <div class="container" style="position: relative; z-index: 10;">
-                <h1>The Future of<br>Badminton.</h1>
-                <p>Professional coaching and management. Building the next generation of shuttlers with integrity and innovation.</p>
-                <div class="hero-actions">
-                    <a href="{% url 'accounts:login' %}" class="btn-solid">
-                        Access Portal <i class="fa-solid fa-arrow-right" style="font-size: 13px;"></i>
-                    </a>
-                </div>
-            </div>
-        </section>
-
-        <section id="features" class="section">
-            <div class="container">
-                <div class="section-header reveal">
-                    <h2>Elite Ecosystem.</h2>
-                    <p>Everything you need to manage progress, from syllabus to tracking.</p>
-                </div>
-                <div class="features-grid">
-                    <div class="feature-card reveal" style="transition-delay: 0.1s;">
-                        <div class="feature-icon">
-                            <i class="fa-solid fa-trophy"></i>
-                        </div>
-                        <h3 class="feature-title">Pro Syllabus</h3>
-                        <p class="feature-desc">Structured training modules for every level from beginner to elite tournament prep. Built and evaluated by professionals.</p>
-                    </div>
-                    <div class="feature-card reveal" style="transition-delay: 0.2s;">
-                        <div class="feature-icon">
-                            <i class="fa-solid fa-mobile-screen"></i>
-                        </div>
-                        <h3 class="feature-title">Performance Apps</h3>
-                        <p class="feature-desc">Dedicated interfaces for Web, iOS, and Android ensuring full business accessibility and student dashboards.</p>
-                    </div>
-                    <div class="feature-card reveal" style="transition-delay: 0.3s;">
-                        <div class="feature-icon">
-                            <i class="fa-solid fa-video"></i>
-                        </div>
-                        <h3 class="feature-title">Video Proof</h3>
-                        <p class="feature-desc">Personalized training clips provided to parents as proof of student progression and technique refinement.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="action" class="spotlight container reveal">
-            <div class="spotlight-inner">
-                <div class="spotlight-bg"></div>
-                <div class="spotlight-content">
-                    <h2>Ready to Elevate?</h2>
-                    <p>Elite coaching is in high demand. Secure your spot in the next intake or sign in to your dashboard to track your journey.</p>
-                    <a href="{% url 'accounts:login' %}" class="btn-solid" style="background: white; color: black; padding: 18px 40px; font-size: 16px;">
-                        Go to Dashboard
-                    </a>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer>
-        <div class="container">
-            <div class="footer-logo">RSBE ACADEMY</div>
-            <div class="footer-links">
-                <a href="#" class="footer-link">Instagram</a>
-                <a href="#" class="footer-link">TikTok</a>
-                <a href="#" class="footer-link">Support</a>
-            </div>
-            <div class="copyright">© 2024 RSBE Badminton Academy. All Rights Reserved.</div>
+        <div class="top-links">
+            <a href="{% url 'members:apply' %}" class="btn btn-secondary"><i class="fa-solid fa-user-plus"></i> Apply Now</a>
+            <a href="/accounts/login/?role=parent" class="btn btn-secondary"><i class="fa-solid fa-child-reaching"></i> Parent Portal</a>
+            <a href="/accounts/login/?role=admin" class="btn btn-primary"><i class="fa-solid fa-arrow-right-to-bracket"></i> Staff Sign In</a>
         </div>
-    </footer>
+    </div>
+</header>
 
-    <script>
-        // Reveal elements on scroll
-        function reveal() {
-            var reveals = document.querySelectorAll('.reveal');
-            var windowHeight = window.innerHeight;
-            
-            for (var i = 0; i < reveals.length; i++) {
-                var elementTop = reveals[i].getBoundingClientRect().top;
-                var elementVisible = 100;
-                
-                if (elementTop < windowHeight - elementVisible) {
-                    reveals[i].classList.add('active');
-                }
-            }
-        }
-        
-        window.addEventListener('scroll', reveal, { passive: true });
-        // Trigger once on load
-        setTimeout(reveal, 100);
-        
-        // Dynamic Navbar Background
-        window.addEventListener('scroll', function() {
-            var nav = document.getElementById('mainNav');
-            if (window.scrollY > 10) {
-                nav.style.background = 'rgba(0, 0, 0, 0.7)';
-                nav.style.boxShadow = '0 4px 30px rgba(0, 0, 0, 0.1)';
-            } else {
-                nav.style.background = 'rgba(0, 0, 0, 0.5)';
-                nav.style.boxShadow = 'none';
-            }
-        }, { passive: true });
-    </script>
+<main class="container">
+    <section class="hero">
+        <div class="hero-grid">
+            <div class="panel hero-main">
+                <div class="hero-content">
+                    <div class="eyebrow"><i class="fa-solid fa-bolt"></i> {{ landing_content.announcement_text }}</div>
+                    <h1>{{ landing_content.hero_title }}</h1>
+                    <p class="lead">{{ landing_content.hero_subtitle }}</p>
+                    <div class="hero-actions">
+                        <a href="{% url 'members:apply' %}" class="btn btn-primary"><i class="fa-solid fa-user-plus"></i> {{ landing_content.primary_cta_text }}</a>
+                        <a href="#roles" class="btn btn-secondary"><i class="fa-solid fa-diagram-project"></i> {{ landing_content.secondary_cta_text }}</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="side-stack">
+                <div class="panel side-card">
+                    <div class="kicker">Live Club Snapshot</div>
+                    <h3>{{ active_members }} active players, {{ coach_count }} coach account(s), and {{ pending_reviews }} payment proof review(s) in motion.</h3>
+                    <p style="margin-top:10px;">The strongest part of the original flow is now production-ready: parents can apply, receive invoices, scan the live QR, upload proof, and wait for staff verification inside one connected portal.</p>
+                </div>
+                <div class="panel side-card">
+                    <div class="kicker">Available Programs</div>
+                    <div class="pill-row">
+                        {% for program in landing_content.available_programs %}
+                        <span class="pill">{{ program }}</span>
+                        {% empty %}
+                        <span class="pill">General Training</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="panel side-card">
+                    <div class="kicker">Training Locations</div>
+                    <div class="pill-row">
+                        {% for location in landing_content.available_locations %}
+                        <span class="pill">{{ location }}</span>
+                        {% empty %}
+                        <span class="pill">Main Hall</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="panel">
+            <div class="section-head">
+                <div>
+                    <div class="kicker">Platform Pulse</div>
+                    <h2>The real flow is now visible from the very first screen.</h2>
+                    <p>Every number below maps to live Django data instead of reference-only mocks, so the public site, staff dashboard, and parent portal all tell the same story.</p>
+                </div>
+            </div>
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="kicker">Members</div>
+                    <div class="stat-value">{{ active_members }}</div>
+                    <p>Active club members right now.</p>
+                </div>
+                <div class="stat-card">
+                    <div class="kicker">Sessions</div>
+                    <div class="stat-value">{{ sessions_this_month }}</div>
+                    <p>Training sessions already scheduled this month.</p>
+                </div>
+                <div class="stat-card">
+                    <div class="kicker">Applications</div>
+                    <div class="stat-value">{{ application_count }}</div>
+                    <p>Pending admission requests waiting for a decision.</p>
+                </div>
+                <div class="stat-card">
+                    <div class="kicker">Store</div>
+                    <div class="stat-value">{{ product_count }}</div>
+                    <p>Active merchandise items visible in the portal.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="roles">
+        <div class="panel">
+            <div class="section-head">
+                <div>
+                    <div class="kicker">Role Journeys</div>
+                    <h2>Each role enters the same system through a different working rhythm.</h2>
+                    <p>The original concept separated parents, coaches, and administrators clearly. This version keeps that clarity while landing every CTA on a real page backed by members, sessions, invoices, store items, and payment proofs.</p>
+                </div>
+            </div>
+            <div class="role-grid">
+                {% for card in role_cards %}
+                <div class="role-card">
+                    <div class="role-icon"><i class="fa-solid {{ card.icon }}"></i></div>
+                    <h3>{{ card.title }}</h3>
+                    <p style="margin-top:10px;">{{ card.subtitle }}</p>
+                    <div style="margin-top:18px;">
+                        <a href="{{ card.url }}" class="btn btn-secondary"><i class="fa-solid fa-arrow-right"></i> Open {{ card.title }}</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="panel">
+            <div class="section-head">
+                <div>
+                    <div class="kicker">Connected Flow</div>
+                    <h2>Parents can now move from application to payments without jumping systems.</h2>
+                    <p>The missing middle has been filled in: application intake, role dashboards, coach reports, finance visibility, QR payment proof, and store browsing all live inside the same app.</p>
+                </div>
+            </div>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-user-plus"></i></div>
+                    <h3>Admissions</h3>
+                    <p>Public applications can be reviewed by staff and converted into real member profiles.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-file-lines"></i></div>
+                    <h3>Progress Reports</h3>
+                    <p>Coaches publish report-card style updates tied to attendance and real player records.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-qrcode"></i></div>
+                    <h3>Manual QR Payments</h3>
+                    <p>Parents scan the uploaded QR, pay the exact amount, and submit proof for review.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-bag-shopping"></i></div>
+                    <h3>Official Store</h3>
+                    <p>Staff can manage merchandise, while families browse club products in the same portal.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="panel">
+            <div class="section-head">
+                <div>
+                    <div class="kicker">Next Step</div>
+                    <h2>Ready to start the parent-facing flow?</h2>
+                    <p>Apply for intake if you’re new, or jump straight into the portal if your family already has access.</p>
+                </div>
+            </div>
+            <div class="meta-grid">
+                <div class="side-card">
+                    <div class="kicker">New Families</div>
+                    <h3>Begin with the application form.</h3>
+                    <p style="margin-top:10px;">Choose a program, pick a location, and send the student details into the live staff review queue.</p>
+                    <div style="margin-top:18px;">
+                        <a href="{% url 'members:apply' %}" class="btn btn-primary"><i class="fa-solid fa-user-plus"></i> Apply For Admission</a>
+                    </div>
+                </div>
+                <div class="side-card">
+                    <div class="kicker">Existing Families</div>
+                    <h3>Enter the parent portal.</h3>
+                    <p style="margin-top:10px;">Track child attendance, view published reports, browse invoices, and complete the QR payment proof flow.</p>
+                    <div style="margin-top:18px;">
+                        <a href="/accounts/login/?role=parent" class="btn btn-secondary"><i class="fa-solid fa-credit-card"></i> Open Parent Portal</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="footer">
+    <div class="container footer-inner">
+        <div>NYO Admin Dashboard for badminton club operations.</div>
+        <div class="footer-links">
+            {% if landing_content.instagram_link %}<a href="{{ landing_content.instagram_link }}" target="_blank" rel="noreferrer">Instagram</a>{% endif %}
+            {% if landing_content.tiktok_link %}<a href="{{ landing_content.tiktok_link }}" target="_blank" rel="noreferrer">TikTok</a>{% endif %}
+            {% if landing_content.contact_email %}<a href="mailto:{{ landing_content.contact_email }}">{{ landing_content.contact_email }}</a>{% endif %}
+        </div>
+    </div>
+</footer>
 </body>
 </html>

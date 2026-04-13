@@ -1,11 +1,19 @@
 from django.urls import path
 
 from members.views import (
+    AdmissionApplicationCreateView,
+    AdmissionApplicationListView,
+    AdmissionApplicationReviewView,
     MemberCreateView,
     MemberDeleteView,
     MemberDetailView,
+    MemberLevelUpdateView,
     MemberListView,
     MemberUpdateView,
+    ProgressReportCreateView,
+    ProgressReportDetailView,
+    ProgressReportListView,
+    ProgressReportUpdateView,
     export_members_csv,
 )
 
@@ -13,7 +21,15 @@ app_name = "members"
 
 urlpatterns = [
     path("", MemberListView.as_view(), name="list"),
+    path("apply/", AdmissionApplicationCreateView.as_view(), name="apply"),
+    path("applications/", AdmissionApplicationListView.as_view(), name="application_list"),
+    path("applications/<int:pk>/", AdmissionApplicationReviewView.as_view(), name="application_review"),
+    path("reports/", ProgressReportListView.as_view(), name="report_list"),
+    path("reports/create/", ProgressReportCreateView.as_view(), name="report_create"),
+    path("reports/<int:pk>/", ProgressReportDetailView.as_view(), name="report_detail"),
+    path("reports/<int:pk>/edit/", ProgressReportUpdateView.as_view(), name="report_edit"),
     path("create/", MemberCreateView.as_view(), name="create"),
+    path("<int:pk>/level/", MemberLevelUpdateView.as_view(), name="level_update"),
     path("<int:pk>/", MemberDetailView.as_view(), name="detail"),
     path("<int:pk>/edit/", MemberUpdateView.as_view(), name="edit"),
     path("<int:pk>/delete/", MemberDeleteView.as_view(), name="delete"),

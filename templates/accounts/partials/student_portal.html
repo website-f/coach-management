@@ -1,0 +1,598 @@
+{% load ui_tags %}
+{% with featured=student_portal.featured_child %}
+<style>
+    .student-portal-shell { display: grid; gap: 18px; }
+    .student-portal-hero {
+        position: relative;
+        overflow: hidden;
+        padding: 28px;
+        border-radius: 28px;
+        background:
+            radial-gradient(circle at top right, rgba(245, 166, 35, 0.18), transparent 28%),
+            linear-gradient(135deg, #183b92 0%, #2d62ea 58%, #376ef5 100%);
+        color: #f8fbff;
+        box-shadow: 0 24px 48px rgba(24, 59, 146, 0.28);
+    }
+    .student-portal-hero::after {
+        content: "";
+        position: absolute;
+        right: -60px;
+        top: -80px;
+        width: 220px;
+        height: 220px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        filter: blur(8px);
+    }
+    .student-portal-hero-grid {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        gap: 18px;
+        grid-template-columns: minmax(0, 1.6fr) minmax(220px, 0.7fr);
+        align-items: center;
+    }
+    .student-portal-hero h2 {
+        font-size: clamp(28px, 4vw, 40px);
+        line-height: 1.05;
+        letter-spacing: -0.04em;
+        margin-bottom: 10px;
+    }
+    .student-portal-hero p { color: rgba(248, 251, 255, 0.82); max-width: 700px; }
+    .student-portal-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 18px;
+    }
+    .student-portal-level {
+        justify-self: end;
+        width: 100%;
+        max-width: 240px;
+        padding: 18px 18px 20px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        backdrop-filter: blur(14px);
+    }
+    .student-portal-level-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+    .student-portal-level-badge {
+        width: 52px;
+        height: 52px;
+        border-radius: 999px;
+        background: #f5c542;
+        color: #10204f;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.2);
+    }
+    .student-portal-level small {
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.7);
+        margin-top: 6px;
+    }
+    .student-portal-level strong {
+        display: block;
+        font-size: 30px;
+        line-height: 1;
+    }
+    .student-portal-switcher {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    }
+    .student-switch-card {
+        text-decoration: none;
+        color: inherit;
+        padding: 18px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    }
+    .student-switch-card.active {
+        border-color: rgba(79, 110, 247, 0.35);
+        background: linear-gradient(180deg, rgba(79,110,247,0.15), rgba(79,110,247,0.05));
+        box-shadow: 0 16px 28px rgba(79, 110, 247, 0.14);
+    }
+    .student-switch-card .meta {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.7;
+        margin-top: 8px;
+    }
+    .student-portal-main-grid {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.85fr);
+    }
+    .student-portal-bottom-grid {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .student-portal-card {
+        padding: 24px;
+        border-radius: 24px;
+        border: 1px solid var(--border);
+        background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+        box-shadow: 0 20px 36px rgba(15, 23, 42, 0.08);
+    }
+    .student-portal-card h3 {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 16px;
+    }
+    .student-portal-label {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(79, 110, 247, 0.12);
+        color: #4f6ef7;
+        font-size: 11px;
+        font-weight: 700;
+        margin-bottom: 18px;
+    }
+    .student-session-title {
+        font-size: clamp(24px, 3vw, 34px);
+        line-height: 1.08;
+        letter-spacing: -0.04em;
+        margin-bottom: 16px;
+        color: var(--text);
+    }
+    .student-session-meta {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: 20px;
+    }
+    .student-session-meta-item {
+        padding: 14px 16px;
+        border-radius: 16px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+    }
+    .student-session-meta-item.full { grid-column: 1 / -1; }
+    .student-session-meta-item i {
+        width: 18px;
+        color: #4f6ef7;
+        text-align: center;
+        flex-shrink: 0;
+    }
+    .student-session-meta-item span { min-width: 0; color: var(--text); }
+    .student-session-cta {
+        margin-top: 20px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        padding: 15px 18px;
+        border-radius: 16px;
+        text-decoration: none;
+        background: #21409a;
+        color: #fff;
+        font-weight: 700;
+        box-shadow: 0 16px 32px rgba(33, 64, 154, 0.22);
+    }
+    .student-attendance-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 8px auto 26px;
+    }
+    .student-attendance-ring {
+        position: relative;
+        width: 168px;
+        height: 168px;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+    }
+    .student-attendance-ring::after {
+        content: "";
+        width: 118px;
+        height: 118px;
+        border-radius: 999px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        box-shadow: inset 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+    .student-attendance-value {
+        position: absolute;
+        z-index: 1;
+        display: grid;
+        gap: 2px;
+        justify-items: center;
+        text-align: center;
+    }
+    .student-attendance-value strong {
+        font-size: 42px;
+        line-height: 1;
+        letter-spacing: -0.05em;
+        color: var(--text);
+    }
+    .student-attendance-value span {
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 700;
+    }
+    .student-attendance-stats {
+        display: grid;
+        gap: 12px;
+    }
+    .student-attendance-stat {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        color: var(--muted);
+        font-size: 14px;
+    }
+    .student-attendance-stat strong { color: var(--text); }
+    .student-progress-list {
+        display: grid;
+        gap: 18px;
+    }
+    .student-progress-item {
+        display: grid;
+        gap: 8px;
+    }
+    .student-progress-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: baseline;
+    }
+    .student-progress-title {
+        font-weight: 700;
+        color: var(--text);
+    }
+    .student-progress-delta.positive { color: var(--success); }
+    .student-progress-delta.neutral { color: var(--muted); }
+    .student-progress-track {
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(245, 166, 35, 0.16);
+        overflow: hidden;
+    }
+    .student-progress-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #f5a623, #f7c948);
+    }
+    .student-report-summary {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin-bottom: 18px;
+    }
+    .student-mini-metric {
+        padding: 16px;
+        border-radius: 18px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+    }
+    .student-mini-metric span {
+        display: block;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        margin-bottom: 10px;
+    }
+    .student-mini-metric strong {
+        font-size: 26px;
+        letter-spacing: -0.04em;
+        color: var(--text);
+    }
+    .student-plan-list { display: grid; gap: 12px; }
+    .student-plan-item {
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr);
+        gap: 14px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+    }
+    .student-plan-step {
+        width: 42px;
+        height: 42px;
+        border-radius: 999px;
+        background: rgba(79, 110, 247, 0.14);
+        color: #2d62ea;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+    }
+    .student-secondary-list { display: grid; gap: 12px; }
+    .student-report-item,
+    .student-feedback-item {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+        padding: 16px 18px;
+        border-radius: 18px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+    }
+    .student-report-item strong,
+    .student-feedback-item strong {
+        display: block;
+        color: var(--text);
+        margin-bottom: 6px;
+    }
+    .student-report-item small,
+    .student-feedback-item small {
+        color: var(--muted);
+        line-height: 1.7;
+    }
+    .student-empty {
+        padding: 26px;
+        border-radius: 24px;
+        border: 1px dashed var(--border2);
+        text-align: center;
+        color: var(--muted);
+        background: var(--surface2);
+    }
+    @media (max-width: 1100px) {
+        .student-portal-hero-grid,
+        .student-portal-main-grid,
+        .student-portal-bottom-grid,
+        .student-report-summary {
+            grid-template-columns: 1fr;
+        }
+        .student-portal-level { justify-self: stretch; max-width: none; }
+    }
+    @media (max-width: 720px) {
+        .student-portal-hero,
+        .student-portal-card { padding: 20px; border-radius: 22px; }
+        .student-session-meta { grid-template-columns: 1fr; }
+        .student-attendance-ring { width: 150px; height: 150px; }
+        .student-attendance-ring::after { width: 104px; height: 104px; }
+    }
+</style>
+
+<div class="student-portal-shell">
+    {% if featured %}
+    <section class="student-portal-hero">
+        <div class="student-portal-hero-grid">
+            <div>
+                <span class="student-portal-eyebrow"><i class="fa-solid fa-grip"></i> Student Portal</span>
+                <h2>Welcome back, {{ featured.member.full_name }}!</h2>
+                <p>{{ featured.momentum_body }}</p>
+            </div>
+            <div class="student-portal-level">
+                <div class="student-portal-level-top">
+                    <div>
+                        <small>Current Level</small>
+                        <strong>{{ featured.grade_label }}</strong>
+                        <div style="margin-top:8px;color:rgba(255,255,255,0.82);font-weight:600;">{{ featured.level_label }}</div>
+                    </div>
+                    <span class="student-portal-level-badge"><i class="fa-solid fa-trophy"></i></span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {% if student_portal.children|length > 1 %}
+    <section class="student-portal-switcher">
+        {% for child in student_portal.children %}
+        <a href="{{ child.profile_url }}" class="student-switch-card {% if child.member.pk == featured.member.pk %}active{% endif %}">
+            <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
+                <div>
+                    <strong style="font-size:18px;display:block;color:var(--text);">{{ child.member.full_name }}</strong>
+                    <div class="meta">
+                        {{ child.level_label }}<br>
+                        Attendance {{ child.attendance_rate }}%
+                    </div>
+                </div>
+                <span class="badge {{ child.member.status|status_badge }}">{{ child.status_label }}</span>
+            </div>
+        </a>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <section class="student-portal-main-grid">
+        <article class="student-portal-card">
+            <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;">
+                <div>
+                    <span class="student-portal-label">{% if featured.next_session %}Next Class{% else %}Schedule Status{% endif %}</span>
+                    {% if featured.next_session %}
+                    <h3 class="student-session-title">{{ featured.next_session.title }}</h3>
+                    {% else %}
+                    <h3 class="student-session-title">No class assigned yet</h3>
+                    {% endif %}
+                </div>
+                {% if featured.next_session %}
+                <div style="text-align:right;color:var(--muted);font-size:13px;line-height:1.7;">
+                    <strong style="display:block;color:var(--text);font-size:15px;">{{ featured.next_session.session_date|date:"D, d M Y" }}</strong>
+                    {{ featured.next_session.start_time|time:"H:i" }}
+                </div>
+                {% endif %}
+            </div>
+
+            {% if featured.next_session %}
+            <div class="student-session-meta">
+                <div class="student-session-meta-item">
+                    <i class="fa-regular fa-clock"></i>
+                    <span>{{ featured.next_session_duration|default:"Scheduled session" }}</span>
+                </div>
+                <div class="student-session-meta-item">
+                    <i class="fa-regular fa-user"></i>
+                    <span>{{ featured.coach_label }}</span>
+                </div>
+                <div class="student-session-meta-item full">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span>Court {{ featured.next_session.court }}</span>
+                </div>
+            </div>
+            <a href="{% url 'sessions:list' %}" class="student-session-cta">
+                <i class="fa-regular fa-calendar-check"></i> View Session Calendar
+            </a>
+            {% else %}
+            <div class="student-empty" style="margin-top:16px;">
+                Admin has not published the next session yet. You will see it here as soon as it is scheduled.
+            </div>
+            {% endif %}
+        </article>
+
+        <article class="student-portal-card">
+            <h3>Attendance Progress</h3>
+            <div class="student-attendance-wrap">
+                <div class="student-attendance-ring" style="background:conic-gradient(#10b981 0deg {{ featured.attendance_ring }}deg, rgba(148,163,184,0.18) {{ featured.attendance_ring }}deg 360deg);">
+                    <div class="student-attendance-value">
+                        <strong>{{ featured.attendance_rate }}%</strong>
+                        <span>Present</span>
+                    </div>
+                </div>
+            </div>
+            <div class="student-attendance-stats">
+                <div class="student-attendance-stat">
+                    <span>Classes Attended</span>
+                    <strong>{{ featured.attendance_count }}/{{ featured.total_logged|default:"0" }}</strong>
+                </div>
+                <div class="student-attendance-stat">
+                    <span>Streak</span>
+                    <strong>{{ featured.momentum_label }}</strong>
+                </div>
+                <div class="student-attendance-stat">
+                    <span>Outstanding Balance</span>
+                    <strong>RM {{ featured.outstanding_total|floatformat:2 }}</strong>
+                </div>
+            </div>
+        </article>
+    </section>
+
+    <section class="student-portal-bottom-grid">
+        <article class="student-portal-card" style="background:linear-gradient(180deg, rgba(245,166,35,0.08), rgba(245,166,35,0.02));border-color:rgba(245,166,35,0.22);">
+            <h3>Recent Progress</h3>
+            <div class="student-report-summary">
+                <div class="student-mini-metric">
+                    <span>Overall Score</span>
+                    <strong>{{ featured.overall_score }}</strong>
+                </div>
+                <div class="student-mini-metric">
+                    <span>Current Grade</span>
+                    <strong>{{ featured.grade_label }}</strong>
+                </div>
+                <div class="student-mini-metric">
+                    <span>Goal Reached</span>
+                    <strong>{{ featured.goal_reached }}%</strong>
+                </div>
+                <div class="student-mini-metric">
+                    <span>This Cycle</span>
+                    <strong>{{ featured.score_delta_label }}</strong>
+                </div>
+            </div>
+            <div class="student-progress-list">
+                {% for item in featured.progress_items %}
+                <div class="student-progress-item">
+                    <div class="student-progress-head">
+                        <div>
+                            <div class="student-progress-title">{{ item.label }}</div>
+                            <div style="font-size:12px;color:var(--muted);">Current score {{ item.value }}%</div>
+                        </div>
+                        <div class="student-progress-delta {{ item.tone }}">{{ item.delta_label }}</div>
+                    </div>
+                    <div class="student-progress-track">
+                        <div class="student-progress-fill" style="width:{{ item.value }}%;"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div style="margin-top:18px;">
+                <a href="{{ featured.report_url }}" class="btn btn-primary"><i class="fa-solid fa-chart-line"></i> View Full Report</a>
+            </div>
+        </article>
+
+        <article class="student-portal-card">
+            <h3>Training Plan</h3>
+            <div class="student-plan-list">
+                {% for item in featured.training_plan %}
+                <div class="student-plan-item">
+                    <span class="student-plan-step">{{ item.step }}</span>
+                    <div>
+                        <strong style="display:block;color:var(--text);margin-bottom:5px;">{{ item.title }}</strong>
+                        <small style="display:block;color:var(--muted);line-height:1.7;">{{ item.detail }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </article>
+    </section>
+
+    <section class="student-portal-bottom-grid">
+        <article class="student-portal-card">
+            <div style="display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
+                <h3 style="margin:0;">Recent Report Cards</h3>
+                <a href="{% url 'members:report_list' %}" class="section-link">Open reports</a>
+            </div>
+            <div class="student-secondary-list">
+                {% for report in student_portal.reports %}
+                <a href="{% url 'members:report_detail' report.pk %}" class="student-report-item">
+                    <strong>{{ report.period_label }}</strong>
+                    <small>{{ report.get_overall_status_display }} | Attendance {{ report.attendance_rate }}% | Coach {{ report.coach|default:"Coaching team" }}</small>
+                </a>
+                {% empty %}
+                <div class="student-empty">Published report cards will appear here once the coach completes them.</div>
+                {% endfor %}
+            </div>
+        </article>
+
+        <article class="student-portal-card">
+            <div style="display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
+                <h3 style="margin:0;">Payments And Feedback</h3>
+                <a href="{{ featured.payments_url }}" class="section-link">Open payments</a>
+            </div>
+            {% if student_portal.featured_invoice %}
+            <div class="student-report-item" style="margin-bottom:12px;">
+                <strong>{{ student_portal.featured_invoice.member.full_name }} - {{ student_portal.featured_invoice.period|date:"F Y" }}</strong>
+                <small>Due {{ student_portal.featured_invoice.due_date }} | RM {{ student_portal.featured_invoice.amount }} | <span class="badge {{ student_portal.featured_invoice.status|status_badge }}">{{ student_portal.featured_invoice.get_status_display }}</span></small>
+            </div>
+            {% endif %}
+            <div class="student-secondary-list">
+                {% for feedback in featured.recent_feedback %}
+                <a href="{{ featured.profile_url }}#feedback-{{ feedback.pk }}" class="student-feedback-item">
+                    <strong>{{ feedback.training_session.title }}</strong>
+                    <small>{{ feedback.training_session.session_date|date:"d M Y" }} | Coach {{ feedback.coach|default:"Coaching team" }}<br>{{ feedback.feedback_text|truncatewords:18 }}</small>
+                </a>
+                {% empty %}
+                <div class="student-empty">Session feedback and video updates will appear here after each completed class.</div>
+                {% endfor %}
+            </div>
+        </article>
+    </section>
+    {% else %}
+    <div class="student-empty">
+        No linked student profile is available yet. Once registration is approved, this portal will show session, attendance, and report card progress here.
+    </div>
+    {% endif %}
+</div>
+{% endwith %}

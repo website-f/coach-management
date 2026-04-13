@@ -1,105 +1,279 @@
 {% extends "base.html" %}
-{% load ui_tags %}
 
 {% block title %}Sessions | NYO Admin Dashboard{% endblock %}
-{% block page_heading %}Sessions{% endblock %}
+{% block page_heading %}Session Calendar{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css">
+<style>
+    .calendar-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+    }
+    .calendar-shell {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 12px;
+    }
+    .fc {
+        --fc-border-color: var(--border);
+        --fc-page-bg-color: transparent;
+        --fc-neutral-bg-color: transparent;
+        --fc-list-event-hover-bg-color: rgba(79,110,247,0.08);
+        --fc-small-font-size: 12px;
+        color: var(--text);
+    }
+    .fc .fc-toolbar.fc-header-toolbar {
+        margin-bottom: 1rem;
+    }
+    .fc .fc-button {
+        background: var(--surface2);
+        border: 1px solid var(--border2);
+        color: var(--text);
+        box-shadow: none;
+        text-transform: capitalize;
+    }
+    .fc .fc-button-primary:not(:disabled).fc-button-active,
+    .fc .fc-button-primary:not(:disabled):active,
+    .fc .fc-button:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+    }
+    .fc .fc-daygrid-day-number,
+    .fc .fc-col-header-cell-cushion {
+        color: var(--text);
+        text-decoration: none;
+    }
+    .fc .fc-day-today {
+        background: rgba(245, 166, 35, 0.08) !important;
+    }
+    .fc .fc-event {
+        border-radius: 10px;
+        padding: 2px 4px;
+        font-size: 11px;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="space-y">
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
+            <div>
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Planning Window</p>
+                <h2 style="font-size:28px;font-weight:700;color:var(--text);">{{ calendar_month_label }}</h2>
+                <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;max-width:760px;">
+                    {% if can_plan %}
+                    Admin owns the schedule here. Create one-off or recurring monthly sessions, assign the coach and students, then let the system notify everyone automatically.
+                    {% else %}
+                    Your session calendar is synced from the admin plan. Open any event to view the roster, attendance, and follow-up actions.
+                    {% endif %}
+                </p>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <a href="?month={{ prev_month }}{% if selected_coach %}&coach={{ selected_coach }}{% endif %}{% if selected_member %}&member={{ selected_member }}{% endif %}" class="btn btn-ghost">
+                    <i class="fa-solid fa-chevron-left"></i> Previous
+                </a>
+                <a href="?month={{ next_month }}{% if selected_coach %}&coach={{ selected_coach }}{% endif %}{% if selected_member %}&member={{ selected_member }}{% endif %}" class="btn btn-ghost">
+                    Next <i class="fa-solid fa-chevron-right"></i>
+                </a>
+                {% if can_plan %}
+                <a href="{% url 'sessions:create' %}" class="btn btn-primary">
+                    <i class="fa-solid fa-plus"></i> Create Schedule
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 
-    <!-- Filter Bar -->
+    <div class="stat-cards">
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Sessions This Month</p>
+                    <p class="stat-value">{{ month_total_sessions }}</p>
+                </div>
+                <div class="stat-icon"><i class="fa-solid fa-calendar-days"></i></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Player Slots</p>
+                    <p class="stat-value">{{ month_total_players }}</p>
+                </div>
+                <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Pending Attendance</p>
+                    <p class="stat-value">{{ month_pending_attendance }}</p>
+                </div>
+                <div class="stat-icon" style="background:rgba(245,158,11,.12);color:#fbbf24;"><i class="fa-solid fa-clipboard-check"></i></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Visible Window</p>
+                    <p class="stat-value" style="font-size:20px;">{{ month_start|date:"d M" }} - {{ month_end|date:"d M" }}</p>
+                </div>
+                <div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-eye"></i></div>
+            </div>
+        </div>
+    </div>
+
     <div class="filter-bar">
         <form method="get" class="filter-fields">
+            <input type="hidden" name="month" value="{{ selected_month }}">
             <div class="filter-field">
                 <label>Coach</label>
-                <select name="coach" id="coachFilter">
+                <select name="coach">
                     <option value="">All coaches</option>
                     {% for coach in coaches %}
-                    <option value="{{ coach.id }}" {% if request.GET.coach == coach.id|stringformat:"s" %}selected{% endif %}>{{ coach.get_full_name|default:coach.username }}</option>
+                    <option value="{{ coach.id }}" {% if selected_coach == coach.id|stringformat:"s" %}selected{% endif %}>
+                        {{ coach.get_full_name|default:coach.username }}
+                    </option>
                     {% endfor %}
                 </select>
             </div>
             <div class="filter-field">
-                <label>Session Date</label>
-                <input type="date" name="session_date" id="session_date" value="{{ request.GET.session_date }}">
+                <label>Member</label>
+                <select name="member">
+                    <option value="">All members</option>
+                    {% for member in members %}
+                    <option value="{{ member.id }}" {% if selected_member == member.id|stringformat:"s" %}selected{% endif %}>
+                        {{ member.full_name }}
+                    </option>
+                    {% endfor %}
+                </select>
             </div>
             <div class="filter-actions" style="margin-top:auto;">
-                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filter</button>
-                {% if request.GET.coach or request.GET.session_date %}
-                <a href="{% url 'sessions:list' %}" class="btn btn-ghost">Clear</a>
-                {% endif %}
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Apply</button>
+                <a href="{% url 'sessions:list' %}?month={{ selected_month }}" class="btn btn-ghost">Reset</a>
             </div>
         </form>
-        </form>
     </div>
 
-    <!-- Page injected table actions -->
-    {% if can_manage %}
-    <div class="page-table-actions" style="display:none;">
-        <a href="{% url 'sessions:create' %}" class="dt-button" style="background:var(--accent)!important;color:#fff!important;border-color:var(--accent-h)!important;">
-            <i class="fa-solid fa-plus"></i> Create Session
-        </a>
+    <div class="card">
+        <div class="calendar-toolbar">
+            <div>
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Responsive Calendar</p>
+                <p style="font-size:14px;color:var(--text);margin-top:4px;">Tap an event to open the session hub.</p>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <span class="badge badge-warning">Upcoming</span>
+                <span class="badge badge-neutral">Past</span>
+            </div>
+        </div>
+        <div class="calendar-shell">
+            <div id="sessionCalendar"></div>
+        </div>
     </div>
-    {% endif %}
 
-    <!-- Desktop/Mobile Responsive DataTables -->
-    <div class="table-wrap">
-        <table class="tbl">
-            <thead>
-                <tr>
-                    <th style="width: 40px; text-align: left; padding-left: 24px;"><input type="checkbox" class="select-all"></th>
-                    <th>Session and details</th>
-                    <th>Coach</th>
-                    <th>Court</th>
-                    <th>Attendance</th>
-                    <th class="not-export-col">Action</th>
-                </tr>
-            </thead>
-            <tbody>
+    <div class="grid-2">
+        <div class="card">
+            <div class="section-header">
+                <span class="section-title">Monthly Session Agenda</span>
+                {% if can_plan %}
+                <a href="{% url 'sessions:create' %}" class="section-link">Plan another</a>
+                {% endif %}
+            </div>
+            <div class="space-y">
                 {% for session in sessions %}
-                <tr>
-                    <td style="padding-left: 24px; vertical-align: middle;"><input type="checkbox" class="row-checkbox" value="{{ session.id }}"></td>
-                    <td>
-                        <div style="display:flex;align-items:center;gap:12px;">
-                            <div style="width:36px;height:36px;border-radius:12px;background:rgba(22, 163, 74, 0.1);color:var(--success);display:flex;align-items:center;justify-content:center;font-size:16px;">
-                                <i class="fa-solid fa-calendar"></i>
-                            </div>
-                            <div>
-                                <div class="tbl-name">{{ session.title }}</div>
-                                <div class="tbl-sub">{{ session.session_date }} &nbsp;·&nbsp; {{ session.start_time|time:"H:i" }} – {{ session.end_time|time:"H:i" }}</div>
-                            </div>
+                <div class="card-inset">
+                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+                        <div>
+                            <p style="font-weight:700;font-size:15px;color:var(--text);">{{ session.title }}</p>
+                            <p class="text-sm text-muted" style="margin-top:6px;">
+                                {{ session.session_date }} · {{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}<br>
+                                Coach: {{ session.coach|default:"Unassigned" }} · Court {{ session.court }} · {{ session.attendance_records.count }} player(s)
+                            </p>
                         </div>
-                    </td>
-                    <td class="muted">{{ session.coach|default:"Unassigned" }}</td>
-                    <td class="muted">{{ session.court }}</td>
-                    <td>
-                        <span class="badge badge-info">{{ session.attendance_records.count }} player(s)</span>
-                    </td>
-                    <td>
-                        <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                            <a href="{% url 'sessions:detail' session.pk %}" class="btn btn-ghost btn-xs">View</a>
-                            {% if can_manage %}
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <a href="{% url 'sessions:detail' session.pk %}" class="btn btn-ghost btn-xs">Open</a>
+                            {% if can_plan %}
                             <a href="{% url 'sessions:edit' session.pk %}" class="btn btn-xs" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:99px;padding:4px 12px;">Edit</a>
                             {% endif %}
                             {% if can_mark_attendance %}
-                            <a href="{% url 'sessions:attendance' session.pk %}" class="btn btn-xs" style="background:var(--success);color:#fff;border-radius:99px;padding:4px 12px;">Attendance</a>
+                            <a href="{% url 'sessions:attendance' session.pk %}" class="btn btn-success btn-xs">Attendance</a>
                             {% endif %}
                         </div>
-                    </td>
-                </tr>
+                    </div>
+                </div>
                 {% empty %}
+                <div class="empty-state">
+                    <i class="fa-regular fa-calendar-xmark"></i>
+                    <p>No sessions are scheduled in this month yet.</p>
+                </div>
                 {% endfor %}
-            </tbody>
-        </table>
-    </div>
+            </div>
+        </div>
 
+        <div class="card">
+            <div class="section-header">
+                <span class="section-title">Scheduling Rules</span>
+            </div>
+            <div class="space-y">
+                <div class="card-inset">
+                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Admin-led planning</p>
+                    <p style="font-size:14px;color:var(--text);line-height:1.7;">Only admins can create or update the schedule. Coaches, parents, and headcount get the live calendar instantly after the plan is published.</p>
+                </div>
+                <div class="card-inset">
+                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Recurring sessions</p>
+                    <p style="font-size:14px;color:var(--text);line-height:1.7;">Choose “Repeat weekly for this month” inside the session form, then tick Friday, Saturday, or any weekday combination to generate the month schedule in one step.</p>
+                </div>
+                <div class="card-inset">
+                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Alerts</p>
+                    <p style="font-size:14px;color:var(--text);line-height:1.7;">Every scheduled session can push an in-system notification and Gmail SMTP email to the assigned coach and linked parent accounts.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarEl = document.getElementById('sessionCalendar');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: window.innerWidth < 768 ? 'listMonth' : 'dayGridMonth',
+            height: 'auto',
+            initialDate: '{{ calendar_initial_date }}',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,listMonth'
+            },
+            events: {{ calendar_events_json|safe }},
+            eventClick: function(info) {
+                if (info.event.url) {
+                    info.jsEvent.preventDefault();
+                    window.location.href = info.event.url;
+                }
+            },
+            windowResize: function() {
+                const nextView = window.innerWidth < 768 ? 'listMonth' : 'dayGridMonth';
+                if (calendar.view.type !== nextView) {
+                    calendar.changeView(nextView);
+                }
+            }
+        });
+        calendar.render();
+    });
+
     $(document).ready(function() {
-        $('select').not('[multiple]').select2({ theme:'default', allowClear:true });
+        $('select').not('[multiple]').select2({ theme: 'default', allowClear: true });
     });
 </script>
 {% endblock %}

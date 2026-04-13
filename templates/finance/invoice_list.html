@@ -35,15 +35,16 @@
                 {% endif %}
             </div>
         </form>
-        </form>
     </div>
 
     <!-- Page injected table actions -->
+    {% if can_manage %}
     <div class="page-table-actions" style="display:none;">
         <a href="{% url 'finance:invoice_create' %}" class="dt-button" style="background:var(--accent)!important;color:#fff!important;border-color:var(--accent-h)!important;">
             <i class="fa-solid fa-plus"></i> Generate Invoice
         </a>
     </div>
+    {% endif %}
 
     <!-- Desktop Table -->
     <div class="table-wrap" id="desktopTable" style="display:none;">
@@ -73,14 +74,18 @@
                             </div>
                             <div>
                                 <div class="tbl-name">{{ invoice.member.full_name }}</div>
-                                <div class="tbl-sub">Invoice #{{ invoice.id|stringformat:"06d" }}</div>
+                                <div class="tbl-sub">{{ invoice.get_invoice_type_display }} · Invoice #{{ invoice.id|stringformat:"06d" }}</div>
                             </div>
                         </div>
                     </td>
                     <td style="font-weight:600;color:var(--success);">{{ invoice.amount }}</td>
                     <td><span class="badge {{ invoice.status|status_badge }}">{{ invoice.get_status_display|lower }}</span></td>
                     <td>
+                        {% if can_manage %}
                         <a href="{% url 'finance:invoice_edit' invoice.pk %}" class="btn btn-xs" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:99px;padding:4px 12px;">Edit</a>
+                        {% else %}
+                        <span class="text-sm text-muted">Read only</span>
+                        {% endif %}
                     </td>
                 </tr>
                 {% empty %}
@@ -102,7 +107,11 @@
                 <span class="badge {{ invoice.status|status_badge }}">{{ invoice.get_status_display }}</span>
             </div>
             <div style="margin-top:12px;">
+                {% if can_manage %}
                 <a href="{% url 'finance:invoice_edit' invoice.pk %}" class="btn btn-sm w-full" style="justify-content:center;background:rgba(79,110,247,.1);color:var(--accent);border:1px solid rgba(79,110,247,.25);">Edit Invoice</a>
+                {% else %}
+                <span class="badge badge-neutral" style="margin-top:8px;">Read only</span>
+                {% endif %}
             </div>
         </div>
         {% empty %}

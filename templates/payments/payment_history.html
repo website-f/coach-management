@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+
+{% block title %}Payment History | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}Payment History{% endblock %}
+
+{% block content %}
+<div class="space-y">
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
+            <div>
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Finance tracking</p>
+                <h2 style="font-size:28px;font-weight:700;color:var(--text);">
+                    {% if can_review %}All Payment Activity{% else %}Student Payment Activity{% endif %}
+                </h2>
+                <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;max-width:760px;">
+                    {% if can_review %}
+                    Review the full payment trail here. Admin can open the pending queue to approve or reject uploaded proofs.
+                    {% else %}
+                    Coaches can monitor the payment status of their assigned students here. Verification still stays with admin only.
+                    {% endif %}
+                </p>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                {% if can_review %}
+                <a href="{% url 'payments:pending_reviews' %}" class="btn btn-primary">
+                    <i class="fa-solid fa-receipt"></i> Open Verification Queue
+                </a>
+                {% endif %}
+                <a href="{% url 'finance:invoice_list' %}" class="btn btn-ghost">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> View Invoices
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-cards">
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Pending Proofs</p>
+                    <p class="stat-value">{{ pending_count }}</p>
+                </div>
+                <div class="stat-icon" style="background:rgba(245,158,11,.12);color:#fbbf24;"><i class="fa-solid fa-hourglass-half"></i></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Approved Total</p>
+                    <p class="stat-value">RM {{ approved_total }}</p>
+                </div>
+                <div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-wallet"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="filter-bar">
+        <form method="get" class="filter-fields">
+            <div class="filter-field">
+                <label>Status</label>
+                <select name="status">
+                    <option value="">All statuses</option>
+                    {% for value, label in statuses %}
+                    <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-field">
+                <label>Member</label>
+                <select name="member">
+                    <option value="">All members</option>
+                    {% for member_id, member_name in members %}
+                    <option value="{{ member_id }}" {% if request.GET.member == member_id|stringformat:"s" %}selected{% endif %}>{{ member_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-actions" style="margin-top:auto;">
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filter</button>
+                <a href="{% url 'payments:payment_history' %}" class="btn btn-ghost">Clear</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-wrap">
+        <table class="tbl">
+            <thead>
+                <tr>
+                    <th>Member</th>
+                    <th>Period</th>
+                    <th>Submitted By</th>
+                    <th>Status</th>
+                    <th>Submitted At</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                <tr>
+                    <td>
+                        <div class="tbl-name">{{ payment.invoice.member.full_name }}</div>
+                        <div class="tbl-sub">{{ payment.invoice.get_invoice_type_display }} · RM {{ payment.invoice.amount }}</div>
+                    </td>
+                    <td class="muted">{{ payment.invoice.period|date:"F Y" }}</td>
+                    <td class="muted">{{ payment.paid_by|default:"Unknown" }}</td>
+                    <td><span class="badge {{ payment.status|status_badge }}">{{ payment.get_status_display }}</span></td>
+                    <td class="muted">{{ payment.submitted_at|date:"d M Y H:i" }}</td>
+                    <td>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            {% if payment.proof_image %}
+                            <a href="{{ payment.proof_image.url }}" target="_blank" class="btn btn-ghost btn-xs">Proof</a>
+                            {% endif %}
+                            {% if can_review and payment.status == 'pending' %}
+                            <a href="{% url 'payments:review' payment.pk %}" class="btn btn-xs" style="background:rgba(79,110,247,.1);color:var(--accent);border:1px solid rgba(79,110,247,.25);border-radius:99px;padding:4px 12px;">Review</a>
+                            {% else %}
+                            <span class="text-sm text-muted">Read only</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i class="fa-regular fa-credit-card"></i>
+                            <p>No payment records match the current filters.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('select').not('[multiple]').select2({ theme: 'default', allowClear: true });
+    });
+</script>
+{% endblock %}
