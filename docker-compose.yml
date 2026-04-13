@@ -24,8 +24,8 @@ services:
         - python -c "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/health/', timeout=5)"
       interval: 20s
       timeout: 5s
-      retries: 6
-      start_period: 45s
+      retries: 12
+      start_period: 180s
     volumes:
       - media_data:/app/media
       - static_data:/app/staticfiles
@@ -60,8 +60,7 @@ services:
     env_file:
       - .env
     depends_on:
-      web:
-        condition: service_healthy
+      - web
     ports:
       - "80:80"
       - "443:443"
@@ -92,9 +91,12 @@ services:
     container_name: nyo-dashboard-ollama
     restart: unless-stopped
     environment:
-      OLLAMA_KEEP_ALIVE: 24h
-    ports:
-      - "11434:11434"
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-10m}
+      OLLAMA_MAX_LOADED_MODELS: ${OLLAMA_MAX_LOADED_MODELS:-1}
+      OLLAMA_NUM_PARALLEL: ${OLLAMA_NUM_PARALLEL:-1}
+      OLLAMA_MAX_QUEUE: ${OLLAMA_MAX_QUEUE:-32}
+    expose:
+      - "11434"
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 20s

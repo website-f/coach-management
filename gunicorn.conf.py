@@ -4,8 +4,8 @@ import os
 
 bind = "0.0.0.0:8000"
 worker_class = "gthread"
-workers = int(os.environ.get("WEB_CONCURRENCY", max(2, min(4, multiprocessing.cpu_count()))))
-threads = int(os.environ.get("GUNICORN_THREADS", "4"))
+workers = int(os.environ.get("WEB_CONCURRENCY", max(1, min(2, multiprocessing.cpu_count()))))
+threads = int(os.environ.get("GUNICORN_THREADS", "2"))
 timeout = int(os.environ.get("GUNICORN_TIMEOUT", "120"))
 graceful_timeout = int(os.environ.get("GUNICORN_GRACEFUL_TIMEOUT", "30"))
 keepalive = int(os.environ.get("GUNICORN_KEEPALIVE", "10"))

@@ -185,6 +185,9 @@ Default AI settings in `.env`:
 - `AI_PLANNER_FALLBACK_ENABLED=1`
 - `OLLAMA_BASE_URL=http://ollama:11434`
 - `OLLAMA_MODEL=qwen2.5:3b`
+- `OLLAMA_KEEP_ALIVE=10m`
+- `OLLAMA_MAX_LOADED_MODELS=1`
+- `OLLAMA_NUM_PARALLEL=1`
 
 Notes:
 
@@ -192,3 +195,19 @@ Notes:
 - until the model is ready, the planner can fall back to the built-in deterministic session blueprint
 - once pulled, the Qwen model stays cached in the `ollama_data` volume
 - repeated prompts can reuse saved session-plan answers for faster responses
+- the web container now allows a longer first-boot health window because migration, collectstatic, and initial seed can take a while on smaller VPS instances
+
+## VPS-friendly defaults
+
+The current defaults are tuned to be safer on a modest VPS:
+
+- `WEB_CONCURRENCY=1`
+- `GUNICORN_THREADS=2`
+- Ollama keeps only one model loaded
+- Ollama answers one request at a time by default
+
+If your VPS is stronger, you can raise:
+
+- `WEB_CONCURRENCY`
+- `GUNICORN_THREADS`
+- `OLLAMA_NUM_PARALLEL`
