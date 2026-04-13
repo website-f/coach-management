@@ -4,204 +4,514 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sign In | NYO Dashboard</title>
-  <script>(function(){var t=localStorage.getItem('nyo-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <script>
+    (function () {
+      var theme = localStorage.getItem("nyo-theme") || "dark";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
   <style>
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-    :root,[data-theme="dark"]{
-      --bg:#0a0a0f;--surface:#13131a;--surface2:#1c1c25;
-      --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.12);
-      --text:#f0f0f4;--muted:#8a8a9a;--accent:#4f6ef7;--accent-h:#3b5bdb;
-      --danger:#ef4444;--r:14px;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root,
+    [data-theme="dark"] {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --surface-2: #1b1b25;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-2: rgba(255, 255, 255, 0.12);
+      --text: #f0f0f4;
+      --muted: #8a8a9a;
+      --accent: #4f6ef7;
+      --accent-2: #3b5bdb;
+      --success-bg: rgba(34, 197, 94, 0.12);
+      --success-border: rgba(34, 197, 94, 0.24);
+      --success-text: #86efac;
+      --danger-bg: rgba(239, 68, 68, 0.1);
+      --danger-border: rgba(239, 68, 68, 0.22);
+      --danger-text: #fca5a5;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
     }
-    [data-theme="light"]{
-      --bg:#f4f4f8;--surface:#ffffff;--surface2:#f0f0f5;
-      --border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.11);
-      --text:#0f0f11;--muted:#6b6b82;--accent:#4f6ef7;--accent-h:#3b5bdb;
-      --danger:#dc2626;--r:14px;
+
+    [data-theme="light"] {
+      --bg: #f4f4f8;
+      --surface: #ffffff;
+      --surface-2: #f0f0f5;
+      --border: rgba(0, 0, 0, 0.07);
+      --border-2: rgba(0, 0, 0, 0.12);
+      --text: #14141a;
+      --muted: #68687c;
+      --accent: #4f6ef7;
+      --accent-2: #3b5bdb;
+      --success-bg: rgba(34, 197, 94, 0.1);
+      --success-border: rgba(34, 197, 94, 0.2);
+      --success-text: #15803d;
+      --danger-bg: rgba(239, 68, 68, 0.1);
+      --danger-border: rgba(239, 68, 68, 0.2);
+      --danger-text: #b91c1c;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.08);
     }
-    html,body{height:100%;font-family:"Inter",sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;transition:background .2s,color .2s;}
 
-    /* ── Theme toggle ── */
-    .theme-btn{position:fixed;top:16px;right:16px;z-index:99;width:36px;height:36px;border-radius:9px;background:var(--surface2);border:1px solid var(--border2);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .2s;}
-    .theme-btn:hover{background:var(--border);color:var(--text);}
-
-    /* ── Layout ── */
-    .wrap{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;}
-
-    /* ── Left panel ── */
-    .left{
-      background:var(--surface);border-right:1px solid var(--border);
-      display:flex;flex-direction:column;justify-content:space-between;
-      padding:48px 52px;position:relative;overflow:hidden;
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -webkit-text-size-adjust: 100%;
     }
-    .left::before{
-      content:"";position:absolute;top:-120px;left:-80px;
-      width:420px;height:420px;border-radius:50%;
-      background:radial-gradient(circle,rgba(79,110,247,.12) 0%,transparent 70%);
-      pointer-events:none;
+
+    body {
+      position: relative;
+      overflow-x: hidden;
     }
-    .left-content{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;justify-content:center;padding:40px 0;}
-    .brand{display:flex;align-items:center;gap:12px;position:relative;z-index:1;}
-    .brand-ico{width:40px;height:40px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;}
-    .brand-text small{display:block;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;}
-    .brand-text strong{font-family:"Space Grotesk",sans-serif;font-size:15px;font-weight:700;color:var(--text);}
-    .left-content h2{font-family:"Space Grotesk",sans-serif;font-size:32px;font-weight:700;letter-spacing:-.03em;line-height:1.15;color:var(--text);max-width:380px;}
-    .left-content p{margin-top:14px;color:var(--muted);font-size:14px;line-height:1.8;max-width:360px;}
-    .feat-list{display:flex;flex-direction:column;gap:12px;margin-top:28px;}
-    .feat-item{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;}
-    .feat-item i{color:var(--accent);font-size:13px;width:18px;text-align:center;}
-    .left-foot{font-size:12px;color:var(--muted);position:relative;z-index:1;}
 
-    /* ── Right panel (form) ── */
-    .right{display:flex;align-items:center;justify-content:center;padding:52px 36px;background:var(--bg);}
-    .form-box{width:100%;max-width:400px;}
-    .eyebrow{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
-    .form-box h1{font-family:"Space Grotesk",sans-serif;font-size:26px;font-weight:700;letter-spacing:-.03em;color:var(--text);margin-bottom:8px;}
-    .form-box .sub{color:var(--muted);font-size:13.5px;line-height:1.7;margin-bottom:28px;}
-
-    /* Form fields */
-    .field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
-    .field label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;}
-    .input-wrap{position:relative;}
-    .input-ico{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none;}
-    .field input{
-      width:100%;background:var(--surface);border:1px solid var(--border2);
-      border-radius:var(--r);color:var(--text);font-family:inherit;font-size:14px;
-      padding:12px 42px;outline:none;
-      transition:border-color .18s,box-shadow .18s;
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      border-radius: 999px;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.5;
+      filter: blur(100px);
     }
-    .field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,110,247,.14);}
-    .field .toggle-pw{
-      position:absolute;right:12px;top:50%;transform:translateY(-50%);
-      background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0;
-      transition:color .18s;
+
+    body::before {
+      width: 340px;
+      height: 340px;
+      top: -120px;
+      left: -80px;
+      background: rgba(79, 110, 247, 0.2);
     }
-    .field .toggle-pw:hover{color:var(--text);}
 
-    /* Error */
-    .err{display:flex;align-items:center;gap:9px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.28);border-radius:10px;padding:11px 14px;font-size:13px;color:#f87171;margin-bottom:16px;}
-
-    /* Submit */
-    .btn-submit{
-      width:100%;background:var(--accent);color:#fff;border:none;
-      border-radius:var(--r);font-family:inherit;font-size:14px;font-weight:600;
-      padding:13px;cursor:pointer;transition:background .18s,transform .15s;margin-top:4px;
-      display:flex;align-items:center;justify-content:center;gap:8px;
+    body::after {
+      width: 300px;
+      height: 300px;
+      right: -80px;
+      bottom: -80px;
+      background: rgba(59, 91, 219, 0.18);
     }
-    .btn-submit:hover{background:var(--accent-h);}
-    .btn-submit:active{transform:scale(.98);}
 
-    /* Footer note */
-    .form-note{margin-top:20px;padding:14px;border-radius:11px;background:var(--surface);border:1px solid var(--border2);color:var(--muted);font-size:12.5px;line-height:1.7;}
-    .form-note a{color:var(--accent);text-decoration:none;}
-    .form-note a:hover{text-decoration:underline;}
-    .back-link{display:inline-flex;align-items:center;gap:7px;margin-top:16px;color:var(--muted);font-size:13px;text-decoration:none;transition:color .18s;}
-    .back-link:hover{color:var(--text);}
+    .theme-btn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 3;
+      border: 1px solid var(--border-2);
+      background: var(--surface);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 9px 14px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
 
-    /* Responsive */
-    @media(max-width:800px){
-      .wrap{grid-template-columns:1fr;}
-      .left{display:none;}
-      .right{padding:40px 20px;min-height:100vh;}
-      .form-box{max-width:100%;}
+    .wrap {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(320px, 0.95fr) minmax(340px, 0.85fr);
+      position: relative;
+      z-index: 1;
+    }
+
+    .panel {
+      padding: 56px 56px 48px;
+    }
+
+    .panel-left {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-right: 1px solid var(--border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+    }
+
+    .brand-copy small {
+      display: block;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 10px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .brand-copy strong {
+      display: block;
+      font-size: 15px;
+      letter-spacing: -0.02em;
+    }
+
+    .hero {
+      max-width: 430px;
+      padding: 48px 0;
+    }
+
+    .eyebrow {
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 11px;
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+
+    .hero h1 {
+      font-size: clamp(32px, 5vw, 52px);
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      margin-bottom: 16px;
+    }
+
+    .hero p {
+      color: var(--muted);
+      line-height: 1.8;
+      font-size: 14px;
+      max-width: 380px;
+    }
+
+    .feature-list {
+      list-style: none;
+      display: grid;
+      gap: 14px;
+      margin-top: 30px;
+    }
+
+    .feature-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .feature-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 8px;
+      flex-shrink: 0;
+      background: var(--accent);
+      box-shadow: 0 0 0 5px rgba(79, 110, 247, 0.12);
+    }
+
+    .panel-left footer {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .panel-right {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .form-card {
+      width: 100%;
+      max-width: 420px;
+      border: 1px solid var(--border);
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 34px 30px 28px;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .form-card h2 {
+      font-size: 28px;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+
+    .form-sub {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.75;
+      margin-bottom: 22px;
+    }
+
+    .banner {
+      border-radius: 16px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .banner-success {
+      background: var(--success-bg);
+      border: 1px solid var(--success-border);
+      color: var(--success-text);
+    }
+
+    .banner-error {
+      background: var(--danger-bg);
+      border: 1px solid var(--danger-border);
+      color: var(--danger-text);
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    .field label {
+      display: block;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 11px;
+      font-weight: 800;
+      margin-bottom: 7px;
+    }
+
+    .field input {
+      width: 100%;
+      border-radius: 16px;
+      border: 1px solid var(--border-2);
+      background: var(--surface-2);
+      color: var(--text);
+      font: inherit;
+      font-size: 14px;
+      padding: 13px 14px;
+      outline: none;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+
+    .field input:focus {
+      border-color: rgba(79, 110, 247, 0.85);
+      box-shadow: 0 0 0 4px rgba(79, 110, 247, 0.14);
+      background: var(--surface);
+    }
+
+    .password-row {
+      position: relative;
+    }
+
+    .password-row input {
+      padding-right: 74px;
+    }
+
+    .toggle-pw {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 10px;
+    }
+
+    .submit-btn {
+      width: 100%;
+      border: none;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #fff;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 13px 16px;
+      cursor: pointer;
+      transition: transform 0.16s ease, opacity 0.16s ease;
+    }
+
+    .submit-btn:active {
+      transform: scale(0.99);
+    }
+
+    .note {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.7;
+    }
+
+    .back-link {
+      display: inline-flex;
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 13px;
+      text-decoration: none;
+    }
+
+    .back-link:hover {
+      color: var(--text);
+    }
+
+    @media (max-width: 920px) {
+      .wrap {
+        grid-template-columns: 1fr;
+      }
+
+      .panel-left {
+        display: none;
+      }
+
+      .panel-right {
+        padding: 78px 18px 28px;
+      }
+
+      .form-card {
+        max-width: 100%;
+        padding: 28px 20px 24px;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
+
+      body::before,
+      body::after {
+        display: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .theme-btn,
+      .submit-btn,
+      .field input {
+        transition: none;
+      }
     }
   </style>
 </head>
 <body>
-<button class="theme-btn" id="themeBtn" aria-label="Toggle theme"><i class="fa-solid fa-sun" id="themeIco"></i></button>
+  <button class="theme-btn" id="themeBtn" type="button">Theme</button>
 
-<div class="wrap">
-  <!-- Left: info panel -->
-  <div class="left">
-    <div class="brand">
-      <div class="brand-ico"><i class="fa-solid fa-shuttlecock"></i></div>
-      <div class="brand-text">
-        <small>Badminton Club</small>
-        <strong>NYO Dashboard</strong>
+  <div class="wrap">
+    <section class="panel panel-left">
+      <div class="brand">
+        <div class="brand-mark">NYO</div>
+        <div class="brand-copy">
+          <small>Badminton Club</small>
+          <strong>NYO Dashboard</strong>
+        </div>
       </div>
-    </div>
-    <div class="left-content">
-      <h2>Your complete club management system.</h2>
-      <p>Sign in to access your workspace — tailored automatically to your role as admin, coach, attendance staff, or parent.</p>
-      <div class="feat-list">
-        <div class="feat-item"><i class="fa-solid fa-users"></i> Member management &amp; profiles</div>
-        <div class="feat-item"><i class="fa-solid fa-calendar-days"></i> Training sessions &amp; attendance</div>
-        <div class="feat-item"><i class="fa-solid fa-file-invoice-dollar"></i> Invoices &amp; payment verification</div>
-        <div class="feat-item"><i class="fa-solid fa-file-lines"></i> Progress reports &amp; report cards</div>
-        <div class="feat-item"><i class="fa-solid fa-wand-magic-sparkles"></i> AI session planner for coaches</div>
+
+      <div class="hero">
+        <p class="eyebrow">Club Workspace</p>
+        <h1>Sign in quickly and get back to training operations.</h1>
+        <p>
+          Admin, coach, headcount, and parent users all enter from the same place.
+          Your workspace and permissions are applied automatically after login.
+        </p>
+        <ul class="feature-list">
+          <li><span class="feature-dot"></span><span>Member profiles, schedules, and attendance in one place.</span></li>
+          <li><span class="feature-dot"></span><span>Finance, invoices, and payment verification for each role.</span></li>
+          <li><span class="feature-dot"></span><span>Coach planning, reports, and student progress follow-up.</span></li>
+          <li><span class="feature-dot"></span><span>Mobile-friendly access for staff and parents on the go.</span></li>
+        </ul>
       </div>
-    </div>
-    <div class="left-foot">© NYO Badminton Club · Club Management System</div>
-  </div>
 
-  <!-- Right: form -->
-  <div class="right">
-    <div class="form-box">
-      <p class="eyebrow">Welcome back</p>
-      <h1>Sign in to your account</h1>
-      <p class="sub">Enter your credentials below. Your dashboard will be customised automatically based on your account role.</p>
+      <footer>NYO Badminton Club | Club management system</footer>
+    </section>
 
-      {% if form.errors %}
-      <div class="err">
-        <i class="fa-solid fa-circle-exclamation"></i>
-        Incorrect username or password. Please try again.
-      </div>
-      {% endif %}
+    <section class="panel panel-right">
+      <div class="form-card">
+        <p class="eyebrow">Welcome back</p>
+        <h2>Sign in</h2>
+        <p class="form-sub">
+          Enter your account details below. The dashboard will open directly into your role workspace.
+        </p>
 
-      <form method="post" autocomplete="on">
-        {% csrf_token %}
-        <div class="field">
-          <label for="id_username">Username</label>
-          <div class="input-wrap">
-            <i class="fa-solid fa-user input-ico"></i>
+        {% if request.GET.logged_out %}
+        <div class="banner banner-success">
+          You have been signed out successfully.
+        </div>
+        {% endif %}
+
+        {% if form.errors %}
+        <div class="banner banner-error">
+          Incorrect username or password. Please try again.
+        </div>
+        {% endif %}
+
+        <form method="post" autocomplete="on">
+          {% csrf_token %}
+          <div class="field">
+            <label for="id_username">Username</label>
             <input type="text" name="username" id="id_username" placeholder="Enter your username" required autofocus autocomplete="username">
           </div>
-        </div>
-        <div class="field">
-          <label for="id_password">Password</label>
-          <div class="input-wrap">
-            <i class="fa-solid fa-lock input-ico"></i>
-            <input type="password" name="password" id="id_password" placeholder="Enter your password" required autocomplete="current-password" style="padding-right:42px;">
-            <button type="button" class="toggle-pw" id="togglePw"><i class="fa-regular fa-eye" id="pwIco"></i></button>
+
+          <div class="field">
+            <label for="id_password">Password</label>
+            <div class="password-row">
+              <input type="password" name="password" id="id_password" placeholder="Enter your password" required autocomplete="current-password">
+              <button type="button" class="toggle-pw" id="togglePw">Show</button>
+            </div>
           </div>
+
+          <button type="submit" class="submit-btn">Sign In</button>
+        </form>
+
+        <div class="note">
+          If you cannot access your account, contact the club administrator to verify your role and password.
         </div>
-        <button type="submit" class="btn-submit">
-          <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In
-        </button>
-      </form>
 
-      <div class="form-note">
-        Your role (Admin, Coach, Attendance, or Parent) is detected automatically. If you cannot log in, contact your club administrator.
+        <a href="/" class="back-link">Back to home</a>
       </div>
-      <a href="/" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to home</a>
-    </div>
+    </section>
   </div>
-</div>
 
-<script>
-  // Password toggle
-  document.getElementById('togglePw')?.addEventListener('click', function() {
-    var inp = document.getElementById('id_password');
-    var ico = document.getElementById('pwIco');
-    inp.type = inp.type === 'password' ? 'text' : 'password';
-    ico.className = inp.type === 'password' ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash';
-  });
-  // Theme
-  var html = document.documentElement;
-  var themeBtn = document.getElementById('themeBtn');
-  var themeIco = document.getElementById('themeIco');
-  function syncIco(t){ themeIco.className = t === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon'; }
-  syncIco(html.getAttribute('data-theme'));
-  themeBtn.addEventListener('click', function() {
-    var next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    html.setAttribute('data-theme', next);
-    localStorage.setItem('nyo-theme', next);
-    syncIco(next);
-  });
-</script>
+  <script>
+    (function () {
+      var html = document.documentElement;
+      var themeBtn = document.getElementById("themeBtn");
+      var togglePw = document.getElementById("togglePw");
+      var passwordInput = document.getElementById("id_password");
+
+      function syncThemeButton() {
+        themeBtn.textContent = html.getAttribute("data-theme") === "dark" ? "Light" : "Dark";
+      }
+
+      syncThemeButton();
+
+      themeBtn.addEventListener("click", function () {
+        var nextTheme = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        html.setAttribute("data-theme", nextTheme);
+        localStorage.setItem("nyo-theme", nextTheme);
+        syncThemeButton();
+      });
+
+      if (togglePw && passwordInput) {
+        togglePw.addEventListener("click", function () {
+          var nextType = passwordInput.type === "password" ? "text" : "password";
+          passwordInput.type = nextType;
+          togglePw.textContent = nextType === "password" ? "Show" : "Hide";
+        });
+      }
+    })();
+  </script>
 </body>
 </html>

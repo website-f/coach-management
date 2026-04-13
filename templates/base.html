@@ -115,6 +115,38 @@
             transition: background var(--transition) ease, color var(--transition) ease;
             position: relative; /* for absolute background blobs */
         }
+        body.is-leaving-page {
+            cursor: progress;
+        }
+        .page-exit-overlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(10, 10, 15, 0.45);
+            color: #fff;
+            z-index: 500;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .18s ease;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+        body.is-leaving-page .page-exit-overlay {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .page-exit-pill {
+            padding: 12px 18px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,.16);
+            background: rgba(20,20,28,.92);
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: .02em;
+            box-shadow: 0 12px 30px rgba(0,0,0,.28);
+        }
 
         /* Ambient Background Blobs for Glassmorphism */
         body::before, body::after {
@@ -1186,6 +1218,10 @@
 </head>
 <body>
 
+<div class="page-exit-overlay" id="pageExitOverlay" aria-hidden="true">
+    <div class="page-exit-pill">Signing out...</div>
+</div>
+
 <!-- Toast stack -->
 <div class="toast-stack" id="toastStack">
     {% for message in messages %}
@@ -1388,9 +1424,9 @@
                     <p class="name">{{ request.user.username }}</p>
                     <p class="role">{{ current_role_label }}</p>
                 </div>
-                <form method="post" action="{% url 'accounts:logout' %}">
+                <form method="post" action="{% url 'accounts:logout' %}" data-logout-form>
                     {% csrf_token %}
-                    <button type="submit" class="logout-btn" title="Logout">
+                    <button type="submit" class="logout-btn" title="Logout" data-logout-trigger>
                         <i class="fa-solid fa-arrow-right-from-bracket"></i>
                     </button>
                 </form>
@@ -1527,9 +1563,9 @@
         </a>
         {% endif %}
         {% if request.user.is_authenticated %}
-        <form method="post" action="{% url 'accounts:logout' %}" style="display:contents;">
+        <form method="post" action="{% url 'accounts:logout' %}" style="display:contents;" data-logout-form>
             {% csrf_token %}
-            <button type="submit" class="mob-more-item">
+            <button type="submit" class="mob-more-item" data-logout-trigger>
                 <i class="fa-solid fa-arrow-right-from-bracket"></i><span>Logout</span>
             </button>
         </form>
@@ -2025,6 +2061,14 @@
     document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
         overlay.addEventListener('click', function(e) {
             if (e.target === overlay) overlay.classList.remove('open');
+        });
+    });
+
+    document.querySelectorAll('[data-logout-form]').forEach(function(form) {
+        form.addEventListener('submit', function() {
+            document.body.classList.add('is-leaving-page');
+            var trigger = form.querySelector('[data-logout-trigger]');
+            if (trigger) trigger.disabled = true;
         });
     });
 

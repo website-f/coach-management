@@ -3,7 +3,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib import messages
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Q, Sum
@@ -126,6 +126,14 @@ class RoleAwareLoginView(LoginView):
             if has_onboarding_fees:
                 return f"{reverse('payments:my_payments')}?onboarding=1"
         return super().get_success_url()
+
+
+class FastLogoutView(View):
+    http_method_names = ["post", "options"]
+
+    def post(self, request, *args, **kwargs):
+        logout(request)
+        return redirect(f"{reverse('accounts:login')}?logged_out=1")
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
