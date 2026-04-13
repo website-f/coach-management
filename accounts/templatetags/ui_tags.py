@@ -53,9 +53,28 @@ def nav_active_section(context, url_prefix, *excluded_prefixes):
 
 
 @register.simple_tag(takes_context=True)
+def nav_active_path(context, url_prefix, *excluded_fragments):
+    request = context["request"]
+    path = request.path
+    if any(fragment and fragment in path for fragment in excluded_fragments):
+        return ""
+    if path == url_prefix or path.startswith(url_prefix):
+        return "active"
+    return ""
+
+
+@register.simple_tag(takes_context=True)
 def nav_active_exact(context, url_value):
     request = context["request"]
     if request.path == url_value:
+        return "active"
+    return ""
+
+
+@register.simple_tag(takes_context=True)
+def nav_active_contains(context, needle):
+    request = context["request"]
+    if needle and needle in request.path:
         return "active"
     return ""
 

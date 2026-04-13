@@ -1124,9 +1124,17 @@
             <a href="{% url 'members:list' %}" class="nav-link {% nav_active_section '/members/' '/members/reports/' '/members/applications/' '/members/apply/' %}">
                 <span class="icon"><i class="fa-solid fa-users"></i></span> Members
             </a>
-            <a href="{% url 'sessions:list' %}" class="nav-link {% nav_active '/sessions/' %}">
+            <a href="{% url 'sessions:list' %}" class="nav-link {% nav_active_path '/sessions/' '/plan/' '/sessions/syllabus/' %}">
                 <span class="icon"><i class="fa-solid fa-calendar-days"></i></span> Sessions
             </a>
+            {% if current_role == 'admin' or current_role == 'coach' %}
+            <a href="{{ sidebar_planner_url }}" class="nav-link {% nav_active_contains '/plan/' %}">
+                <span class="icon"><i class="fa-solid fa-wand-magic-sparkles"></i></span> AI Planner
+                {% if sidebar_planner_session %}
+                <span class="nav-badge">Next</span>
+                {% endif %}
+            </a>
+            {% endif %}
             {% if request.user.is_authenticated %}
             <a href="{% url 'accounts:notifications' %}" class="nav-link {% nav_active '/accounts/notifications/' %}">
                 <span class="icon"><i class="fa-solid fa-bell"></i></span> Notifications
@@ -1163,6 +1171,9 @@
                 <span class="icon"><i class="fa-solid fa-money-check-dollar"></i></span> Payments
             </a>
             {% if current_role == 'admin' %}
+            <a href="{% url 'sessions:syllabus' %}" class="nav-link {% nav_active '/sessions/syllabus/' %}">
+                <span class="icon"><i class="fa-solid fa-book-open"></i></span> Syllabus
+            </a>
             <a href="{% url 'payments:qrcode_list' %}" class="nav-link {% nav_active '/payments/qr-codes/' %}">
                 <span class="icon"><i class="fa-solid fa-qrcode"></i></span> QR Codes
             </a>
@@ -1250,60 +1261,6 @@
             </div>
         </header>
 
-        {% if request.user.is_authenticated %}
-        <div class="page-quicknav">
-            <div class="quick-nav-shell" data-scroll-track>
-                <div class="quick-nav-track">
-                    <a href="{% url 'accounts:dashboard' %}" class="quick-nav-item {% nav_active '/accounts/dashboard/' %}">
-                        <i class="fa-solid fa-chart-pie"></i> Dashboard
-                    </a>
-                    <a href="{% url 'members:list' %}" class="quick-nav-item {% nav_active_section '/members/' '/members/reports/' '/members/applications/' '/members/apply/' %}">
-                        <i class="fa-solid fa-users"></i> Members
-                    </a>
-                    <a href="{% url 'sessions:list' %}" class="quick-nav-item {% nav_active '/sessions/' %}">
-                        <i class="fa-solid fa-calendar-days"></i> Sessions
-                    </a>
-                    {% if current_role == 'parent' %}
-                    <a href="{% url 'payments:my_payments' %}" class="quick-nav-item {% nav_active '/payments/my-payments/' %}">
-                        <i class="fa-solid fa-credit-card"></i> My Payments
-                    </a>
-                    {% endif %}
-                    {% if current_role == 'admin' or current_role == 'coach' or current_role == 'parent' %}
-                    <a href="{% url 'members:report_list' %}" class="quick-nav-item {% nav_active '/members/reports/' %}">
-                        <i class="fa-solid fa-file-lines"></i> Reports
-                    </a>
-                    {% endif %}
-                    {% if current_role == 'admin' or current_role == 'coach' %}
-                    <a href="{% url 'finance:invoice_list' %}" class="quick-nav-item {% nav_active '/finance/invoices/' %}">
-                        <i class="fa-solid fa-file-invoice-dollar"></i> Invoices
-                    </a>
-                    <a href="{% url 'payments:payment_history' %}" class="quick-nav-item {% nav_active '/payments/history/' %}">
-                        <i class="fa-solid fa-money-check-dollar"></i> Payments
-                    </a>
-                    {% endif %}
-                    <a href="{% url 'accounts:notifications' %}" class="quick-nav-item {% nav_active '/accounts/notifications/' %}">
-                        <i class="fa-solid fa-bell"></i> Notifications
-                    </a>
-                    {% if current_role == 'admin' %}
-                    <a href="{% url 'payments:pending_reviews' %}" class="quick-nav-item {% nav_active '/payments/pending-reviews/' %}">
-                        <i class="fa-solid fa-receipt"></i> Reviews
-                    </a>
-                    <a href="{% url 'accounts:coaches' %}" class="quick-nav-item {% nav_active '/accounts/coaches/' %}">
-                        <i class="fa-solid fa-user-tie"></i> Coaches
-                    </a>
-                    <a href="{% url 'sessions:syllabus' %}" class="quick-nav-item {% nav_active '/sessions/syllabus/' %}">
-                        <i class="fa-solid fa-book-open"></i> Syllabus
-                    </a>
-                    <a href="{% url 'finance:overview' %}" class="quick-nav-item {% nav_active_exact '/finance/' %}">
-                        <i class="fa-solid fa-sack-dollar"></i> Finance
-                    </a>
-                    {% endif %}
-                </div>
-                <span class="scroll-indicator">Scroll for more</span>
-            </div>
-        </div>
-        {% endif %}
-
         <main class="page-content">
             {% block content %}{% endblock %}
         </main>
@@ -1323,7 +1280,7 @@
         <i class="fa-solid fa-credit-card"></i><span>Payments</span>
     </a>
     {% else %}
-    <a href="{% url 'sessions:list' %}" class="mob-nav-item {% nav_active '/sessions/' %}">
+    <a href="{% url 'sessions:list' %}" class="mob-nav-item {% nav_active_path '/sessions/' '/plan/' '/sessions/syllabus/' %}">
         <i class="fa-solid fa-calendar-days"></i><span>Sessions</span>
     </a>
     {% endif %}
@@ -1343,7 +1300,7 @@
     </div>
     <div class="mob-more-grid">
         {% if current_role == 'parent' %}
-        <a href="{% url 'sessions:list' %}" class="mob-more-item {% nav_active '/sessions/' %}">
+        <a href="{% url 'sessions:list' %}" class="mob-more-item {% nav_active_path '/sessions/' '/plan/' '/sessions/syllabus/' %}">
             <i class="fa-solid fa-calendar-days"></i><span>Sessions</span>
         </a>
         {% endif %}
@@ -1358,6 +1315,9 @@
         </a>
         {% endif %}
         {% if current_role == 'admin' or current_role == 'coach' %}
+        <a href="{{ sidebar_planner_url }}" class="mob-more-item {% nav_active_contains '/plan/' %}">
+            <i class="fa-solid fa-wand-magic-sparkles"></i><span>AI Planner</span>
+        </a>
         <a href="{% url 'members:application_list' %}" class="mob-more-item {% nav_active '/members/applications/' %}">
             <i class="fa-solid fa-user-plus"></i><span>Applications</span>
         </a>
@@ -1376,6 +1336,9 @@
         </a>
         {% endif %}
         {% if current_role == 'admin' %}
+        <a href="{% url 'sessions:syllabus' %}" class="mob-more-item {% nav_active '/sessions/syllabus/' %}">
+            <i class="fa-solid fa-book-open"></i><span>Syllabus</span>
+        </a>
         <a href="{% url 'payments:qrcode_list' %}" class="mob-more-item {% nav_active '/payments/qr-codes/' %}">
             <i class="fa-solid fa-qrcode"></i><span>QR Codes</span>
         </a>

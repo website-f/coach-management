@@ -14,6 +14,18 @@ class PlannerAssistantError(Exception):
     pass
 
 
+def compact_text(value, limit=140):
+    if isinstance(value, (dict, list, tuple)):
+        try:
+            value = json.dumps(value, ensure_ascii=False, default=str)
+        except TypeError:
+            value = str(value)
+    text = " ".join(str(value or "").strip().split())
+    if len(text) <= limit:
+        return text
+    return f"{text[:limit - 3]}..."
+
+
 def recent_report_rows(training_session, limit=6):
     rows = []
     member_ids = list(
@@ -38,8 +50,8 @@ def recent_report_rows(training_session, limit=6):
                 "period": report.period_label,
                 "status": report.get_overall_status_display(),
                 "attendance_rate": report.attendance_rate,
-                "coach_reflection": report.coach_reflection[:220].strip(),
-                "skill_notes": report.skill_notes,
+                "coach_reflection": compact_text(report.coach_reflection, 110),
+                "skill_notes": compact_text(report.skill_notes, 110),
             }
         )
         if len(rows) >= limit:
@@ -107,7 +119,7 @@ def recent_feedback_rows(training_session, limit=6):
                 "session": entry.training_session.title,
                 "session_date": entry.training_session.session_date.isoformat(),
                 "coach": entry.coach.get_full_name() if entry.coach else "Coach",
-                "feedback_excerpt": entry.feedback_text[:240].strip(),
+                "feedback_excerpt": compact_text(entry.feedback_text, 120),
                 "has_video": bool(entry.video_proof),
             }
         )
@@ -128,6 +140,55 @@ def recent_saved_rows(training_session, limit=3):
     ]
 
 
+def summarize_roster(training_session):
+    attendance_rows = training_session.attendance_records.select_related("member").order_by("member__full_name")
+    level_counts = {}
+    attendance_counts = {}
+    player_examples = []
+
+    for row in attendance_rows:
+        member = row.member
+        skill_label = member.get_skill_level_display()
+        level_counts[skill_label] = level_counts.get(skill_label, 0) + 1
+        attendance_label = row.get_status_display()
+        attendance_counts[attendance_label] = attendance_counts.get(attendance_label, 0) + 1
+        if len(player_examples) < 6:
+            player_examples.append(f"{member.full_name} ({skill_label})")
+
+    return {
+        "size": attendance_rows.count(),
+        "levels": ", ".join(f"{label}: {count}" for label, count in level_counts.items()) or "No level data",
+        "attendance_mix": ", ".join(f"{label}: {count}" for label, count in attendance_counts.items()) or "No attendance marks yet",
+        "player_examples": player_examples,
+    }
+
+
+def compact_blueprint(blueprint):
+    return {
+        "plan_title": blueprint["plan_title"],
+        "summary": compact_text(blueprint["summary"], 180),
+        "track_label": blueprint["track_label"],
+        "resolved_week": blueprint["resolved_week"],
+        "roster_size": blueprint["roster_size"],
+        "payment_count": blueprint["payment_count"],
+        "payment_summary": blueprint["payment_summary"],
+        "blocks": [
+            {
+                "title": item["title"],
+                "duration": item["duration"],
+                "detail": compact_text(item["detail"], 120),
+            }
+            for item in blueprint["blocks"][:4]
+        ],
+        "coach_prompts": blueprint["coach_prompts"][:4],
+        "syllabus_reference": {
+            "title": blueprint["syllabus_reference"]["title"],
+            "objective": compact_text(blueprint["syllabus_reference"]["objective"], 150),
+            "homework": compact_text(blueprint["syllabus_reference"]["homework"], 120),
+        },
+    }
+
+
 def normalize_prompt(value):
     return " ".join((value or "").strip().lower().split())
 
@@ -145,18 +206,6 @@ def find_cached_plan(training_session, user_prompt):
 
 def build_planner_context(training_session):
     blueprint = build_session_plan(training_session)
-    roster_rows = []
-    attendance_rows = training_session.attendance_records.select_related("member").order_by("member__full_name")
-    for row in attendance_rows:
-        roster_rows.append(
-            {
-                "name": row.member.full_name,
-                "skill_level": row.member.get_skill_level_display(),
-                "membership_type": row.member.get_membership_type_display(),
-                "attendance_status": row.get_status_display(),
-            }
-        )
-
     return {
         "session": {
             "title": training_session.title,
@@ -166,12 +215,12 @@ def build_planner_context(training_session):
             "court": training_session.court,
             "coach": training_session.coach.get_full_name() if training_session.coach else "Unassigned",
         },
-        "blueprint": blueprint,
-        "roster": roster_rows,
-        "recent_reports": recent_report_rows(training_session),
-        "report_trends": report_trend_rows(training_session),
-        "recent_feedback": recent_feedback_rows(training_session),
-        "saved_plans": recent_saved_rows(training_session),
+        "blueprint": compact_blueprint(blueprint),
+        "roster": summarize_roster(training_session),
+        "recent_reports": recent_report_rows(training_session, limit=3),
+        "report_trends": report_trend_rows(training_session, limit=2),
+        "recent_feedback": recent_feedback_rows(training_session, limit=3),
+        "saved_plans": recent_saved_rows(training_session, limit=2),
     }
 
 
@@ -189,6 +238,7 @@ Rules:
 - Prefer actionable badminton drills, time blocks, coaching cues, match scenarios, and adaptations.
 - Use recent feedback and report trends to personalize the answer when they are available.
 - Answer in clean markdown.
+- Keep the whole answer concise and practical, ideally under 450 words.
 - Start with a short title line.
 - Then include sections:
   1. Session Goal
@@ -198,11 +248,12 @@ Rules:
   5. Follow-up
 """.strip()
 
+    compact_context = json.dumps(context, separators=(",", ":"), ensure_ascii=False, default=str)
     user_message = (
         "Coach request:\n"
         f"{user_prompt.strip()}\n\n"
         "Live session context JSON:\n"
-        f"{json.dumps(context, indent=2, default=str)}"
+        f"{compact_context}"
     )
     return context, [
         {"role": "system", "content": system_prompt},
@@ -267,10 +318,13 @@ def call_ollama(messages):
         "model": settings.OLLAMA_MODEL,
         "messages": messages,
         "stream": False,
+        "keep_alive": settings.OLLAMA_REQUEST_KEEP_ALIVE,
         "options": {
-            "temperature": 0.4,
-            "top_p": 0.9,
-            "repeat_penalty": 1.05,
+            "temperature": settings.OLLAMA_TEMPERATURE,
+            "top_p": settings.OLLAMA_TOP_P,
+            "repeat_penalty": settings.OLLAMA_REPEAT_PENALTY,
+            "num_ctx": settings.OLLAMA_NUM_CTX,
+            "num_predict": settings.OLLAMA_NUM_PREDICT,
         },
     }
     req = request.Request(

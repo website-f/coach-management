@@ -7,7 +7,7 @@ from django.db.models import Sum
 from django.http import HttpResponse
 from django.urls import reverse_lazy
 from django.utils import timezone
-from django.views.generic import CreateView, DeleteView, ListView, TemplateView, UpdateView
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
 
 from accounts.decorators import role_required
 from accounts.mixins import AdminOrCoachRequiredMixin, AdminRequiredMixin
@@ -136,8 +136,33 @@ class ProductListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        visible_products = visible_products_for_user(self.request.user)
         context["availability_choices"] = Product.AVAILABILITY_CHOICES
         context["can_manage"] = has_role(self.request.user, ROLE_ADMIN)
+        context["total_products"] = visible_products.count()
+        context["ready_products"] = visible_products.filter(availability=Product.AVAILABILITY_READY).count()
+        context["preorder_products"] = visible_products.filter(availability=Product.AVAILABILITY_PREORDER).count()
+        context["search_query"] = self.request.GET.get("q", "").strip()
+        context["selected_availability"] = self.request.GET.get("availability", "").strip()
+        return context
+
+
+class ProductDetailView(LoginRequiredMixin, DetailView):
+    model = Product
+    template_name = "finance/product_detail.html"
+    context_object_name = "product"
+
+    def get_queryset(self):
+        return visible_products_for_user(self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["can_manage"] = has_role(self.request.user, ROLE_ADMIN)
+        context["related_products"] = (
+            visible_products_for_user(self.request.user)
+            .exclude(pk=self.object.pk)
+            .order_by("name")[:4]
+        )
         return context
 
 

@@ -10,12 +10,30 @@
         <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
             <div style="max-width:760px;">
                 <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;">Merchandise & Inventory</p>
-                <h2 style="font-size:28px;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1.1;">The store is now part of the live portal instead of a disconnected mock module.</h2>
-                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">Admins can manage stock and visibility here, while coaches, headcount, and parents can browse the official club items from the same system.</p>
+                <h2 style="font-size:28px;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1.1;">Club storefront and product catalog.</h2>
+                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">This is the live ecommerce-style browse page for all uploaded products. Staff can manage inventory here, and every logged-in user can open each product card to see the full details.</p>
             </div>
-            {% if can_manage %}
-            <a href="{% url 'finance:product_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Product</a>
-            {% endif %}
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                {% if can_manage %}
+                <a href="{% url 'finance:product_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Product</a>
+                {% endif %}
+                <a href="#catalog-grid" class="btn btn-ghost"><i class="fa-solid fa-store"></i> Browse Catalog</a>
+            </div>
+        </div>
+
+        <div class="grid-3 mt-3">
+            <div class="card-inset">
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Visible Products</p>
+                <p style="font-size:24px;font-weight:700;color:var(--text);">{{ total_products }}</p>
+            </div>
+            <div class="card-inset">
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Ready Stock</p>
+                <p style="font-size:24px;font-weight:700;color:var(--text);">{{ ready_products }}</p>
+            </div>
+            <div class="card-inset">
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Preorder</p>
+                <p style="font-size:24px;font-weight:700;color:var(--text);">{{ preorder_products }}</p>
+            </div>
         </div>
     </div>
 
@@ -23,43 +41,59 @@
         <form method="get" class="filter-fields">
             <div class="filter-field">
                 <label>Search</label>
-                <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Search product name">
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Search product name">
             </div>
             <div class="filter-field">
                 <label>Availability</label>
                 <select name="availability">
                     <option value="">All availability</option>
                     {% for value, label in availability_choices %}
-                    <option value="{{ value }}" {% if request.GET.availability == value %}selected{% endif %}>{{ label }}</option>
+                    <option value="{{ value }}" {% if selected_availability == value %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="filter-actions" style="margin-top:auto;">
                 <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filter</button>
-                {% if request.GET.q or request.GET.availability %}
+                {% if search_query or selected_availability %}
                 <a href="{% url 'finance:product_list' %}" class="btn btn-ghost">Clear</a>
                 {% endif %}
             </div>
         </form>
     </div>
 
-    <div class="grid-3">
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
+        <p class="text-sm text-muted">Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} product{{ page_obj.paginator.count|pluralize }}.</p>
+        {% if page_obj.has_other_pages %}
+        <p class="text-sm text-muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</p>
+        {% endif %}
+    </div>
+
+    <div class="grid-3" id="catalog-grid">
         {% for product in products %}
         <div class="card" style="padding:0;overflow:hidden;">
-            {% if product.image %}
-            <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width:100%;height:210px;object-fit:cover;">
-            {% else %}
-            <div style="height:210px;background:linear-gradient(135deg, rgba(245,166,35,.18), rgba(79,110,247,.12));display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:42px;">
-                <i class="fa-solid fa-bag-shopping"></i>
-            </div>
-            {% endif %}
+            <a href="{% url 'finance:product_detail' product.pk %}" style="display:block;text-decoration:none;">
+                {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width:100%;height:210px;object-fit:cover;">
+                {% else %}
+                <div style="height:210px;background:linear-gradient(135deg, rgba(245,166,35,.18), rgba(79,110,247,.12));display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:42px;">
+                    <i class="fa-solid fa-bag-shopping"></i>
+                </div>
+                {% endif %}
+            </a>
             <div style="padding:18px;">
                 <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
                     <div>
-                        <h3 style="font-size:20px;font-weight:700;letter-spacing:-.03em;color:var(--text);">{{ product.name }}</h3>
+                        <a href="{% url 'finance:product_detail' product.pk %}" style="text-decoration:none;">
+                            <h3 style="font-size:20px;font-weight:700;letter-spacing:-.03em;color:var(--text);">{{ product.name }}</h3>
+                        </a>
                         <p class="text-sm text-muted" style="margin-top:6px;line-height:1.8;">{{ product.description|default:"Official club merchandise."|truncatechars:110 }}</p>
                     </div>
-                    <span class="badge {{ product.availability|status_badge }}">{{ product.get_availability_display }}</span>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+                        <span class="badge {{ product.availability|status_badge }}">{{ product.get_availability_display }}</span>
+                        {% if can_manage and not product.is_active %}
+                        <span class="badge badge-neutral">Hidden</span>
+                        {% endif %}
+                    </div>
                 </div>
 
                 <div class="grid-2 mt-3">
@@ -73,12 +107,13 @@
                     </div>
                 </div>
 
-                {% if can_manage %}
                 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
+                    <a href="{% url 'finance:product_detail' product.pk %}" class="btn btn-primary"><i class="fa-solid fa-eye"></i> View Product</a>
+                    {% if can_manage %}
                     <a href="{% url 'finance:product_edit' product.pk %}" class="btn btn-ghost">Edit</a>
                     <a href="{% url 'finance:product_delete' product.pk %}" class="btn btn-danger">Delete</a>
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
         </div>
         {% empty %}
@@ -90,5 +125,9 @@
         </div>
         {% endfor %}
     </div>
+
+    {% if page_obj.has_other_pages %}
+    {% include "partials/pagination.html" %}
+    {% endif %}
 </div>
 {% endblock %}
