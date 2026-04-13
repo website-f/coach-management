@@ -22,6 +22,9 @@
                 {% if can_mark_attendance %}
                 <a href="{% url 'sessions:attendance' training_session.pk %}" class="btn btn-success"><i class="fa-solid fa-check-circle"></i> Mark Attendance</a>
                 {% endif %}
+                {% if can_feedback %}
+                <a href="{% url 'sessions:plan' training_session.pk %}?autostart=1" class="btn btn-primary"><i class="fa-solid fa-wand-magic-sparkles"></i> Plan For Today</a>
+                {% endif %}
                 {% if can_plan %}
                 <a href="{% url 'sessions:edit' training_session.pk %}" class="btn" style="background:rgba(79,110,247,.1);color:var(--accent);border:1px solid rgba(79,110,247,.25);"><i class="fa-solid fa-pen"></i> Edit Session</a>
                 {% endif %}
@@ -65,7 +68,7 @@
             <span class="section-title">Roster, Attendance, and Feedback</span>
         </div>
         <div class="overflow-x">
-            <table class="tbl">
+            <table class="tbl native-stack">
                 <thead>
                     <tr>
                         <th>Player</th>
@@ -78,12 +81,12 @@
                 <tbody>
                     {% for row in feedback_rows %}
                     <tr>
-                        <td>
+                        <td data-label="Player">
                             <div class="tbl-name">{{ row.record.member.full_name }}</div>
                             <div class="tbl-sub">Coach: {{ row.record.member.assigned_coach|default:"Unassigned" }}</div>
                         </td>
-                        <td><span class="badge {{ row.record.status|status_badge }}">{{ row.record.get_status_display }}</span></td>
-                        <td>
+                        <td data-label="Attendance"><span class="badge {{ row.record.status|status_badge }}">{{ row.record.get_status_display }}</span></td>
+                        <td data-label="Feedback">
                             {% if row.feedback %}
                             <div class="tbl-name">Uploaded</div>
                             <div class="tbl-sub">{{ row.feedback.updated_at|date:"d M Y H:i" }}</div>
@@ -91,14 +94,14 @@
                             <span class="badge badge-neutral">Pending</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td data-label="Video">
                             {% if row.feedback and row.feedback.video_proof %}
                             <a href="{{ row.feedback.video_proof.url }}" class="btn btn-ghost btn-xs" target="_blank">Open video</a>
                             {% else %}
                             <span class="text-sm text-muted">No file</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td data-label="Action">
                             <div style="display:flex;gap:8px;flex-wrap:wrap;">
                                 {% if can_feedback %}
                                 <a href="{% url 'sessions:feedback' training_session.pk row.record.member.pk %}" class="btn btn-xs" style="background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.25);border-radius:99px;padding:4px 12px;">

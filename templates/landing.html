@@ -1,469 +1,993 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NYO Admin Dashboard</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <style>
-        :root {
-            --bg: #07111f;
-            --panel: rgba(10, 24, 42, 0.78);
-            --line: rgba(255, 255, 255, 0.08);
-            --text: #f8fafc;
-            --muted: #a6b5c8;
-            --gold: #f5a623;
-            --gold-soft: rgba(245, 166, 35, 0.16);
-            --teal: #38bdf8;
-            --shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
-        }
-        * { box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
-        body {
-            margin: 0;
-            min-height: 100vh;
-            font-family: "Inter", sans-serif;
-            color: var(--text);
-            background:
-                radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 28%),
-                radial-gradient(circle at bottom right, rgba(245, 166, 35, 0.14), transparent 24%),
-                linear-gradient(180deg, #091525 0%, #050b15 100%);
-        }
-        a { color: inherit; text-decoration: none; }
-        .container { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
-        .topbar {
-            position: sticky;
-            top: 0;
-            z-index: 20;
-            backdrop-filter: blur(18px);
-            background: rgba(7, 17, 31, 0.72);
-            border-bottom: 1px solid var(--line);
-        }
-        .topbar-inner {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 18px;
-            padding: 16px 0;
-            flex-wrap: wrap;
-        }
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .brand-mark {
-            width: 42px;
-            height: 42px;
-            border-radius: 14px;
-            background: linear-gradient(135deg, var(--gold), #ffd36e);
-            color: #07111f;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            box-shadow: 0 18px 32px rgba(245, 166, 35, 0.22);
-        }
-        .brand-copy small {
-            display: block;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: var(--muted);
-        }
-        .brand-copy strong {
-            display: block;
-            font-family: "Space Grotesk", sans-serif;
-            font-size: 18px;
-            letter-spacing: -0.03em;
-        }
-        .top-links { display: flex; gap: 10px; flex-wrap: wrap; }
-        .btn {
-            border-radius: 999px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 13px 20px;
-            font-size: 14px;
-            font-weight: 700;
-            border: 1px solid transparent;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, var(--gold), #ffd36e);
-            color: #07111f;
-            box-shadow: 0 18px 32px rgba(245, 166, 35, 0.24);
-        }
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.04);
-            border-color: var(--line);
-            color: var(--text);
-        }
-        .hero { padding: 82px 0 40px; }
-        .hero-grid,
-        .role-grid,
-        .feature-grid,
-        .stat-grid,
-        .meta-grid {
-            display: grid;
-            gap: 18px;
-        }
-        .hero-grid { grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr); }
-        .role-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-        .feature-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-        .stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-        .meta-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        .panel,
-        .role-card,
-        .feature-card,
-        .stat-card {
-            background: var(--panel);
-            border: 1px solid var(--line);
-            backdrop-filter: blur(20px);
-            box-shadow: var(--shadow);
-        }
-        .panel {
-            border-radius: 34px;
-            padding: 30px;
-        }
-        .hero-main {
-            position: relative;
-            overflow: hidden;
-        }
-        .hero-main::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background:
-                linear-gradient(120deg, rgba(255,255,255,0.05), transparent 30%),
-                url("https://images.unsplash.com/photo-1626225967045-9c76db7b62a9?auto=format&fit=crop&q=80&w=1600") center/cover;
-            opacity: 0.15;
-            mix-blend-mode: screen;
-        }
-        .hero-content { position: relative; z-index: 1; }
-        .eyebrow {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 14px;
-            border-radius: 999px;
-            background: var(--gold-soft);
-            border: 1px solid rgba(245, 166, 35, 0.22);
-            color: #ffd88a;
-            font-size: 12px;
-            font-weight: 800;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-        }
-        h1, h2 {
-            margin: 0;
-            font-family: "Space Grotesk", sans-serif;
-            letter-spacing: -0.05em;
-        }
-        h1 {
-            font-size: clamp(42px, 7vw, 78px);
-            line-height: 0.96;
-            margin-top: 18px;
-        }
-        h2 { font-size: clamp(28px, 4vw, 42px); }
-        .lead,
-        .section-head p,
-        .side-card p,
-        .feature-card p,
-        .role-card p {
-            color: var(--muted);
-            line-height: 1.8;
-        }
-        .lead { margin-top: 20px; max-width: 680px; font-size: 17px; }
-        .hero-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 26px;
-        }
-        .side-stack { display: grid; gap: 14px; }
-        .side-card,
-        .role-card,
-        .feature-card,
-        .stat-card {
-            border-radius: 28px;
-            padding: 22px;
-        }
-        .kicker {
-            color: var(--gold);
-            font-size: 12px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            margin-bottom: 10px;
-        }
-        .role-card h3,
-        .feature-card h3,
-        .stat-card h3 {
-            margin: 0;
-            font-size: 20px;
-            letter-spacing: -0.03em;
-        }
-        .section { padding: 22px 0 0; }
-        .section-head {
-            display: flex;
-            justify-content: space-between;
-            gap: 16px;
-            align-items: end;
-            flex-wrap: wrap;
-            margin-bottom: 24px;
-        }
-        .pill-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
-        .pill {
-            padding: 9px 14px;
-            border-radius: 999px;
-            border: 1px solid var(--line);
-            background: rgba(255,255,255,.04);
-            font-size: 13px;
-        }
-        .role-icon,
-        .feature-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 16px;
-            font-size: 18px;
-            background: rgba(56, 189, 248, 0.12);
-            color: #89ddff;
-        }
-        .stat-value {
-            font-size: 36px;
-            font-family: "Space Grotesk", sans-serif;
-            letter-spacing: -0.05em;
-            margin-top: 4px;
-        }
-        .footer {
-            padding: 48px 0 56px;
-            border-top: 1px solid var(--line);
-            margin-top: 34px;
-            color: var(--muted);
-            font-size: 13px;
-        }
-        .footer-inner {
-            display: flex;
-            justify-content: space-between;
-            gap: 18px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .footer-links { display: flex; gap: 18px; flex-wrap: wrap; }
-        @media (max-width: 960px) {
-            .hero-grid,
-            .role-grid,
-            .feature-grid,
-            .stat-grid,
-            .meta-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ landing_content.hero_title }} — Badminton Club</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <!-- Prevent theme flash -->
+  <script>
+    (function(){
+      var t = localStorage.getItem("nyo-theme") || "dark";
+      document.documentElement.dataset.theme = t;
+    })();
+  </script>
+  <style>
+    /* ── Tokens ─────────────────────────────────────────────── */
+    :root {
+      --bg:           #000000;
+      --bg2:          #0a0a0f;
+      --surface:      rgba(255,255,255,0.055);
+      --surface-h:    rgba(255,255,255,0.09);
+      --border:       rgba(255,255,255,0.09);
+      --border-s:     rgba(255,255,255,0.18);
+      --text:         #f5f5f7;
+      --text-2:       #a1a1a6;
+      --text-3:       #6e6e73;
+      --accent:       #f5a623;
+      --accent-soft:  rgba(245,166,35,0.13);
+      --accent-dim:   #ffd080;
+      --nav-bg:       rgba(0,0,0,0.72);
+      --card-shadow:  0 8px 40px rgba(0,0,0,0.45);
+    }
+    [data-theme="light"] {
+      --bg:           #ffffff;
+      --bg2:          #f5f5f7;
+      --surface:      rgba(0,0,0,0.042);
+      --surface-h:    rgba(0,0,0,0.07);
+      --border:       rgba(0,0,0,0.08);
+      --border-s:     rgba(0,0,0,0.16);
+      --text:         #1d1d1f;
+      --text-2:       #515154;
+      --text-3:       #86868b;
+      --accent:       #b87300;
+      --accent-soft:  rgba(184,115,0,0.10);
+      --accent-dim:   #8a5500;
+      --nav-bg:       rgba(255,255,255,0.82);
+      --card-shadow:  0 8px 40px rgba(0,0,0,0.10);
+    }
+
+    /* ── Reset ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html  { scroll-behavior: smooth; }
+    body  {
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      transition: background 0.25s, color 0.25s;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Layout ─────────────────────────────────────────────── */
+    .wrap  { width: min(1160px, calc(100% - 40px)); margin: 0 auto; }
+    .sec   { padding: 96px 0; }
+    .sec-sm{ padding: 64px 0; }
+
+    /* ── Typography ─────────────────────────────────────────── */
+    h1,h2,h3,h4 {
+      font-family: "Space Grotesk", sans-serif;
+      letter-spacing: -0.03em;
+      line-height: 1.06;
+    }
+    h1 { font-size: clamp(44px,7.5vw,86px); font-weight: 800; }
+    h2 { font-size: clamp(30px,4.5vw,54px); font-weight: 700; }
+    h3 { font-size: clamp(18px,2vw,22px);   font-weight: 600; }
+    .eyebrow {
+      display: inline-block;
+      font-size: 11px; font-weight: 800;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 14px;
+    }
+    .lead {
+      font-size: clamp(16px,1.8vw,19px);
+      color: var(--text-2); line-height: 1.75;
+    }
+
+    /* ── Glass card ─────────────────────────────────────────── */
+    .glass {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      box-shadow: var(--card-shadow);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .glass:hover { border-color: var(--border-s); }
+
+    /* ── Buttons ────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 22px; border-radius: 999px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      border: none; transition: all 0.18s; white-space: nowrap;
+    }
+    .btn-p  { background: var(--accent); color: #000; }
+    .btn-p:hover { opacity: 0.87; transform: translateY(-1px); }
+    .btn-g  { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+    .btn-g:hover { background: var(--surface-h); transform: translateY(-1px); }
+    .btn-s  { padding: 10px 18px; font-size: 13px; }
+
+    /* ── Nav ────────────────────────────────────────────────── */
+    .nav {
+      position: fixed; inset-block-start: 0; inset-inline: 0; z-index: 200;
+      background: var(--nav-bg);
+      backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.25s;
+    }
+    .nav-inner {
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 14px; height: 58px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-icon {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: var(--accent); color: #000;
+      display: flex; align-items: center; justify-content: center; font-size: 15px;
+    }
+    .brand-name {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 15px; font-weight: 700; letter-spacing: -0.02em;
+    }
+    .nav-right { display: flex; align-items: center; gap: 6px; }
+    .nav-lnk {
+      font-size: 13px; font-weight: 500; color: var(--text-2);
+      padding: 6px 11px; border-radius: 8px; transition: color 0.2s;
+    }
+    .nav-lnk:hover { color: var(--text); }
+    .theme-btn {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text-2); display: flex; align-items: center;
+      justify-content: center; cursor: pointer; font-size: 14px;
+      transition: all 0.2s;
+    }
+    .theme-btn:hover { background: var(--surface-h); color: var(--text); }
+    .hamburger {
+      display: none; width: 34px; height: 34px; border-radius: 8px;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); align-items: center; justify-content: center;
+      cursor: pointer; font-size: 13px;
+    }
+    /* Mobile overlay */
+    .mob-nav {
+      display: none; position: fixed; inset: 58px 0 auto;
+      z-index: 199; background: var(--nav-bg);
+      backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px 20px; flex-direction: column; gap: 6px;
+    }
+    .mob-nav.open { display: flex; }
+    .mob-lnk {
+      font-size: 14px; font-weight: 500; color: var(--text-2);
+      padding: 10px 12px; border-radius: 10px; transition: all 0.2s;
+    }
+    .mob-lnk:hover { background: var(--surface); color: var(--text); }
+    .mob-btns { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+    .mob-btns .btn { flex: 1; justify-content: center; }
+
+    /* ── Hero ───────────────────────────────────────────────── */
+    .hero {
+      padding: 134px 0 100px;
+      text-align: center; position: relative; overflow: hidden;
+    }
+    .hero-glow {
+      position: absolute; top: -160px; left: 50%;
+      transform: translateX(-50%); width: 900px; height: 900px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(245,166,35,0.07) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 14px; border-radius: 999px;
+      background: var(--accent-soft);
+      border: 1px solid rgba(245,166,35,0.22);
+      color: var(--accent-dim);
+      font-size: 12px; font-weight: 700; margin-bottom: 26px;
+    }
+    [data-theme="light"] .hero-badge { color: var(--accent); }
+    .hero h1 { margin-bottom: 22px; }
+    .hero h1 em { font-style: normal; color: var(--accent); }
+    .hero .lead { max-width: 600px; margin: 0 auto 36px; }
+    .hero-btns {
+      display: flex; justify-content: center;
+      flex-wrap: wrap; gap: 10px; margin-bottom: 64px;
+    }
+    .hero-trust {
+      display: flex; justify-content: center;
+      align-items: center; flex-wrap: wrap; gap: 32px;
+      padding: 26px 32px; border-radius: 18px;
+      background: var(--surface); border: 1px solid var(--border);
+      max-width: 620px; margin: 0 auto;
+    }
+    .trust-item { text-align: center; }
+    .trust-num  {
+      display: block;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 28px; font-weight: 700; letter-spacing: -0.04em;
+    }
+    .trust-lbl  { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+    .trust-sep  { width: 1px; height: 36px; background: var(--border); }
+
+    /* ── Section header ─────────────────────────────────────── */
+    .sec-head    { margin-bottom: 52px; }
+    .sec-head.center { text-align: center; }
+    .sec-head h2 { margin-bottom: 14px; }
+    .sec-head .lead { max-width: 580px; }
+    .sec-head.center .lead { margin: 0 auto; }
+
+    /* ── About ──────────────────────────────────────────────── */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 56px; align-items: start;
+    }
+    .about-text h2 { margin-bottom: 18px; }
+    .about-text .lead { margin-bottom: 32px; max-width: 480px; }
+    .points { list-style: none; display: flex; flex-direction: column; gap: 18px; }
+    .point  { display: flex; gap: 14px; align-items: flex-start; }
+    .point-ico {
+      width: 38px; height: 38px; border-radius: 11px;
+      background: var(--accent-soft); color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; flex-shrink: 0; margin-top: 2px;
+    }
+    .point-body strong { display: block; font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+    .point-body span   { font-size: 14px; color: var(--text-2); line-height: 1.65; }
+    .stat-tiles {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 12px; position: sticky; top: 80px;
+    }
+    .stat-tile {
+      padding: 26px 22px; text-align: center;
+    }
+    .stat-tile .num {
+      display: block;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 38px; font-weight: 700; letter-spacing: -0.05em;
+    }
+    .stat-tile .lbl { font-size: 13px; color: var(--text-2); margin-top: 4px; }
+
+    /* ── Features ───────────────────────────────────────────── */
+    .feat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .feat-card { padding: 28px 26px; transition: transform 0.2s, box-shadow 0.2s; }
+    .feat-card:hover { transform: translateY(-4px); box-shadow: 0 24px 60px rgba(0,0,0,0.35); }
+    [data-theme="light"] .feat-card:hover { box-shadow: 0 24px 60px rgba(0,0,0,0.12); }
+    .feat-icon {
+      width: 50px; height: 50px; border-radius: 15px;
+      background: var(--accent-soft); color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 19px; margin-bottom: 18px;
+    }
+    .feat-card h3 { font-size: 17px; margin-bottom: 10px; }
+    .feat-card p  { font-size: 14px; color: var(--text-2); line-height: 1.7; }
+    .feat-tag {
+      display: inline-flex; margin-top: 14px;
+      padding: 3px 9px; border-radius: 6px;
+      background: var(--accent-soft); color: var(--accent-dim);
+      font-size: 10px; font-weight: 800; letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    [data-theme="light"] .feat-tag { color: var(--accent); }
+
+    /* ── How it works ───────────────────────────────────────── */
+    .steps {
+      display: grid; grid-template-columns: repeat(4,1fr);
+      gap: 0; position: relative;
+    }
+    .steps::before {
+      content: "";
+      position: absolute; top: 26px;
+      left: 12.5%; right: 12.5%; height: 1px;
+      background: var(--border);
+    }
+    .step { text-align: center; padding: 0 18px; }
+    .step-num {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--accent); color: #000;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 19px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px; position: relative; z-index: 1;
+    }
+    .step h3 { font-size: 15px; margin-bottom: 10px; }
+    .step p   { font-size: 13px; color: var(--text-2); line-height: 1.65; }
+
+    /* ── Roles ──────────────────────────────────────────────── */
+    .roles-grid {
+      display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 14px;
+    }
+    .role-card { padding: 36px 28px; text-align: center; transition: transform 0.2s; }
+    .role-card:hover { transform: translateY(-4px); }
+    .role-ico {
+      width: 66px; height: 66px; border-radius: 20px;
+      background: var(--accent-soft); color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; margin: 0 auto 20px;
+    }
+    .role-card h3 { margin-bottom: 12px; }
+    .role-card > p { font-size: 14px; color: var(--text-2); line-height: 1.7; margin-bottom: 22px; }
+    .perks { list-style: none; text-align: left; margin-bottom: 26px; display: flex; flex-direction: column; gap: 9px; }
+    .perk  { display: flex; gap: 9px; font-size: 13px; color: var(--text-2); align-items: flex-start; }
+    .perk::before { content: "✓"; color: var(--accent); font-weight: 800; flex-shrink: 0; }
+    .role-btn { width: 100%; justify-content: center; }
+
+    /* ── FAQ ────────────────────────────────────────────────── */
+    .faq-wrap {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 36px; align-items: start;
+    }
+    .faq-sidebar {
+      position: sticky; top: 78px;
+      display: flex; flex-direction: column; gap: 5px;
+    }
+    .faq-tab {
+      padding: 11px 15px; border-radius: 11px;
+      font-size: 13px; font-weight: 500; color: var(--text-2);
+      cursor: pointer; transition: all 0.18s;
+      border: 1px solid transparent; display: flex;
+      align-items: center; gap: 9px;
+    }
+    .faq-tab:hover { color: var(--text); background: var(--surface); }
+    .faq-tab.on    {
+      color: var(--accent); background: var(--accent-soft);
+      border-color: rgba(245,166,35,0.18);
+    }
+    [data-theme="light"] .faq-tab.on { color: var(--accent); }
+    .faq-grp  { display: none; flex-direction: column; gap: 7px; }
+    .faq-grp.on { display: flex; }
+    .faq-item { border-radius: 15px; overflow: hidden; }
+    .faq-q {
+      width: 100%; text-align: left;
+      padding: 18px 22px; display: flex;
+      align-items: center; justify-content: space-between; gap: 14px;
+      font-size: 14px; font-weight: 600; color: var(--text);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 15px; cursor: pointer; transition: all 0.18s;
+    }
+    .faq-q:hover { background: var(--surface-h); border-color: var(--border-s); }
+    .faq-item.on .faq-q {
+      border-bottom-left-radius: 0; border-bottom-right-radius: 0;
+      border-bottom-color: transparent;
+    }
+    .faq-chev { font-size: 11px; color: var(--text-3); transition: transform 0.22s; flex-shrink: 0; }
+    .faq-item.on .faq-chev { transform: rotate(180deg); }
+    .faq-a {
+      display: none;
+      padding: 4px 22px 18px;
+      font-size: 14px; color: var(--text-2); line-height: 1.8;
+      background: var(--surface); border: 1px solid var(--border);
+      border-top: none;
+      border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;
+    }
+    .faq-item.on .faq-a { display: block; }
+
+    /* ── CTA banner ─────────────────────────────────────────── */
+    .cta-panel {
+      padding: 72px 40px; text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .cta-panel::before {
+      content: "";
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at center, var(--accent-soft) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .cta-panel h2 { margin-bottom: 14px; }
+    .cta-panel p  {
+      color: var(--text-2); font-size: 17px; line-height: 1.7;
+      max-width: 500px; margin: 0 auto 32px;
+    }
+    .cta-btns { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
+
+    /* ── Divider ────────────────────────────────────────────── */
+    hr.div { border: none; height: 1px; background: var(--border); margin: 0; }
+
+    /* ── Footer ─────────────────────────────────────────────── */
+    footer {
+      padding: 40px 0; color: var(--text-3); font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
+    .foot-inner {
+      display: flex; justify-content: space-between;
+      align-items: center; flex-wrap: wrap; gap: 16px;
+    }
+    .foot-left strong { display: block; font-size: 14px; color: var(--text); margin-bottom: 4px; font-weight: 600; }
+    .foot-links { display: flex; gap: 18px; flex-wrap: wrap; }
+    .foot-links a { color: var(--text-3); transition: color 0.2s; }
+    .foot-links a:hover { color: var(--text); }
+
+    /* ── Responsive ─────────────────────────────────────────── */
+    @media (max-width: 980px) {
+      .nav-lnk, .nav-right .btn-s { display: none; }
+      .hamburger { display: flex; }
+      .about-grid { grid-template-columns: 1fr; }
+      .stat-tiles { position: static; }
+      .feat-grid  { grid-template-columns: 1fr 1fr; }
+      .steps      { grid-template-columns: 1fr 1fr; gap: 32px; }
+      .steps::before { display: none; }
+      .roles-grid { grid-template-columns: 1fr; }
+      .faq-wrap   { grid-template-columns: 1fr; }
+      .faq-sidebar { position: static; flex-direction: row; flex-wrap: wrap; }
+      .sec  { padding: 72px 0; }
+    }
+    @media (max-width: 600px) {
+      .feat-grid  { grid-template-columns: 1fr; }
+      .steps      { grid-template-columns: 1fr; }
+      .stat-tiles { grid-template-columns: 1fr 1fr; }
+      .hero       { padding: 110px 0 80px; }
+      .hero-trust { gap: 20px; padding: 20px; }
+      .trust-sep  { display: none; }
+      .sec        { padding: 56px 0; }
+      .cta-panel  { padding: 52px 24px; }
+    }
+
+    /* ── Anim ───────────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+    .fu   { animation: fadeUp 0.48s ease both; }
+    .d1   { animation-delay: 0.08s; }
+    .d2   { animation-delay: 0.17s; }
+    .d3   { animation-delay: 0.27s; }
+    .d4   { animation-delay: 0.36s; }
+  </style>
 </head>
 <body>
-<header class="topbar">
-    <div class="container topbar-inner">
-        <div class="brand">
-            <div class="brand-mark"><i class="fa-solid fa-shuttlecock"></i></div>
-            <div class="brand-copy">
-                <small>Badminton Club System</small>
-                <strong>NYO Admin Dashboard</strong>
-            </div>
-        </div>
-        <div class="top-links">
-            <a href="{% url 'members:apply' %}" class="btn btn-secondary"><i class="fa-solid fa-user-plus"></i> Apply Now</a>
-            <a href="/accounts/login/?role=parent" class="btn btn-secondary"><i class="fa-solid fa-child-reaching"></i> Parent Portal</a>
-            <a href="/accounts/login/?role=admin" class="btn btn-primary"><i class="fa-solid fa-arrow-right-to-bracket"></i> Staff Sign In</a>
-        </div>
+
+<!-- ── Nav ──────────────────────────────────────────────────────── -->
+<nav class="nav">
+  <div class="wrap nav-inner">
+    <a href="#" class="brand">
+      <div class="brand-icon"><i class="fa-solid fa-shuttlecock"></i></div>
+      <span class="brand-name">{{ landing_content.hero_title }}</span>
+    </a>
+
+    <div class="nav-right">
+      <a href="#about"        class="nav-lnk">About</a>
+      <a href="#features"     class="nav-lnk">Features</a>
+      <a href="#how-it-works" class="nav-lnk">How It Works</a>
+      <a href="#faq"          class="nav-lnk">FAQ</a>
+      <button class="theme-btn" id="themeBtn" aria-label="Toggle theme">
+        <i class="fa-solid fa-sun" id="themeIco"></i>
+      </button>
+      <a href="{% url 'members:apply' %}" class="btn btn-g btn-s">Apply Now</a>
+      <a href="/accounts/login/" class="btn btn-p btn-s"><i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In</a>
     </div>
-</header>
 
-<main class="container">
-    <section class="hero">
-        <div class="hero-grid">
-            <div class="panel hero-main">
-                <div class="hero-content">
-                    <div class="eyebrow"><i class="fa-solid fa-bolt"></i> {{ landing_content.announcement_text }}</div>
-                    <h1>{{ landing_content.hero_title }}</h1>
-                    <p class="lead">{{ landing_content.hero_subtitle }}</p>
-                    <div class="hero-actions">
-                        <a href="{% url 'members:apply' %}" class="btn btn-primary"><i class="fa-solid fa-user-plus"></i> {{ landing_content.primary_cta_text }}</a>
-                        <a href="#roles" class="btn btn-secondary"><i class="fa-solid fa-diagram-project"></i> {{ landing_content.secondary_cta_text }}</a>
-                    </div>
-                </div>
-            </div>
+    <button class="hamburger" id="menuBtn"><i class="fa-solid fa-bars"></i></button>
+  </div>
+</nav>
 
-            <div class="side-stack">
-                <div class="panel side-card">
-                    <div class="kicker">Live Club Snapshot</div>
-                    <h3>{{ active_members }} active players, {{ coach_count }} coach account(s), and {{ pending_reviews }} payment proof review(s) in motion.</h3>
-                    <p style="margin-top:10px;">The strongest part of the original flow is now production-ready: parents can apply, receive invoices, scan the live QR, upload proof, and wait for staff verification inside one connected portal.</p>
-                </div>
-                <div class="panel side-card">
-                    <div class="kicker">Available Programs</div>
-                    <div class="pill-row">
-                        {% for program in landing_content.available_programs %}
-                        <span class="pill">{{ program }}</span>
-                        {% empty %}
-                        <span class="pill">General Training</span>
-                        {% endfor %}
-                    </div>
-                </div>
-                <div class="panel side-card">
-                    <div class="kicker">Training Locations</div>
-                    <div class="pill-row">
-                        {% for location in landing_content.available_locations %}
-                        <span class="pill">{{ location }}</span>
-                        {% empty %}
-                        <span class="pill">Main Hall</span>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+<!-- Mobile nav -->
+<div class="mob-nav" id="mobNav">
+  <a href="#about"        class="mob-lnk" onclick="closeMob()">About</a>
+  <a href="#features"     class="mob-lnk" onclick="closeMob()">Features</a>
+  <a href="#how-it-works" class="mob-lnk" onclick="closeMob()">How It Works</a>
+  <a href="#roles"        class="mob-lnk" onclick="closeMob()">Who Is It For</a>
+  <a href="#faq"          class="mob-lnk" onclick="closeMob()">FAQ</a>
+  <div class="mob-btns">
+    <a href="{% url 'members:apply' %}" class="btn btn-g btn-s" onclick="closeMob()"><i class="fa-solid fa-user-plus"></i> Apply Now</a>
+    <a href="/accounts/login/" class="btn btn-p btn-s" onclick="closeMob()"><i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In</a>
+  </div>
+</div>
 
-    <section class="section">
-        <div class="panel">
-            <div class="section-head">
-                <div>
-                    <div class="kicker">Platform Pulse</div>
-                    <h2>The real flow is now visible from the very first screen.</h2>
-                    <p>Every number below maps to live Django data instead of reference-only mocks, so the public site, staff dashboard, and parent portal all tell the same story.</p>
-                </div>
-            </div>
-            <div class="stat-grid">
-                <div class="stat-card">
-                    <div class="kicker">Members</div>
-                    <div class="stat-value">{{ active_members }}</div>
-                    <p>Active club members right now.</p>
-                </div>
-                <div class="stat-card">
-                    <div class="kicker">Sessions</div>
-                    <div class="stat-value">{{ sessions_this_month }}</div>
-                    <p>Training sessions already scheduled this month.</p>
-                </div>
-                <div class="stat-card">
-                    <div class="kicker">Applications</div>
-                    <div class="stat-value">{{ application_count }}</div>
-                    <p>Pending admission requests waiting for a decision.</p>
-                </div>
-                <div class="stat-card">
-                    <div class="kicker">Store</div>
-                    <div class="stat-value">{{ product_count }}</div>
-                    <p>Active merchandise items visible in the portal.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="section" id="roles">
-        <div class="panel">
-            <div class="section-head">
-                <div>
-                    <div class="kicker">Role Journeys</div>
-                    <h2>Each role enters the same system through a different working rhythm.</h2>
-                    <p>The original concept separated parents, coaches, and administrators clearly. This version keeps that clarity while landing every CTA on a real page backed by members, sessions, invoices, store items, and payment proofs.</p>
-                </div>
-            </div>
-            <div class="role-grid">
-                {% for card in role_cards %}
-                <div class="role-card">
-                    <div class="role-icon"><i class="fa-solid {{ card.icon }}"></i></div>
-                    <h3>{{ card.title }}</h3>
-                    <p style="margin-top:10px;">{{ card.subtitle }}</p>
-                    <div style="margin-top:18px;">
-                        <a href="{{ card.url }}" class="btn btn-secondary"><i class="fa-solid fa-arrow-right"></i> Open {{ card.title }}</a>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </section>
-
-    <section class="section">
-        <div class="panel">
-            <div class="section-head">
-                <div>
-                    <div class="kicker">Connected Flow</div>
-                    <h2>Parents can now move from application to payments without jumping systems.</h2>
-                    <p>The missing middle has been filled in: application intake, role dashboards, coach reports, finance visibility, QR payment proof, and store browsing all live inside the same app.</p>
-                </div>
-            </div>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fa-solid fa-user-plus"></i></div>
-                    <h3>Admissions</h3>
-                    <p>Public applications can be reviewed by staff and converted into real member profiles.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fa-solid fa-file-lines"></i></div>
-                    <h3>Progress Reports</h3>
-                    <p>Coaches publish report-card style updates tied to attendance and real player records.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fa-solid fa-qrcode"></i></div>
-                    <h3>Manual QR Payments</h3>
-                    <p>Parents scan the uploaded QR, pay the exact amount, and submit proof for review.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fa-solid fa-bag-shopping"></i></div>
-                    <h3>Official Store</h3>
-                    <p>Staff can manage merchandise, while families browse club products in the same portal.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="section">
-        <div class="panel">
-            <div class="section-head">
-                <div>
-                    <div class="kicker">Next Step</div>
-                    <h2>Ready to start the parent-facing flow?</h2>
-                    <p>Apply for intake if you’re new, or jump straight into the portal if your family already has access.</p>
-                </div>
-            </div>
-            <div class="meta-grid">
-                <div class="side-card">
-                    <div class="kicker">New Families</div>
-                    <h3>Begin with the application form.</h3>
-                    <p style="margin-top:10px;">Choose a program, pick a location, and send the student details into the live staff review queue.</p>
-                    <div style="margin-top:18px;">
-                        <a href="{% url 'members:apply' %}" class="btn btn-primary"><i class="fa-solid fa-user-plus"></i> Apply For Admission</a>
-                    </div>
-                </div>
-                <div class="side-card">
-                    <div class="kicker">Existing Families</div>
-                    <h3>Enter the parent portal.</h3>
-                    <p style="margin-top:10px;">Track child attendance, view published reports, browse invoices, and complete the QR payment proof flow.</p>
-                    <div style="margin-top:18px;">
-                        <a href="/accounts/login/?role=parent" class="btn btn-secondary"><i class="fa-solid fa-credit-card"></i> Open Parent Portal</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-</main>
-
-<footer class="footer">
-    <div class="container footer-inner">
-        <div>NYO Admin Dashboard for badminton club operations.</div>
-        <div class="footer-links">
-            {% if landing_content.instagram_link %}<a href="{{ landing_content.instagram_link }}" target="_blank" rel="noreferrer">Instagram</a>{% endif %}
-            {% if landing_content.tiktok_link %}<a href="{{ landing_content.tiktok_link }}" target="_blank" rel="noreferrer">TikTok</a>{% endif %}
-            {% if landing_content.contact_email %}<a href="mailto:{{ landing_content.contact_email }}">{{ landing_content.contact_email }}</a>{% endif %}
-        </div>
+<!-- ── Hero ─────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="wrap" style="position:relative;z-index:1;">
+    <div class="hero-badge fu"><i class="fa-solid fa-bolt"></i>&nbsp;{{ landing_content.announcement_text }}</div>
+    <h1 class="fu d1">
+      Everything your<br>
+      <em>badminton club</em><br>
+      needs in one place.
+    </h1>
+    <p class="lead fu d2">{{ landing_content.hero_subtitle }}</p>
+    <div class="hero-btns fu d3">
+      <a href="{% url 'members:apply' %}" class="btn btn-p"><i class="fa-solid fa-user-plus"></i> {{ landing_content.primary_cta_text }}</a>
+      <a href="/accounts/login/?role=parent" class="btn btn-g"><i class="fa-solid fa-child-reaching"></i> Parent Login</a>
+      <a href="/accounts/login/?role=admin" class="btn btn-g"><i class="fa-solid fa-shield-halved"></i> Staff Login</a>
     </div>
+    <!-- Trust bar -->
+    <div class="hero-trust fu d4">
+      <div class="trust-item">
+        <span class="trust-num">{{ active_members }}</span>
+        <div class="trust-lbl">Active Players</div>
+      </div>
+      <div class="trust-sep"></div>
+      <div class="trust-item">
+        <span class="trust-num">{{ sessions_this_month }}</span>
+        <div class="trust-lbl">Sessions This Month</div>
+      </div>
+      <div class="trust-sep"></div>
+      <div class="trust-item">
+        <span class="trust-num">{{ coach_count }}</span>
+        <div class="trust-lbl">Expert Coaches</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ── About ────────────────────────────────────────────────────── -->
+<section class="sec" id="about">
+  <div class="wrap">
+    <div class="about-grid">
+      <!-- Text -->
+      <div class="about-text">
+        <div class="eyebrow">About This System</div>
+        <h2>A complete management platform built for your badminton club.</h2>
+        <p class="lead">Whether you are a parent keeping up with your child's training, a coach running sessions, or an admin managing the whole club — everything you need is here, simple and clear.</p>
+        <ul class="points" style="margin-top:32px;">
+          <li class="point">
+            <div class="point-ico"><i class="fa-solid fa-child-reaching"></i></div>
+            <div class="point-body">
+              <strong>For Parents</strong>
+              <span>Register your child, track attendance, read progress report cards, and pay monthly fees — all from one parent account, from any device.</span>
+            </div>
+          </li>
+          <li class="point">
+            <div class="point-ico"><i class="fa-solid fa-user-check"></i></div>
+            <div class="point-body">
+              <strong>For Coaches</strong>
+              <span>View your assigned training sessions, mark attendance during class, and publish detailed skill progress reports for each student.</span>
+            </div>
+          </li>
+          <li class="point">
+            <div class="point-ico"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="point-body">
+              <strong>For Club Admin</strong>
+              <span>Control everything from one dashboard — member records, staff accounts, billing, payment verification, and club announcements.</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <!-- Stat tiles -->
+      <div class="stat-tiles">
+        <div class="glass stat-tile">
+          <span class="num">{{ active_members }}</span>
+          <div class="lbl">Active Players</div>
+        </div>
+        <div class="glass stat-tile">
+          <span class="num">{{ coach_count }}</span>
+          <div class="lbl">Coaches</div>
+        </div>
+        <div class="glass stat-tile">
+          <span class="num">{{ sessions_this_month }}</span>
+          <div class="lbl">Sessions This Month</div>
+        </div>
+        <div class="glass stat-tile">
+          <span class="num">{{ product_count }}</span>
+          <div class="lbl">Store Items</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ── Features ─────────────────────────────────────────────────── -->
+<section class="sec" id="features">
+  <div class="wrap">
+    <div class="sec-head center">
+      <div class="eyebrow">Platform Features</div>
+      <h2>Powerful tools, designed to be simple.</h2>
+      <p class="lead" style="margin-top:14px;">Every feature was built with one goal — anyone, including someone using a computer for the first time, should be able to understand and use this system without instructions.</p>
+    </div>
+    <div class="feat-grid">
+
+      <div class="glass feat-card">
+        <div class="feat-icon"><i class="fa-solid fa-user-plus"></i></div>
+        <h3>Online Admission &amp; Enrollment</h3>
+        <p>New families apply through a simple online form. Fill in your child's details, choose a training program and location, and submit. The coaching staff will review and approve your application — usually within one to two days.</p>
+        <div class="feat-tag">For Parents</div>
+      </div>
+
+      <div class="glass feat-card">
+        <div class="feat-icon"><i class="fa-solid fa-chart-line"></i></div>
+        <h3>Automatic Skill Level Assessment</h3>
+        <p>During the admission form, your child answers a short set of questions about their badminton experience. The system automatically places them in the right group — <strong>Beginner</strong>, <strong>Intermediate</strong>, or <strong>Advanced</strong>. The admin can also adjust this after an in-person assessment.</p>
+        <div class="feat-tag">Smart Placement</div>
+      </div>
+
+      <div class="glass feat-card">
+        <div class="feat-icon"><i class="fa-solid fa-calendar-days"></i></div>
+        <h3>Session Monitoring</h3>
+        <p>See every training session your child is enrolled in. View the full schedule, check upcoming dates and times, track which sessions were attended, arrived late, or missed — updated live after each class.</p>
+        <div class="feat-tag">For Parents</div>
+      </div>
+
+      <div class="glass feat-card">
+        <div class="feat-icon"><i class="fa-solid fa-file-lines"></i></div>
+        <h3>Detailed Progress Report Cards</h3>
+        <p>After each training period, coaches publish a structured report card covering specific skill areas — footwork, smash power, serve accuracy, game sense, and consistency. Each area has a numeric score and written feedback. Like a school report card, but for badminton.</p>
+        <div class="feat-tag">Coach Reports</div>
+      </div>
+
+      <div class="glass feat-card">
+        <div class="feat-icon"><i class="fa-solid fa-qrcode"></i></div>
+        <h3>QR Code Payment System</h3>
+        <p>No complicated bank details to copy. When you have an invoice, scan the QR code shown on screen with your banking app, transfer the exact amount, take a screenshot, and upload it as payment proof. Staff will verify and confirm it — simple and safe.</p>
+        <div class="feat-tag">Easy Payments</div>
+      </div>
+
+      <div class="glass feat-card">
+        <div class="feat-icon"><i class="fa-solid fa-clipboard-check"></i></div>
+        <h3>Live Attendance Tracking</h3>
+        <p>Coaches and attendance staff mark each student's presence during every session in real time. Parents can instantly see whether their child attended, arrived late, or was absent — along with the overall attendance rate over time.</p>
+        <div class="feat-tag">Real-Time</div>
+      </div>
+
+      <div class="glass feat-card">
+        <div class="feat-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+        <h3>Invoice &amp; Billing Management</h3>
+        <p>All monthly fees and one-time charges appear as clear, itemised invoices. You can see exactly what you owe, the due date, and whether each invoice is paid, waiting for confirmation, or still outstanding — no guessing.</p>
+        <div class="feat-tag">Finance</div>
+      </div>
+
+      <div class="glass feat-card">
+        <div class="feat-icon"><i class="fa-solid fa-bag-shopping"></i></div>
+        <h3>Official Club Store</h3>
+        <p>Browse and purchase official club merchandise, equipment, and training gear directly from your portal. Admins manage the store inventory; parents and members can shop from the same account they use every day.</p>
+        <div class="feat-tag">Official Store</div>
+      </div>
+
+      <div class="glass feat-card">
+        <div class="feat-icon"><i class="fa-solid fa-bell"></i></div>
+        <h3>Notifications &amp; Announcements</h3>
+        <p>Stay informed about session changes, payment confirmations, new report cards, application status updates, and club-wide announcements — all through the built-in notification centre in your account.</p>
+        <div class="feat-tag">Alerts</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ── How it works ──────────────────────────────────────────────── -->
+<section class="sec" id="how-it-works">
+  <div class="wrap">
+    <div class="sec-head center">
+      <div class="eyebrow">Getting Started</div>
+      <h2>From sign-up to first session in 4 easy steps.</h2>
+      <p class="lead" style="margin-top:14px;">Here is exactly what happens when a new family joins the club — step by step, no confusion, no missing pieces.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>Apply Online</h3>
+        <p>Fill in the online admission form with your child's details, choose a training program and location, and answer a few quick questions so the system can suggest the right skill group.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>Staff Reviews &amp; Approves</h3>
+        <p>The club admin reviews your application within one to two working days. Once approved, your parent account and your child's member profile are activated and ready to use.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>Pay the Enrollment Fee</h3>
+        <p>You will receive an invoice for the one-time enrollment fee. Scan the QR code in your portal, pay using your banking app, upload a screenshot of the receipt, and the admin confirms it — usually the same day.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <h3>Start Training!</h3>
+        <p>Your child attends their first session. From that point on, you can see attendance, read progress reports, check upcoming sessions, pay monthly fees, and manage everything from your parent dashboard.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ── Roles ─────────────────────────────────────────────────────── -->
+<section class="sec" id="roles">
+  <div class="wrap">
+    <div class="sec-head center">
+      <div class="eyebrow">Who Is This For?</div>
+      <h2>Three roles, one connected system.</h2>
+      <p class="lead" style="margin-top:14px;">Every person in the club has their own dedicated workspace with the exact tools they need — nothing more, nothing less.</p>
+    </div>
+    <div class="roles-grid">
+
+      <!-- Parent -->
+      <div class="glass role-card">
+        <div class="role-ico"><i class="fa-solid fa-child-reaching"></i></div>
+        <h3>Parents</h3>
+        <p>Everything you need to stay connected to your child's badminton journey — attendance, reports, fees, and more, all in one place.</p>
+        <ul class="perks">
+          <li class="perk">Register and manage your child's profile</li>
+          <li class="perk">View upcoming and past training sessions</li>
+          <li class="perk">Check attendance records and overall rate</li>
+          <li class="perk">Read detailed skill progress report cards</li>
+          <li class="perk">Pay fees safely using QR code scanning</li>
+          <li class="perk">Track invoice history and payment status</li>
+          <li class="perk">Browse the official club merchandise store</li>
+        </ul>
+        <a href="/accounts/login/?role=parent" class="btn btn-g role-btn">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Parent Login
+        </a>
+      </div>
+
+      <!-- Coach -->
+      <div class="glass role-card">
+        <div class="role-ico"><i class="fa-solid fa-user-check"></i></div>
+        <h3>Coaches</h3>
+        <p>Focus on what you do best — coaching. The system handles scheduling, attendance logging, and report publishing for you.</p>
+        <ul class="perks">
+          <li class="perk">View your assigned training session schedule</li>
+          <li class="perk">Mark attendance for each student in real time</li>
+          <li class="perk">Write and publish detailed progress reports</li>
+          <li class="perk">Give session feedback for individual students</li>
+          <li class="perk">See all your assigned players in one list</li>
+          <li class="perk">Monitor payment status for your students</li>
+          <li class="perk">Access the club store</li>
+        </ul>
+        <a href="/accounts/login/?role=coach" class="btn btn-g role-btn">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Coach Login
+        </a>
+      </div>
+
+      <!-- Admin -->
+      <div class="glass role-card">
+        <div class="role-ico"><i class="fa-solid fa-shield-halved"></i></div>
+        <h3>Club Admin</h3>
+        <p>Complete control over every part of the club — members, staff, finance, payments, and website settings — from a single command centre.</p>
+        <ul class="perks">
+          <li class="perk">Review and approve membership applications</li>
+          <li class="perk">Create and manage coach staff accounts</li>
+          <li class="perk">Plan and schedule all training sessions</li>
+          <li class="perk">Issue invoices and manage all billing</li>
+          <li class="perk">Verify and approve payment proof uploads</li>
+          <li class="perk">View full finance overview and reports</li>
+          <li class="perk">Manage the store, website, and announcements</li>
+        </ul>
+        <a href="/accounts/login/?role=admin" class="btn btn-p role-btn">
+          <i class="fa-solid fa-shield-halved"></i> Admin Login
+        </a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ── FAQ ──────────────────────────────────────────────────────── -->
+<section class="sec" id="faq">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">Frequently Asked Questions</div>
+      <h2>Got questions? We have answers.</h2>
+      <p class="lead" style="margin-top:14px;">If you are new here or unsure how something works, this section covers the most common questions we receive from parents, coaches, and new members.</p>
+    </div>
+
+    <div class="faq-wrap">
+      <!-- Sidebar -->
+      <div class="faq-sidebar">
+        <div class="faq-tab on" data-for="fq-signup"><i class="fa-solid fa-user-plus"></i> Sign Up &amp; Registration</div>
+        <div class="faq-tab"    data-for="fq-login"><i class="fa-solid fa-key"></i> Login &amp; Account</div>
+        <div class="faq-tab"    data-for="fq-payment"><i class="fa-solid fa-credit-card"></i> Payments &amp; Fees</div>
+        <div class="faq-tab"    data-for="fq-sessions"><i class="fa-solid fa-calendar-days"></i> Sessions &amp; Attendance</div>
+        <div class="faq-tab"    data-for="fq-reports"><i class="fa-solid fa-file-lines"></i> Reports &amp; Progress</div>
+      </div>
+
+      <!-- Content -->
+      <div class="faq-content">
+
+        <!-- Sign Up -->
+        <div class="faq-grp on" id="fq-signup">
+          <div class="faq-item">
+            <button class="faq-q">How do I register my child for the badminton club? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
+            <div class="faq-a">Click the <strong>Apply Now</strong> button at the top of this page. Fill in your child's full name, date of birth, and contact details, then select a training program and training location. After submitting, the club admin will review your application — usually within one to two working days.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q">What information do I need to register? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
+            <div class="faq-a">You will need your child's full name, date of birth, and gender. You will also need your own name, email address, and a contact phone number to create a parent account. No complicated documents are required at the application stage.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q">How is my child's skill level decided? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
+            <div class="faq-a">The admission form includes a short set of questions about your child's badminton experience — such as how many years they have been playing, whether they have had formal training before, and what areas they feel confident in. Based on the answers, the system assigns a starting level: <strong>Beginner</strong>, <strong>Intermediate</strong>, or <strong>Advanced</strong>. The admin can also adjust this level after an in-person assessment at the first session.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q">Can I register more than one child under my account? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
+            <div class="faq-a">Yes. One parent account can be linked to multiple children. Each child will have their own separate member profile, session schedule, attendance history, and progress reports — all visible from your single parent account.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q">What happens after I submit the application? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
+            <div class="faq-a">Your application enters a staff review queue. The club admin will look at it and either approve it or contact you for more information. Once approved, your parent login credentials are created and you will receive an invoice for the enrollment fee. After paying, your child can begin attending sessions.</div>
+          </div>
+        </div>
+
+        <!-- Login -->
+        <div class="faq-grp" id="fq-login">
+          <div class="faq-item">
+            <button class="faq-q">How do I log in to my parent account? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
+            <div class="faq-a">Click the <strong>Parent Login</strong> button at the top of this page or click <strong>Sign In</strong> and use the parent login option. Enter your username and password — these are set up when your application is approved. If you have not received your credentials yet, please contact the club admin.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q">What if I forget my password? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
+            <div class="faq-a">On the login page, click <strong>Forgot Password</strong> and enter your registered email address. A password reset link will be sent to your inbox. If you do not see it, check your spam or junk folder. You can also contact the club admin directly for assistance.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q">What is the difference between Parent Login and Staff Login? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
+            <div class="faq-a"><strong>Parent Login</strong> is for families — to view their child's sessions, attendance, invoices, and make payments. <strong>Staff Login</strong> is for coaches and club administrators only. Coaches use it to manage sessions and write progress reports. Admins use it to run all club operations. Staff accounts are created by the admin — they cannot be self-registered by the public.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q">I cannot log in. What should I do? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
+            <div class="faq-a">First, double-check that your username and password are entered correctly — both are case-sensitive. Try the Forgot Password option if needed. If you are still unable to log in, please contact the club admin at <strong>{% if landing_content.contact_email %}<a href="mailto:{{ landing_content.contact_email }}" style="color:var(--accent);">{{ landing_content.contact_email }}</a>{% else %}the club email address{% endif %}</strong> and they will assist you.</div>
+          </div>
+        </div>
+
+        <!-- Payment -->
+        <div class="faq-grp" id="fq-payment">
+          <div class="faq-item">
+            <button class="faq-q">How does the payment system work? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
+            <div class="faq-a">The club issues invoices through the system — for the one-time enrollment fee and for monthly training fees. When you have an outstanding invoice, you will see a QR code in your payment page. Scan it with your banking or e-wallet app, pay the exact amount, take a screenshot, and upload it as payment proof. The admin reviews your screenshot and marks the invoice as paid.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q">What exactly is the QR code payment method? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
+            <div class="faq-a">A QR code is a square barcode that your phone camera can read. Open your banking app (such as Maybank2u, CIMB Clicks, or any e-wallet like Touch 'n Go or GrabPay), tap the "Scan &amp; Pay" or "Transfer" option, point your camera at the QR code on screen, and the payment details will be filled in automatically. Enter the exact amount from your invoice, confirm the transfer, then take a screenshot of the success message and upload it to the portal.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q">How long does payment verification take? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
+            <div class="faq-a">Most payment proofs are reviewed within <strong>1 business day</strong>. Once the admin approves your screenshot, your invoice will be marked as <strong>Paid</strong> and you will see it updated in your payment history. You will also receive a notification inside the system when it is confirmed.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q">What fees does the club charge? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
+            <div class="faq-a">There is typically a one-time <strong>enrollment or registration fee</strong> when joining the club, and a recurring <strong>monthly training fee</strong> for ongoing sessions. The exact amounts are set by the club admin and will be shown clearly on each invoice before you need to pay anything.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q">I uploaded my payment proof but it has not been confirmed yet. <i class="fa-solid fa-chevron-down faq-chev"></i></button>
+            <div class="faq-a">Please allow up to 1 business day for review. Make sure your uploaded screenshot clearly shows the transaction amount, date, and transaction reference number. If the image is blurry or incomplete, you can upload a clearer version. If it has been more than 1 business day, contact the admin directly and they can check it for you.</div>
+          </div>
+        </div>
+
+        <!-- Sessions -->
+        <div class="faq-grp" id="fq-sessions">
+          <div class="faq-item">
+            <button class="faq-q">How do I see my child's training schedule? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
+            <div class="faq-a">After logging in to your parent account, go to <strong>Session Schedule</strong> from your dashboard menu. You will see all upcoming sessions with dates, times, and locations. You can also view past sessions and check whether your child attended each one.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q">How is attendance recorded? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
+            <div class="faq-a">The coach or designated attendance staff marks each student as <strong>Present</strong>, <strong>Late</strong>, or <strong>Absent</strong> at the start of every session. This is updated in real time and you can view it immediately in your parent portal. Your child's full attendance history and overall attendance percentage are always visible on your dashboard.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q">My child missed a session. Will it affect anything? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
+            <div class="faq-a">Missed sessions are recorded as "Absent" in the attendance history. The overall attendance rate is visible to both you and the coach. Consistent absences may be noted in progress reports. If your child needs to miss a session for a valid reason, please inform the coach in advance so it can be noted accordingly.</div>
+          </div>
+        </div>
+
+        <!-- Reports -->
+        <div class="faq-grp" id="fq-reports">
+          <div class="faq-item">
+            <button class="faq-q">What is a Progress Report Card? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
+            <div class="faq-a">A Progress Report Card is a structured written assessment published by your child's coach at the end of each training period. It covers specific badminton skill areas — such as footwork, smash power, serve accuracy, consistency, and game sense — giving each area a numerical score and short written feedback. Think of it exactly like a school report card, but focused entirely on your child's development as a badminton player.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q">How often are report cards published? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
+            <div class="faq-a">Report cards are published at the end of each training period as set by the coach or admin. You will receive a notification inside the system when a new report is available. All past reports are stored and accessible at any time from the <strong>Progress Reports</strong> section of your dashboard.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q">Can I see how my child is improving over time? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
+            <div class="faq-a">Yes. Each report card shows the scores for the current period and compares them to the previous one. You can see at a glance whether each skill went up, went down, or stayed the same. An overall performance score and a grade (such as A, B, or C) are also shown to make it easy to track long-term improvement.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q">Can I contact the coach about my child's report? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
+            <div class="faq-a">Yes. You can reach the club admin or your child's assigned coach using the contact details shown in the footer of this page. Your child's assigned coach name is also shown on their member profile and on the session schedule so you always know who to speak to.</div>
+          </div>
+        </div>
+
+      </div><!-- /.faq-content -->
+    </div><!-- /.faq-wrap -->
+  </div>
+</section>
+
+<hr class="div">
+
+<!-- ── CTA Banner ────────────────────────────────────────────────── -->
+<section class="sec-sm" id="join">
+  <div class="wrap">
+    <div class="glass cta-panel">
+      <div class="eyebrow">Ready to Start?</div>
+      <h2>Join the club today.</h2>
+      <p>Register your child in minutes. The coaching team is ready to welcome your family and get your child into their first session.</p>
+      <div class="cta-btns">
+        <a href="{% url 'members:apply' %}" class="btn btn-p"><i class="fa-solid fa-user-plus"></i> Apply For Admission</a>
+        <a href="/accounts/login/?role=parent" class="btn btn-g"><i class="fa-solid fa-arrow-right-to-bracket"></i> Already a Member? Sign In</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ────────────────────────────────────────────────────── -->
+<footer>
+  <div class="wrap foot-inner">
+    <div class="foot-left">
+      <strong>{{ landing_content.hero_title }}</strong>
+      <span>Badminton club management &mdash; sessions, reports, payments, and more.</span>
+    </div>
+    <div class="foot-links">
+      {% if landing_content.instagram_link %}
+        <a href="{{ landing_content.instagram_link }}" target="_blank" rel="noreferrer"><i class="fa-brands fa-instagram"></i> Instagram</a>
+      {% endif %}
+      {% if landing_content.tiktok_link %}
+        <a href="{{ landing_content.tiktok_link }}" target="_blank" rel="noreferrer"><i class="fa-brands fa-tiktok"></i> TikTok</a>
+      {% endif %}
+      {% if landing_content.contact_email %}
+        <a href="mailto:{{ landing_content.contact_email }}"><i class="fa-solid fa-envelope"></i> {{ landing_content.contact_email }}</a>
+      {% endif %}
+      <a href="{% url 'members:apply' %}"><i class="fa-solid fa-user-plus"></i> Apply</a>
+      <a href="/accounts/login/"><i class="fa-solid fa-arrow-right-to-bracket"></i> Login</a>
+    </div>
+  </div>
 </footer>
+
+<script>
+/* ── Theme ─────────────────────────────────────────────────────── */
+const html    = document.documentElement;
+const themeBtn = document.getElementById("themeBtn");
+const themeIco = document.getElementById("themeIco");
+
+function applyTheme(t) {
+  html.dataset.theme = t;
+  themeIco.className = t === "dark" ? "fa-solid fa-sun" : "fa-solid fa-moon";
+  localStorage.setItem("nyo-theme", t);
+}
+// Restore on load (already set by inline script above; just sync icon)
+applyTheme(html.dataset.theme || "dark");
+
+themeBtn.addEventListener("click", () => {
+  applyTheme(html.dataset.theme === "dark" ? "light" : "dark");
+});
+
+/* ── Mobile menu ───────────────────────────────────────────────── */
+const menuBtn = document.getElementById("menuBtn");
+const mobNav  = document.getElementById("mobNav");
+menuBtn.addEventListener("click", () => mobNav.classList.toggle("open"));
+function closeMob() { mobNav.classList.remove("open"); }
+
+/* ── FAQ tabs ──────────────────────────────────────────────────── */
+document.querySelectorAll(".faq-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".faq-tab").forEach(t => t.classList.remove("on"));
+    document.querySelectorAll(".faq-grp").forEach(g => g.classList.remove("on"));
+    tab.classList.add("on");
+    document.getElementById(tab.dataset.for).classList.add("on");
+  });
+});
+
+/* ── FAQ accordion ─────────────────────────────────────────────── */
+document.querySelectorAll(".faq-q").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const item  = btn.closest(".faq-item");
+    const isOpen = item.classList.contains("on");
+    btn.closest(".faq-grp").querySelectorAll(".faq-item").forEach(i => i.classList.remove("on"));
+    if (!isOpen) item.classList.add("on");
+  });
+});
+
+/* ── Close mob menu on anchor links ────────────────────────────── */
+document.querySelectorAll(".mob-nav a[href^='#']").forEach(a => {
+  a.addEventListener("click", closeMob);
+});
+</script>
 </body>
 </html>

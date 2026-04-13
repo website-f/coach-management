@@ -7,18 +7,20 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.forms import modelformset_factory
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views import View
-from django.views.generic import CreateView, DetailView, ListView, UpdateView
+from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
 
 from accounts.mixins import AdminOrCoachRequiredMixin, AdminRequiredMixin, HeadcountOrAboveRequiredMixin
 from accounts.notifications import notify_users
 from accounts.utils import ROLE_ADMIN, ROLE_COACH, ROLE_HEADCOUNT, ROLE_PARENT, has_role
 from members.models import Member
-from sessions.forms import SessionFeedbackForm, TrainingSessionForm
-from sessions.models import AttendanceRecord, SessionFeedback, TrainingSession
+from sessions.forms import SessionFeedbackForm, TrainingSessionForm, WeeklySyllabusForm
+from sessions.models import AttendanceRecord, SessionFeedback, TrainingSession, WeeklySyllabus
+from sessions.services import build_session_plan, ensure_default_syllabus
 from sessions.video_utils import compress_session_feedback_video
 
 User = get_user_model()
@@ -150,6 +152,65 @@ def notify_feedback_ready(feedback_entry):
     )
 
 
+def can_manage_session_plan(user, training_session):
+    return has_role(user, ROLE_ADMIN) or (
+        has_role(user, ROLE_COACH) and training_session.coach_id == user.id
+    )
+
+
+class SyllabusListView(AdminRequiredMixin, ListView):
+    model = WeeklySyllabus
+    template_name = "sessions/syllabus_list.html"
+    context_object_name = "syllabus_rows"
+
+    def get_queryset(self):
+        ensure_default_syllabus()
+        queryset = WeeklySyllabus.objects.order_by("track", "week_number")
+        track = self.request.GET.get("track", "").strip()
+        if track:
+            queryset = queryset.filter(track=track)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        rows = list(context["syllabus_rows"])
+        grouped_rows = []
+        for track_value, track_label in WeeklySyllabus.TRACK_CHOICES:
+            track_rows = [row for row in rows if row.track == track_value]
+            if track_rows:
+                grouped_rows.append({"track": track_value, "label": track_label, "rows": track_rows})
+        context["grouped_rows"] = grouped_rows
+        context["track_choices"] = WeeklySyllabus.TRACK_CHOICES
+        context["selected_track"] = self.request.GET.get("track", "").strip()
+        return context
+
+
+class SyllabusCreateView(AdminRequiredMixin, CreateView):
+    model = WeeklySyllabus
+    form_class = WeeklySyllabusForm
+    template_name = "sessions/syllabus_form.html"
+    success_url = reverse_lazy("sessions:syllabus")
+
+    def form_valid(self, form):
+        form.instance.updated_by = self.request.user
+        response = super().form_valid(form)
+        messages.success(self.request, "Syllabus week created successfully.")
+        return response
+
+
+class SyllabusUpdateView(AdminRequiredMixin, UpdateView):
+    model = WeeklySyllabus
+    form_class = WeeklySyllabusForm
+    template_name = "sessions/syllabus_form.html"
+    success_url = reverse_lazy("sessions:syllabus")
+
+    def form_valid(self, form):
+        form.instance.updated_by = self.request.user
+        response = super().form_valid(form)
+        messages.success(self.request, "Syllabus week updated successfully.")
+        return response
+
+
 class SessionListView(LoginRequiredMixin, ListView):
     model = TrainingSession
     template_name = "sessions/session_list.html"
@@ -274,6 +335,47 @@ class SessionDetailView(LoginRequiredMixin, DetailView):
             "member__full_name"
         )
         return context
+
+
+class SessionPlanView(AdminOrCoachRequiredMixin, TemplateView):
+    template_name = "sessions/session_plan.html"
+
+    def get_training_session(self):
+        training_session = get_object_or_404(visible_sessions_for_user(self.request.user), pk=self.kwargs["pk"])
+        if not can_manage_session_plan(self.request.user, training_session):
+            messages.error(self.request, "Only admin or the assigned coach can generate this training plan.")
+            raise PermissionError
+        return training_session
+
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            self.training_session = self.get_training_session()
+        except PermissionError:
+            return redirect("sessions:detail", pk=kwargs["pk"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        roster = list(
+            self.training_session.attendance_records.select_related("member").order_by("member__full_name")
+        )
+        context.update(
+            {
+                "training_session": self.training_session,
+                "roster": roster,
+                "autoload_plan": self.request.GET.get("autostart") == "1",
+            }
+        )
+        return context
+
+
+class SessionPlanGenerateView(AdminOrCoachRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        training_session = get_object_or_404(visible_sessions_for_user(request.user), pk=kwargs["pk"])
+        if not can_manage_session_plan(request.user, training_session):
+            return JsonResponse({"error": "Only admin or the assigned coach can generate this training plan."}, status=403)
+        plan_payload = build_session_plan(training_session)
+        return JsonResponse(plan_payload)
 
 
 class SessionCreateView(AdminRequiredMixin, CreateView):

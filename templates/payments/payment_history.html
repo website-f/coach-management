@@ -83,7 +83,7 @@
     </div>
 
     <div class="table-wrap">
-        <table class="tbl">
+        <table class="tbl native-stack">
             <thead>
                 <tr>
                     <th>Member</th>
@@ -97,15 +97,15 @@
             <tbody>
                 {% for payment in payments %}
                 <tr>
-                    <td>
+                    <td data-label="Member">
                         <div class="tbl-name">{{ payment.invoice.member.full_name }}</div>
                         <div class="tbl-sub">{{ payment.invoice.get_invoice_type_display }} · RM {{ payment.invoice.amount }}</div>
                     </td>
-                    <td class="muted">{{ payment.invoice.period|date:"F Y" }}</td>
-                    <td class="muted">{{ payment.paid_by|default:"Unknown" }}</td>
-                    <td><span class="badge {{ payment.status|status_badge }}">{{ payment.get_status_display }}</span></td>
-                    <td class="muted">{{ payment.submitted_at|date:"d M Y H:i" }}</td>
-                    <td>
+                    <td class="muted" data-label="Period">{{ payment.invoice.period|date:"F Y" }}</td>
+                    <td class="muted" data-label="Submitted By">{{ payment.paid_by|default:"Unknown" }}</td>
+                    <td data-label="Status"><span class="badge {{ payment.status|status_badge }}">{{ payment.get_status_display }}</span></td>
+                    <td class="muted" data-label="Submitted At">{{ payment.submitted_at|date:"d M Y H:i" }}</td>
+                    <td data-label="Action">
                         <div style="display:flex;gap:8px;flex-wrap:wrap;">
                             {% if payment.proof_image %}
                             <a href="{{ payment.proof_image.url }}" target="_blank" class="btn btn-ghost btn-xs">Proof</a>

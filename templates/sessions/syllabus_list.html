@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Syllabus | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}Coaching Syllabus{% endblock %}
+
+{% block content %}
+<div class="space-y">
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
+            <div>
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Admin Coaching Control</p>
+                <h2 style="font-size:28px;font-weight:700;color:var(--text);">Weekly Badminton Syllabus</h2>
+                <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;max-width:780px;">
+                    This syllabus drives the coach “Plan for Today” generator. Edit the weekly themes here and the coach workspace will adapt the plan around the roster level, attendance rhythm, and session context.
+                </p>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <a href="{% url 'sessions:syllabus_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Week</a>
+                <a href="{% url 'sessions:list' %}" class="btn btn-ghost"><i class="fa-solid fa-calendar-days"></i> Back to Sessions</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="filter-bar">
+        <form method="get" class="filter-fields">
+            <div class="filter-field">
+                <label>Track</label>
+                <select name="track">
+                    <option value="">All tracks</option>
+                    {% for value, label in track_choices %}
+                    <option value="{{ value }}" {% if selected_track == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-actions" style="margin-top:auto;">
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filter</button>
+                <a href="{% url 'sessions:syllabus' %}" class="btn btn-ghost">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    {% for group in grouped_rows %}
+    <div class="card">
+        <div class="section-header">
+            <span class="section-title">{{ group.label }} Track</span>
+            <span class="badge badge-info">{{ group.rows|length }} week{{ group.rows|length|pluralize }}</span>
+        </div>
+        <div class="space-y">
+            {% for row in group.rows %}
+            <div class="card-inset">
+                <div style="display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;">
+                    <div style="max-width:780px;">
+                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Week {{ row.week_number }}</p>
+                        <p style="font-weight:700;font-size:18px;color:var(--text);">{{ row.title }}</p>
+                        <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;">{{ row.objective }}</p>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <span class="badge {% if row.is_active %}badge-success{% else %}badge-neutral{% endif %}">
+                            {% if row.is_active %}Active{% else %}Inactive{% endif %}
+                        </span>
+                        <a href="{% url 'sessions:syllabus_edit' row.pk %}" class="btn btn-ghost btn-xs">Edit</a>
+                    </div>
+                </div>
+                <div class="grid-2 mt-3">
+                    <div>
+                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Warm-up</p>
+                        <p style="font-size:13.5px;color:var(--text);line-height:1.8;">{{ row.warm_up_plan }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Technical Focus</p>
+                        <p style="font-size:13.5px;color:var(--text);line-height:1.8;">{{ row.technical_focus }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Tactical Focus</p>
+                        <p style="font-size:13.5px;color:var(--text);line-height:1.8;">{{ row.tactical_focus }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Coach Cues</p>
+                        <p style="font-size:13.5px;color:var(--text);line-height:1.8;">{{ row.coaching_cues }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="card">
+        <div class="empty-state">
+            <i class="fa-regular fa-clipboard"></i>
+            <p>No syllabus rows match the current filter.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('select').not('[multiple]').select2({ theme: 'default', allowClear: true });
+    });
+</script>
+{% endblock %}

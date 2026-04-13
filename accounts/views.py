@@ -139,7 +139,12 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         attendance = AttendanceRecord.objects.select_related("member", "training_session")
         sessions = TrainingSession.objects.select_related("coach")
 
-        if role == ROLE_PARENT:
+        if role == ROLE_COACH:
+            members = members.filter(assigned_coach=user)
+            invoices = invoices.filter(member__assigned_coach=user)
+            attendance = attendance.filter(member__assigned_coach=user)
+            sessions = sessions.filter(coach=user).distinct()
+        elif role == ROLE_PARENT:
             members = members.filter(parent_user=user)
             invoices = invoices.filter(member__in=members)
             attendance = attendance.filter(member__in=members)
@@ -151,6 +156,8 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         month_labels = [month.strftime("%b %Y") for month in months]
         application_count = AdmissionApplication.objects.filter(status=AdmissionApplication.STATUS_PENDING).count()
         report_queryset = ProgressReport.objects.select_related("member", "coach")
+        if role == ROLE_COACH:
+            report_queryset = report_queryset.filter(member__assigned_coach=user)
         product_count = Product.objects.filter(is_active=True).count()
 
         paid_invoices = invoices.filter(status=Invoice.STATUS_PAID)
@@ -214,6 +221,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             growth_values.append(running_total)
 
         total_active_members = members.filter(status=Member.STATUS_ACTIVE).count()
+        role_member_count = total_active_members
         monthly_revenue = (
             paid_invoices.filter(period__year=month_start.year, period__month=month_start.month).aggregate(
                 total=Sum("amount")
@@ -228,6 +236,13 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         pending_count = pending_payments.count()
         new_registrations = members.filter(joined_at__year=today.year, joined_at__month=today.month).count()
         recent_payments = recent_payments.order_by("-submitted_at")[:5]
+        current_month_fee_watchlist = invoices.filter(
+            period__year=today.year,
+            period__month=today.month,
+        ).exclude(status=Invoice.STATUS_PAID).select_related("member", "member__assigned_coach").order_by(
+            "due_date",
+            "member__full_name",
+        )
 
         dashboard_intro = {
             "eyebrow": "Club Operations",
@@ -256,6 +271,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 {"label": "Manage Members", "url": reverse("members:list"), "icon": "fa-users"},
                 {"label": "Coach Accounts", "url": reverse("accounts:coaches"), "icon": "fa-user-tie"},
                 {"label": "Plan Sessions", "url": reverse("sessions:list"), "icon": "fa-calendar-days"},
+                {"label": "Syllabus", "url": reverse("sessions:syllabus"), "icon": "fa-book-open"},
                 {"label": "Progress Reports", "url": reverse("members:report_list"), "icon": "fa-file-lines"},
                 {
                     "label": "Applications",
@@ -277,13 +293,14 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             workspace_highlights = [
                 {"label": "Sessions This Week", "value": sessions.filter(session_date__range=(today, week_window_end)).count(), "tone": "info"},
                 {"label": "Active Coaches", "value": coach_count, "tone": "success"},
-                {"label": "Unpaid Invoices", "value": invoices.exclude(status=Invoice.STATUS_PAID).count(), "tone": "warning"},
+                {"label": "Fees Still Unpaid", "value": current_month_fee_watchlist.count(), "tone": "warning"},
                 {"label": "New Registrations", "value": new_registrations, "tone": "neutral"},
             ]
             workspace_lists = {
                 "queue": pending_payments.order_by("-submitted_at")[:5],
                 "upcoming_sessions": upcoming_sessions,
                 "member_focus": members.order_by("-joined_at", "full_name")[:5],
+                "payment_watchlist": current_month_fee_watchlist[:5],
                 "reports": report_queryset.order_by("-period_end")[:5],
                 "applications": AdmissionApplication.objects.filter(
                     status=AdmissionApplication.STATUS_PENDING
@@ -293,6 +310,8 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             coach_members = members.filter(assigned_coach=user)
             coach_sessions = sessions.filter(coach=user)
             coach_reports = report_queryset.filter(member__assigned_coach=user)
+            next_planning_session = coach_sessions.filter(session_date__gte=today).order_by("session_date", "start_time").first()
+            role_member_count = coach_members.filter(status=Member.STATUS_ACTIVE).count()
             dashboard_intro = {
                 "eyebrow": "Coach Workspace",
                 "title": "Your squad, sessions, and coaching follow-ups",
@@ -307,16 +326,27 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 {"label": "Invoices", "url": reverse("finance:invoice_list"), "icon": "fa-file-invoice-dollar"},
                 {"label": "Store", "url": reverse("finance:product_list"), "icon": "fa-bag-shopping"},
             ]
+            if next_planning_session:
+                dashboard_actions.insert(
+                    1,
+                    {
+                        "label": "Plan For Today",
+                        "url": f"{reverse('sessions:plan', kwargs={'pk': next_planning_session.pk})}?autostart=1",
+                        "icon": "fa-wand-magic-sparkles",
+                    },
+                )
             workspace_highlights = [
                 {"label": "Assigned Players", "value": coach_members.count(), "tone": "info"},
                 {"label": "Upcoming Sessions", "value": coach_sessions.filter(session_date__gte=today).count(), "tone": "success"},
-                {"label": "Pending Invoices", "value": invoices.filter(member__assigned_coach=user).exclude(status=Invoice.STATUS_PAID).count(), "tone": "warning"},
+                {"label": "Fees Still Unpaid", "value": current_month_fee_watchlist.count(), "tone": "warning"},
                 {"label": "Draft Reports", "value": coach_reports.filter(is_published=False).count(), "tone": "neutral"},
             ]
             workspace_lists = {
                 "queue": coach_reports.filter(is_published=False).order_by("-period_end")[:5],
                 "upcoming_sessions": coach_sessions.filter(session_date__gte=today).order_by("session_date", "start_time")[:5],
                 "member_focus": coach_members.order_by("full_name")[:6],
+                "payment_watchlist": current_month_fee_watchlist[:5],
+                "plan_session": next_planning_session,
                 "reports": coach_reports.order_by("-period_end")[:5],
             }
         elif role == ROLE_HEADCOUNT:
@@ -331,7 +361,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             dashboard_intro = {
                 "eyebrow": "Headcount Workspace",
                 "title": "Attendance command center",
-                "body": "Move through today’s session list, find open attendance rows fast, and keep the live floor count accurate for coaches and parents.",
+                "body": "Move through today's session list, find open attendance rows fast, and keep the live floor count accurate for coaches and parents.",
                 "meta": f"{scheduled_today} attendance row(s) still open today",
             }
             dashboard_actions = [
@@ -354,7 +384,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         elif role == ROLE_PARENT:
             dashboard_intro = {
                 "eyebrow": "Parent Portal",
-                "title": "Your family’s training and payment hub",
+                "title": "Your family's training and payment hub",
                 "body": "This flow now matches the original client portal more closely: child overview first, payment status second, and session visibility always close by.",
                 "meta": f"{members.count()} linked child(ren)",
             }
@@ -484,10 +514,19 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                     if featured_child["streak"] >= 3
                     else "Class info, attendance progress, and report updates are all ready to review below."
                 )
+            featured_parent_invoice = current_month_fee_watchlist.first() or invoices.exclude(
+                status=Invoice.STATUS_PAID
+            ).order_by("due_date", "period").first()
             student_portal = {
                 "featured_child": featured_child,
                 "children": child_portal_cards,
-                "featured_invoice": invoices.exclude(status=Invoice.STATUS_PAID).order_by("due_date", "period").first(),
+                "featured_invoice": featured_parent_invoice,
+                "featured_invoice_note": (
+                    "This month's fee still needs action."
+                    if current_month_fee_watchlist.exists()
+                    else "All current month fees are clear."
+                ),
+                "current_month_fee_count": current_month_fee_watchlist.count(),
                 "reports": parent_reports.order_by("-period_end")[:5],
             }
             outstanding_total = invoices.exclude(status=Invoice.STATUS_PAID).aggregate(total=Sum("amount"))["total"] or Decimal(
@@ -503,16 +542,25 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 "upcoming_sessions": upcoming_sessions,
                 "featured_invoice": student_portal["featured_invoice"] if student_portal else None,
                 "reports": student_portal["reports"] if student_portal else parent_reports.order_by("-period_end")[:5],
+                "payment_watchlist": current_month_fee_watchlist[:5],
             }
 
         cards = []
-        if role in {ROLE_ADMIN, ROLE_COACH}:
+        if role == ROLE_ADMIN:
             cards = [
                 {"label": "Total Active Members", "value": total_active_members, "icon": "fa-users"},
                 {"label": "Monthly Revenue", "value": f"RM {monthly_revenue:,.2f}", "icon": "fa-wallet"},
                 {"label": "Attendance Rate", "value": f"{attendance_rate}%", "icon": "fa-chart-line"},
                 {"label": "Pending Payments", "value": pending_count, "icon": "fa-hourglass-half"},
                 {"label": "New Registrations", "value": new_registrations, "icon": "fa-user-plus"},
+            ]
+        elif role == ROLE_COACH:
+            cards = [
+                {"label": "My Active Players", "value": role_member_count, "icon": "fa-users"},
+                {"label": "Attendance Rate", "value": f"{attendance_rate}%", "icon": "fa-chart-line"},
+                {"label": "Fees Still Unpaid", "value": current_month_fee_watchlist.count(), "icon": "fa-file-invoice-dollar"},
+                {"label": "Upcoming Sessions", "value": sessions.filter(session_date__gte=today).count(), "icon": "fa-calendar-days"},
+                {"label": "Draft Reports", "value": report_queryset.filter(member__assigned_coach=user, is_published=False).count(), "icon": "fa-file-lines"},
             ]
         elif role == ROLE_HEADCOUNT:
             cards = [

@@ -571,6 +571,17 @@
                 <h3 style="margin:0;">Payments And Feedback</h3>
                 <a href="{{ featured.payments_url }}" class="section-link">Open payments</a>
             </div>
+            {% if student_portal.current_month_fee_count %}
+            <div class="student-report-item" style="margin-bottom:12px;background:linear-gradient(180deg, rgba(245,166,35,0.12), rgba(245,166,35,0.04));border-color:rgba(245,166,35,0.22);">
+                <strong>This Month Fee Alert</strong>
+                <small>{{ student_portal.current_month_fee_count }} invoice(s) still need payment attention for this month.</small>
+            </div>
+            {% elif student_portal.featured_invoice_note %}
+            <div class="student-report-item" style="margin-bottom:12px;">
+                <strong>Payment Status</strong>
+                <small>{{ student_portal.featured_invoice_note }}</small>
+            </div>
+            {% endif %}
             {% if student_portal.featured_invoice %}
             <div class="student-report-item" style="margin-bottom:12px;">
                 <strong>{{ student_portal.featured_invoice.member.full_name }} - {{ student_portal.featured_invoice.period|date:"F Y" }}</strong>

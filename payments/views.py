@@ -79,6 +79,11 @@ class MyPaymentsView(ParentRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         children = Member.objects.filter(parent_user=self.request.user).order_by("full_name")
         invoice_queryset = self.get_queryset()
+        today = timezone.localdate()
+        current_month_invoices = invoice_queryset.filter(
+            period__year=today.year,
+            period__month=today.month,
+        ).exclude(status=Invoice.STATUS_PAID)
         child_summaries = []
         for child in children:
             child_invoices = invoice_queryset.filter(member=child)
@@ -105,7 +110,9 @@ class MyPaymentsView(ParentRequiredMixin, ListView):
                 or 0,
                 "pending_invoice_count": invoice_queryset.filter(status=Invoice.STATUS_PENDING).count(),
                 "paid_invoice_count": invoice_queryset.filter(status=Invoice.STATUS_PAID).count(),
-                "featured_invoice": invoice_queryset.exclude(status=Invoice.STATUS_PAID).order_by("due_date", "period").first(),
+                "current_month_unpaid_count": current_month_invoices.count(),
+                "featured_invoice": current_month_invoices.order_by("due_date", "period").first()
+                or invoice_queryset.exclude(status=Invoice.STATUS_PAID).order_by("due_date", "period").first(),
                 "onboarding_invoices": invoice_queryset.filter(is_onboarding_fee=True).exclude(
                     status=Invoice.STATUS_PAID
                 ).order_by("due_date", "period")[:3],

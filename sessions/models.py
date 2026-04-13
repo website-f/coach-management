@@ -2,6 +2,48 @@ from django.conf import settings
 from django.db import models
 
 
+class WeeklySyllabus(models.Model):
+    TRACK_BEGINNER = "beginner"
+    TRACK_INTERMEDIATE = "intermediate"
+    TRACK_ADVANCED = "advanced"
+    TRACK_PRO = "pro"
+    TRACK_CHOICES = [
+        (TRACK_BEGINNER, "Beginner"),
+        (TRACK_INTERMEDIATE, "Intermediate"),
+        (TRACK_ADVANCED, "Advanced"),
+        (TRACK_PRO, "Pro"),
+    ]
+
+    track = models.CharField(max_length=20, choices=TRACK_CHOICES, default=TRACK_BEGINNER)
+    week_number = models.PositiveIntegerField()
+    title = models.CharField(max_length=255)
+    objective = models.TextField()
+    warm_up_plan = models.TextField()
+    technical_focus = models.TextField()
+    tactical_focus = models.TextField()
+    coaching_cues = models.TextField()
+    homework = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="updated_weekly_syllabi",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["track", "week_number"]
+        constraints = [
+            models.UniqueConstraint(fields=["track", "week_number"], name="unique_syllabus_track_week")
+        ]
+
+    def __str__(self):
+        return f"{self.get_track_display()} Week {self.week_number}: {self.title}"
+
+
 class TrainingSession(models.Model):
     title = models.CharField(max_length=255)
     session_date = models.DateField()

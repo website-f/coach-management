@@ -14,6 +14,11 @@
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
             <span class="badge badge-warning">{{ pending_invoice_count }} pending review</span>
+            {% if current_month_unpaid_count %}
+            <span class="badge badge-warning">{{ current_month_unpaid_count }} current month unpaid</span>
+            {% else %}
+            <span class="badge badge-success">Current month clear</span>
+            {% endif %}
             <span class="badge badge-info">{{ children|length }} linked child{{ children|length|pluralize:"ren" }}</span>
         </div>
     </div>
@@ -103,7 +108,7 @@
         <div class="card-inset">
             <div style="display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;align-items:flex-start;">
                 <div>
-                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Priority invoice</p>
+                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">{% if current_month_unpaid_count %}Current month fee{% else %}Priority invoice{% endif %}</p>
                     <h3 style="font-size:24px;font-weight:700;color:var(--text);margin-top:6px;">{{ featured_invoice.member.full_name }} · {{ featured_invoice.get_invoice_type_display }}</h3>
                     <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">{{ featured_invoice.period|date:"F Y" }} · Due {{ featured_invoice.due_date }} · Amount RM {{ featured_invoice.amount }}<br>Use the invoice card below to scan the QR and submit payment proof.</p>
                 </div>

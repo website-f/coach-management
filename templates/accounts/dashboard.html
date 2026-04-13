@@ -27,7 +27,8 @@
         </div>
 
         {% if dashboard_actions %}
-        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;position:relative;z-index:1;">
+        <div class="action-rail" data-scroll-track style="margin-top:18px;position:relative;z-index:1;">
+            <div class="action-rail-track">
             {% for action in dashboard_actions %}
             <a href="{{ action.url }}" class="btn {% if forloop.first %}btn-primary{% else %}btn-ghost{% endif %}">
                 <i class="fa-solid {{ action.icon }}"></i> {{ action.label }}
@@ -36,6 +37,8 @@
                 {% endif %}
             </a>
             {% endfor %}
+            </div>
+            <span class="scroll-indicator">Scroll for more</span>
         </div>
         {% endif %}
     </div>
@@ -189,6 +192,55 @@
         </div>
         {% endif %}
     </div>
+    
+    {% if current_role == 'coach' and workspace_lists.plan_session %}
+    <div class="card">
+        <div class="section-header">
+            <span class="section-title">Coach Strategy Assistant</span>
+            <a href="{% url 'sessions:plan' workspace_lists.plan_session.pk %}?autostart=1" class="section-link">Open planner</a>
+        </div>
+        <div class="card-inset">
+            <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;">
+                <div style="max-width:760px;">
+                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Next plan target</p>
+                    <h3 style="font-size:24px;font-weight:700;color:var(--text);margin-top:6px;">{{ workspace_lists.plan_session.title }}</h3>
+                    <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;">
+                        {{ workspace_lists.plan_session.session_date }} &middot; {{ workspace_lists.plan_session.start_time|time:"H:i" }} &middot; Court {{ workspace_lists.plan_session.court }}<br>
+                        Generate a smart plan from the admin syllabus, roster level mix, attendance rhythm, and fee status visibility.
+                    </p>
+                </div>
+                <a href="{% url 'sessions:plan' workspace_lists.plan_session.pk %}?autostart=1" class="btn btn-primary">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Plan For Today
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if current_role == 'admin' or current_role == 'coach' %}
+    <div class="card">
+        <div class="section-header">
+            <span class="section-title">This Month Fee Status</span>
+            <a href="{% url 'payments:payment_history' %}" class="section-link">Open payment status</a>
+        </div>
+        <div class="space-y">
+            {% for invoice in workspace_lists.payment_watchlist %}
+            <div class="list-item" style="text-decoration:none;">
+                <div>
+                    <p class="list-item-title">{{ invoice.member.full_name }}</p>
+                    <p class="list-item-sub">{{ invoice.period|date:"F Y" }} &middot; {{ invoice.get_invoice_type_display }} &middot; Due {{ invoice.due_date }}{% if current_role == 'admin' %} &middot; Coach {{ invoice.member.assigned_coach|default:"Unassigned" }}{% endif %}</p>
+                </div>
+                <span class="badge {{ invoice.status|status_badge }}">{{ invoice.get_status_display }}</span>
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <i class="fa-regular fa-circle-check"></i>
+                <p>All tracked students are clear for this month.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
     {% endif %}
 
     {% if current_role == 'parent' %}
@@ -313,7 +365,7 @@
             </div>
         </div>
 
-        {% if current_role == 'admin' or current_role == 'coach' %}
+        {% if current_role == 'admin' %}
         <div class="card">
             <div class="section-header">
                 <span class="section-title">Pending Applications</span>
@@ -413,7 +465,7 @@
                 {% endif %}
             </div>
             <div class="overflow-x">
-                <table class="tbl">
+                <table class="tbl native-stack">
                     <thead>
                         <tr>
                             <th>Member</th>
@@ -424,9 +476,9 @@
                     <tbody>
                         {% for payment in recent_payments %}
                         <tr>
-                            <td class="tbl-name">{{ payment.invoice.member.full_name }}</td>
-                            <td class="muted">RM {{ payment.invoice.amount }}</td>
-                            <td><span class="badge {{ payment.status|status_badge }}">{{ payment.get_status_display }}</span></td>
+                            <td class="tbl-name" data-label="Member">{{ payment.invoice.member.full_name }}</td>
+                            <td class="muted" data-label="Amount">RM {{ payment.invoice.amount }}</td>
+                            <td data-label="Status"><span class="badge {{ payment.status|status_badge }}">{{ payment.get_status_display }}</span></td>
                         </tr>
                         {% empty %}
                         <tr>

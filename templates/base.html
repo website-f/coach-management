@@ -366,6 +366,99 @@
             padding: 24px;
         }
 
+        .page-quicknav {
+            padding: 0 24px 10px;
+        }
+        .quick-nav-shell,
+        .action-rail {
+            position: relative;
+        }
+        .quick-nav-track,
+        .action-rail-track {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            white-space: nowrap;
+        }
+        .quick-nav-track::-webkit-scrollbar,
+        .action-rail-track::-webkit-scrollbar {
+            display: none;
+        }
+        .quick-nav-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+            padding: 10px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--border2);
+            background: var(--surface2);
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 12.5px;
+            font-weight: 600;
+            transition: background var(--transition), color var(--transition), border-color var(--transition), transform var(--transition);
+        }
+        .quick-nav-item:hover {
+            color: var(--text);
+            background: var(--border);
+            transform: translateY(-1px);
+        }
+        .quick-nav-item.active {
+            color: var(--accent);
+            background: var(--accent-bg);
+            border-color: rgba(79,110,247,.28);
+        }
+        .quick-nav-item i {
+            font-size: 13px;
+        }
+        .quick-nav-shell::after,
+        .action-rail::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 54px;
+            background: linear-gradient(90deg, rgba(15,15,17,0), var(--bg));
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity var(--transition);
+        }
+        [data-theme="light"] .quick-nav-shell::after,
+        [data-theme="light"] .action-rail::after {
+            background: linear-gradient(90deg, rgba(244,244,248,0), var(--bg));
+        }
+        [data-scroll-track].has-overflow:not(.scrolled-end)::after {
+            opacity: 1;
+        }
+        .scroll-indicator {
+            display: none;
+            position: absolute;
+            right: 2px;
+            bottom: -10px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: var(--surface2);
+            border: 1px solid var(--border2);
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: .04em;
+            transition: opacity var(--transition), transform var(--transition);
+        }
+        [data-scroll-track].has-overflow .scroll-indicator {
+            display: inline-flex;
+        }
+        [data-scroll-track].scrolled-end .scroll-indicator {
+            opacity: 0;
+            transform: translateY(2px);
+        }
+
         /* ── Cards ── */
         .card {
             background: var(--surface);
@@ -913,6 +1006,7 @@
             .header-menu-btn { display: flex; }
             .mob-nav { display: flex; }
             .page-content { padding: 16px 16px calc(var(--mob-nav-h) + 16px); width: 100%; box-sizing: border-box; overflow-x: hidden; }
+            .page-quicknav { padding: 0 16px 8px; }
             .top-header { padding: 0 16px; }
             .stat-cards { grid-template-columns: repeat(2,1fr); }
             .form-grid { grid-template-columns: 1fr; }
@@ -928,6 +1022,9 @@
             .filter-field { min-width: unset; }
             .tbl thead th, .tbl td { padding: 10px 12px; }
             .card { border-radius: var(--radius); }
+            .quick-nav-item { padding: 9px 12px; font-size: 12px; }
+            .quick-nav-item i { font-size: 12px; }
+            .scroll-indicator { right: 0; bottom: -8px; }
             .dt-top-ctrl { flex-direction: column; align-items: stretch; gap: 12px; margin-bottom: 16px; }
             .dataTables_filter { min-width: 100%; width: 100%; }
             .dt-bottom-ctrl { flex-direction: column; gap: 16px; align-items: center; }
@@ -935,6 +1032,56 @@
             .dataTables_length { justify-content: center; display: flex; margin-bottom: 8px; }
             .bulk-action-bar { width: 90%; max-width: 400px; justify-content: space-between; padding: 12px 16px; bottom: calc(var(--mob-nav-h) + 16px); }
             .bulk-action-bar .btn { padding: 6px 12px !important; font-size: 12px !important; }
+
+            .tbl.native-stack thead {
+                display: none;
+            }
+            .tbl.native-stack,
+            .tbl.native-stack tbody,
+            .tbl.native-stack tr,
+            .tbl.native-stack td {
+                display: block;
+                width: 100%;
+            }
+            .tbl.native-stack tbody {
+                display: grid;
+                gap: 12px;
+            }
+            .tbl.native-stack tr {
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                background: var(--surface2);
+                padding: 14px 16px;
+            }
+            .tbl.native-stack tbody tr:hover {
+                background: var(--surface2);
+            }
+            .tbl.native-stack td {
+                padding: 8px 0;
+                border: none !important;
+                display: grid;
+                grid-template-columns: minmax(96px, 36%) minmax(0, 1fr);
+                gap: 12px;
+                align-items: start;
+            }
+            .tbl.native-stack td::before {
+                content: attr(data-label);
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: .08em;
+                text-transform: uppercase;
+                color: var(--muted);
+            }
+            .tbl.native-stack td[colspan] {
+                display: block;
+                padding: 0;
+            }
+            .tbl.native-stack td[colspan]::before {
+                content: none;
+            }
+            .tbl.native-stack .tbl-sub {
+                margin-top: 4px;
+            }
         }
 
         /* ── Light mode select background arrow ── */
@@ -1102,6 +1249,60 @@
                 {% endif %}
             </div>
         </header>
+
+        {% if request.user.is_authenticated %}
+        <div class="page-quicknav">
+            <div class="quick-nav-shell" data-scroll-track>
+                <div class="quick-nav-track">
+                    <a href="{% url 'accounts:dashboard' %}" class="quick-nav-item {% nav_active '/accounts/dashboard/' %}">
+                        <i class="fa-solid fa-chart-pie"></i> Dashboard
+                    </a>
+                    <a href="{% url 'members:list' %}" class="quick-nav-item {% nav_active_section '/members/' '/members/reports/' '/members/applications/' '/members/apply/' %}">
+                        <i class="fa-solid fa-users"></i> Members
+                    </a>
+                    <a href="{% url 'sessions:list' %}" class="quick-nav-item {% nav_active '/sessions/' %}">
+                        <i class="fa-solid fa-calendar-days"></i> Sessions
+                    </a>
+                    {% if current_role == 'parent' %}
+                    <a href="{% url 'payments:my_payments' %}" class="quick-nav-item {% nav_active '/payments/my-payments/' %}">
+                        <i class="fa-solid fa-credit-card"></i> My Payments
+                    </a>
+                    {% endif %}
+                    {% if current_role == 'admin' or current_role == 'coach' or current_role == 'parent' %}
+                    <a href="{% url 'members:report_list' %}" class="quick-nav-item {% nav_active '/members/reports/' %}">
+                        <i class="fa-solid fa-file-lines"></i> Reports
+                    </a>
+                    {% endif %}
+                    {% if current_role == 'admin' or current_role == 'coach' %}
+                    <a href="{% url 'finance:invoice_list' %}" class="quick-nav-item {% nav_active '/finance/invoices/' %}">
+                        <i class="fa-solid fa-file-invoice-dollar"></i> Invoices
+                    </a>
+                    <a href="{% url 'payments:payment_history' %}" class="quick-nav-item {% nav_active '/payments/history/' %}">
+                        <i class="fa-solid fa-money-check-dollar"></i> Payments
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'accounts:notifications' %}" class="quick-nav-item {% nav_active '/accounts/notifications/' %}">
+                        <i class="fa-solid fa-bell"></i> Notifications
+                    </a>
+                    {% if current_role == 'admin' %}
+                    <a href="{% url 'payments:pending_reviews' %}" class="quick-nav-item {% nav_active '/payments/pending-reviews/' %}">
+                        <i class="fa-solid fa-receipt"></i> Reviews
+                    </a>
+                    <a href="{% url 'accounts:coaches' %}" class="quick-nav-item {% nav_active '/accounts/coaches/' %}">
+                        <i class="fa-solid fa-user-tie"></i> Coaches
+                    </a>
+                    <a href="{% url 'sessions:syllabus' %}" class="quick-nav-item {% nav_active '/sessions/syllabus/' %}">
+                        <i class="fa-solid fa-book-open"></i> Syllabus
+                    </a>
+                    <a href="{% url 'finance:overview' %}" class="quick-nav-item {% nav_active_exact '/finance/' %}">
+                        <i class="fa-solid fa-sack-dollar"></i> Finance
+                    </a>
+                    {% endif %}
+                </div>
+                <span class="scroll-indicator">Scroll for more</span>
+            </div>
+        </div>
+        {% endif %}
 
         <main class="page-content">
             {% block content %}{% endblock %}
@@ -1321,6 +1522,37 @@
         }
     });
 
+    function syncScrollableTrack(container) {
+        const track = container.querySelector('.quick-nav-track, .action-rail-track');
+        if (!track) return;
+
+        const hasOverflow = track.scrollWidth - track.clientWidth > 12;
+        const scrolledEnd = !hasOverflow || track.scrollLeft + track.clientWidth >= track.scrollWidth - 8;
+
+        container.classList.toggle('has-overflow', hasOverflow);
+        container.classList.toggle('scrolled-end', scrolledEnd);
+    }
+
+    function bindScrollableTracks() {
+        document.querySelectorAll('[data-scroll-track]').forEach(function(container) {
+            const track = container.querySelector('.quick-nav-track, .action-rail-track');
+            if (!track) return;
+
+            if (container.dataset.scrollBound !== '1') {
+                const update = function() {
+                    syncScrollableTrack(container);
+                };
+                track.addEventListener('scroll', update, { passive: true });
+                window.addEventListener('resize', update);
+                container.dataset.scrollBound = '1';
+            }
+
+            syncScrollableTrack(container);
+        });
+    }
+
+    window.addEventListener('load', bindScrollableTracks);
+
     /* ── Flatpickr ── */
     document.querySelectorAll('input[type="date"]').forEach(function(el) {
         var val = el.value;
@@ -1342,6 +1574,8 @@
 
     /* ── Select2 ── */
     $(document).ready(function() {
+        bindScrollableTracks();
+
         $('select[multiple]').select2({
             theme: 'default',
             placeholder: 'Select options...',
@@ -1403,10 +1637,12 @@
         });
 
         // ── DataTables Init ──
+        var datatableInitialized = false;
         if ($('.tbl').length > 0) {
             $('.tbl').each(function() {
                 var tbl = $(this);
                 if(tbl.find('thead').length === 0 || tbl.find('tbody').length === 0) return;
+                if (tbl.hasClass('native-stack')) return;
                 if ($.fn.DataTable.isDataTable(this)) return;
                 
                 tbl.DataTable({
@@ -1424,6 +1660,7 @@
                         lengthMenu: "Show _MENU_"
                     }
                 });
+                datatableInitialized = true;
 
                 // Move custom page actions into table tops
                 var customActions = $('.page-table-actions').html();
@@ -1433,8 +1670,9 @@
                 }
             });
             
-            // hide django pagination if DataTables is active
-            $('.pagination').hide();
+            if (datatableInitialized) {
+                $('.pagination').hide();
+            }
         }
     });
 

@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from accounts.models import UserProfile
 from accounts.utils import ROLE_ADMIN, ROLE_COACH, has_role
 from members.models import Member
-from sessions.models import SessionFeedback, TrainingSession
+from sessions.models import SessionFeedback, TrainingSession, WeeklySyllabus
 
 User = get_user_model()
 
@@ -171,4 +171,29 @@ class SessionFeedbackForm(forms.ModelForm):
         fields = ["feedback_text", "video_proof"]
         widgets = {
             "feedback_text": forms.Textarea(attrs={"rows": 5}),
+        }
+
+
+class WeeklySyllabusForm(forms.ModelForm):
+    class Meta:
+        model = WeeklySyllabus
+        fields = [
+            "track",
+            "week_number",
+            "title",
+            "objective",
+            "warm_up_plan",
+            "technical_focus",
+            "tactical_focus",
+            "coaching_cues",
+            "homework",
+            "is_active",
+        ]
+        widgets = {
+            "objective": forms.Textarea(attrs={"rows": 3}),
+            "warm_up_plan": forms.Textarea(attrs={"rows": 3}),
+            "technical_focus": forms.Textarea(attrs={"rows": 4}),
+            "tactical_focus": forms.Textarea(attrs={"rows": 4}),
+            "coaching_cues": forms.Textarea(attrs={"rows": 4}),
+            "homework": forms.Textarea(attrs={"rows": 3}),
         }
