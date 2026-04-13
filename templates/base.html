@@ -286,14 +286,22 @@
             cursor: pointer; font-size: 14px;
             flex-shrink: 0;
         }
-        .page-title-wrap { flex: 1; }
+        .page-title-wrap {
+            flex: 1;
+            min-width: 0; /* allow truncation inside flex */
+            overflow: hidden;
+        }
         .page-eyebrow {
             font-size: 10px; font-weight: 600;
             letter-spacing: .12em; text-transform: uppercase;
             color: var(--muted);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
-        .page-title { font-size: 18px; font-weight: 700; color: var(--text); line-height: 1.2; }
-        .header-actions { display: flex; align-items: center; gap: 8px; }
+        .page-title {
+            font-size: 18px; font-weight: 700; color: var(--text); line-height: 1.2;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
         .header-alert {
             position: relative;
             width: 36px; height: 36px;
@@ -1005,7 +1013,8 @@
         }
         @media (max-width: 600px) {
             .top-header { height: 56px; }
-            .page-title { font-size: 16px; }
+            .page-eyebrow { display: none; } /* hide eyebrow on small screens — title alone is enough */
+            .page-title { font-size: 15px; }
             .stat-cards { grid-template-columns: 1fr; gap: 12px; }
             .stat-value { font-size: 24px; }
             .grid-2, .grid-3 { grid-template-columns: 1fr; }
@@ -1401,7 +1410,6 @@
                 <h1 class="page-title">{% block page_heading %}Dashboard{% endblock %}</h1>
             </div>
             <div class="header-actions">
-                <!-- Theme toggle -->
                 <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" type="button">
                     <i class="fa-solid fa-sun theme-icon-light"></i>
                     <i class="fa-solid fa-moon theme-icon-dark"></i>
@@ -1409,20 +1417,14 @@
                 {% if request.user.is_authenticated %}
                 <a href="{% url 'accounts:notifications' %}" class="header-alert" title="Notifications">
                     <i class="fa-solid fa-bell"></i>
-                    {% if unread_notifications %}
-                    <span class="header-alert-badge">{{ unread_notifications }}</span>
-                    {% endif %}
+                    {% if unread_notifications %}<span class="header-alert-badge">{{ unread_notifications }}</span>{% endif %}
                 </a>
-                {% if current_role == 'admin' %}
-                <a href="{% url 'payments:pending_reviews' %}" class="header-alert" title="Pending payment reviews">
+                {% if current_role == 'admin' and pending_payment_reviews %}
+                <a href="{% url 'payments:pending_reviews' %}" class="header-alert" title="{{ pending_payment_reviews }} payment review(s) pending">
                     <i class="fa-solid fa-receipt"></i>
-                    {% if pending_payment_reviews %}
                     <span class="header-alert-badge">{{ pending_payment_reviews }}</span>
-                    {% endif %}
                 </a>
                 {% endif %}
-                <span class="role-chip" style="background:var(--surface2);border-color:var(--border2);color:var(--text);text-transform:none;">{{ request.user.username }}</span>
-                <span class="role-chip">{{ current_role_label }}</span>
                 {% endif %}
             </div>
         </header>

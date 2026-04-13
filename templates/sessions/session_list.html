@@ -306,18 +306,18 @@
         async function buildCalendar() {
             if (calendarInstance) return;
             await ensureCalendarAssets();
-            if (calendarShell) {
-                calendarShell.classList.remove('is-mobile-pending');
-            }
-            if (mobileNote) {
-                mobileNote.style.display = 'none';
-            }
+            if (calendarShell) calendarShell.classList.remove('is-mobile-pending');
+            if (mobileNote) mobileNote.style.display = 'none';
+
+            // Track width so scroll-triggered height-only resize on mobile is ignored
+            let lastTrackedWidth = window.innerWidth;
+
             calendarInstance = new FullCalendar.Calendar(calendarEl, {
                 initialView: window.innerWidth < 768 ? 'listMonth' : 'dayGridMonth',
                 height: 'auto',
                 initialDate: '{{ calendar_initial_date }}',
                 headerToolbar: window.innerWidth < 768
-                    ? { left: 'prev,next', center: 'title', right: 'listMonth' }
+                    ? { left: 'prev,next', center: 'title', right: 'dayGridMonth,listMonth' }
                     : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' },
                 events: {{ calendar_events_json|safe }},
                 eventClick: function(info) {
@@ -327,6 +327,9 @@
                     }
                 },
                 windowResize: function() {
+                    // Only react to actual width changes (not mobile scroll height jitter)
+                    if (window.innerWidth === lastTrackedWidth) return;
+                    lastTrackedWidth = window.innerWidth;
                     const nextView = window.innerWidth < 768 ? 'listMonth' : 'dayGridMonth';
                     if (calendarInstance.view.type !== nextView) {
                         calendarInstance.changeView(nextView);
