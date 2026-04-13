@@ -1784,6 +1784,8 @@
                 var data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Save failed.');
                 if (saveOk) saveOk.style.display = 'flex';
+                // Let the planner page update its saved-plans list live if it's in view
+                document.dispatchEvent(new CustomEvent('aiPlanSaved', { detail: data }));
             } catch(e) {
                 alert(e.message);
                 saveBtn.disabled = false;
