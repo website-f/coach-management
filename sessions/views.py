@@ -3,6 +3,7 @@ import json
 from datetime import date
 
 from django import forms
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -18,8 +19,9 @@ from accounts.mixins import AdminOrCoachRequiredMixin, AdminRequiredMixin, Headc
 from accounts.notifications import notify_users
 from accounts.utils import ROLE_ADMIN, ROLE_COACH, ROLE_HEADCOUNT, ROLE_PARENT, has_role
 from members.models import Member
+from sessions.ai_planner import PlannerAssistantError, generate_ai_planner_reply
 from sessions.forms import SessionFeedbackForm, TrainingSessionForm, WeeklySyllabusForm
-from sessions.models import AttendanceRecord, SessionFeedback, TrainingSession, WeeklySyllabus
+from sessions.models import AttendanceRecord, SessionFeedback, SessionPlannerEntry, TrainingSession, WeeklySyllabus
 from sessions.services import build_session_plan, ensure_default_syllabus
 from sessions.video_utils import compress_session_feedback_video
 
@@ -364,6 +366,8 @@ class SessionPlanView(AdminOrCoachRequiredMixin, TemplateView):
                 "training_session": self.training_session,
                 "roster": roster,
                 "autoload_plan": self.request.GET.get("autostart") == "1",
+                "saved_plans": self.training_session.planner_entries.select_related("saved_by")[:8],
+                "ai_planner_enabled": settings.AI_PLANNER_ENABLED,
             }
         )
         return context
@@ -376,6 +380,95 @@ class SessionPlanGenerateView(AdminOrCoachRequiredMixin, View):
             return JsonResponse({"error": "Only admin or the assigned coach can generate this training plan."}, status=403)
         plan_payload = build_session_plan(training_session)
         return JsonResponse(plan_payload)
+
+
+class SessionPlanAssistantView(AdminOrCoachRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        training_session = get_object_or_404(visible_sessions_for_user(request.user), pk=kwargs["pk"])
+        if not can_manage_session_plan(request.user, training_session):
+            return JsonResponse({"error": "Only admin or the assigned coach can use the AI planner."}, status=403)
+
+        try:
+            payload = json.loads(request.body.decode("utf-8") or "{}")
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid request payload."}, status=400)
+
+        user_prompt = (payload.get("prompt") or "").strip()
+        if not user_prompt:
+            return JsonResponse({"error": "Please enter a planner prompt first."}, status=400)
+
+        try:
+            result = generate_ai_planner_reply(training_session, user_prompt)
+        except PlannerAssistantError as exc:
+            return JsonResponse({"error": str(exc)}, status=503)
+
+        return JsonResponse(
+            {
+                "title": result["title"],
+                "prompt": user_prompt,
+                "response": result["response"],
+                "source": result["source"],
+                "source_label": dict(SessionPlannerEntry.SOURCE_CHOICES).get(result["source"], result["source"]),
+                "model_name": result["model_name"],
+                "warning": result.get("warning", ""),
+                "used_fallback": result.get("used_fallback", False),
+                "from_cache": result.get("from_cache", False),
+                "cached_entry_id": result.get("cached_entry_id"),
+            }
+        )
+
+
+class SessionPlanSaveView(AdminOrCoachRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        training_session = get_object_or_404(visible_sessions_for_user(request.user), pk=kwargs["pk"])
+        if not can_manage_session_plan(request.user, training_session):
+            return JsonResponse({"error": "Only admin or the assigned coach can save AI plans."}, status=403)
+
+        try:
+            payload = json.loads(request.body.decode("utf-8") or "{}")
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid request payload."}, status=400)
+
+        user_prompt = (payload.get("prompt") or "").strip()
+        response_text = (payload.get("response") or "").strip()
+        title = (payload.get("title") or "").strip() or "Saved session plan"
+        source = payload.get("source") or SessionPlannerEntry.SOURCE_OLLAMA
+        model_name = (payload.get("model_name") or "").strip()
+
+        if not user_prompt or not response_text:
+            return JsonResponse({"error": "Prompt and response are required before saving."}, status=400)
+
+        existing_entry = SessionPlannerEntry.objects.filter(
+            training_session=training_session,
+            user_prompt=user_prompt,
+            assistant_response=response_text,
+        ).first()
+        if existing_entry:
+            entry = existing_entry
+        else:
+            entry = SessionPlannerEntry.objects.create(
+                training_session=training_session,
+                title=title[:255],
+                user_prompt=user_prompt,
+                assistant_response=response_text,
+                source=source if source in dict(SessionPlannerEntry.SOURCE_CHOICES) else SessionPlannerEntry.SOURCE_OLLAMA,
+                model_name=model_name[:120],
+                saved_by=request.user,
+            )
+        return JsonResponse(
+            {
+                "id": entry.pk,
+                "title": entry.title,
+                "prompt": entry.user_prompt,
+                "response": entry.assistant_response,
+                "source": entry.source,
+                "source_label": entry.get_source_display(),
+                "model_name": entry.model_name,
+                "saved_by": (entry.saved_by.get_full_name() or entry.saved_by.username) if entry.saved_by else (request.user.get_full_name() or request.user.username),
+                "saved_at": timezone.localtime(entry.created_at).strftime("%d %b %Y %H:%M"),
+                "already_saved": bool(existing_entry),
+            }
+        )
 
 
 class SessionCreateView(AdminRequiredMixin, CreateView):

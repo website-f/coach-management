@@ -48,19 +48,31 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "nyo_dashboard.urls"
 
+template_options = {
+    "context_processors": [
+        "django.template.context_processors.request",
+        "django.contrib.auth.context_processors.auth",
+        "django.contrib.messages.context_processors.messages",
+        "accounts.context_processors.global_dashboard_context",
+    ],
+}
+if not DEBUG:
+    template_options["loaders"] = [
+        (
+            "django.template.loaders.cached.Loader",
+            [
+                "django.template.loaders.filesystem.Loader",
+                "django.template.loaders.app_directories.Loader",
+            ],
+        )
+    ]
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [BASE_DIR / "templates"],
-        "APP_DIRS": True,
-        "OPTIONS": {
-            "context_processors": [
-                "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
-                "accounts.context_processors.global_dashboard_context",
-            ],
-        },
+        "APP_DIRS": DEBUG,
+        "OPTIONS": template_options,
     },
 ]
 
@@ -79,6 +91,8 @@ if DB_ENGINE == "mysql":
             "OPTIONS": {
                 "charset": "utf8mb4",
             },
+            "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "60")),
+            "CONN_HEALTH_CHECKS": True,
         }
     }
 else:
@@ -86,6 +100,7 @@ else:
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": os.environ.get("SQLITE_PATH", BASE_DIR / "db.sqlite3"),
+            "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "0")),
         }
     }
 
@@ -111,7 +126,7 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = Path(os.environ.get("STATIC_ROOT", BASE_DIR / "staticfiles"))
 MEDIA_URL = "/media/"
 MEDIA_ROOT = Path(os.environ.get("MEDIA_ROOT", BASE_DIR / "media"))
 
@@ -147,6 +162,12 @@ EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "no-reply@nyo.local")
 DEFAULT_REGISTRATION_FEE = Decimal(os.environ.get("DEFAULT_REGISTRATION_FEE", "120.00"))
 DEFAULT_MONTHLY_FEE = Decimal(os.environ.get("DEFAULT_MONTHLY_FEE", "180.00"))
+AI_PLANNER_BACKEND = os.environ.get("AI_PLANNER_BACKEND", "ollama").lower()
+AI_PLANNER_ENABLED = env_bool("AI_PLANNER_ENABLED", True)
+AI_PLANNER_FALLBACK_ENABLED = env_bool("AI_PLANNER_FALLBACK_ENABLED", True)
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://ollama:11434")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "qwen2.5:3b")
+OLLAMA_TIMEOUT = int(os.environ.get("OLLAMA_TIMEOUT", "120"))
 
 if env_bool("ENABLE_HTTPS", False):
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

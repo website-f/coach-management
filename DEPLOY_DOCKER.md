@@ -10,18 +10,23 @@
 - automatic startup migration
 - automatic static collection
 - automatic starter-data bootstrap
+- local Ollama service for the coach AI planner
+- direct Nginx serving for static assets
+- health checks for the main containers
 - idempotent seed behavior
 
 When the stack starts:
 
 1. MySQL starts
 2. Django waits for MySQL, then runs migrations
-3. Django collects static files
+3. Django collects static files into a shared volume served by Nginx
 4. Django checks whether the starter dataset exists
 5. If missing, it seeds the system accounts and sample data once
-6. Nginx opens ports `80` and `443`
-7. Certbot requests a Let's Encrypt certificate for your domain
-8. Nginx switches from bootstrap mode to full HTTPS mode as soon as the certificate exists
+6. Ollama starts and pulls the configured Qwen model in the background
+7. The web app becomes healthy without waiting for Ollama, so the dashboard can boot faster
+8. Nginx opens ports `80` and `443`
+9. Certbot requests a Let's Encrypt certificate for your domain
+10. Nginx switches from bootstrap mode to full HTTPS mode as soon as the certificate exists
 
 If the starter data already exists, it is skipped.
 
@@ -35,6 +40,7 @@ If the starter data already exists, it is skipped.
 - `docker/nginx/templates/https.conf.template`
 - `docker/certbot/entrypoint.sh`
 - `.env.example`
+- `gunicorn.conf.py`
 
 ## Before you start
 
@@ -75,7 +81,7 @@ docker compose up -d --build
 5. Watch the first boot:
 
 ```bash
-docker compose logs -f db web nginx certbot
+docker compose logs -f db web nginx certbot ollama ollama-init
 ```
 
 6. Open the site once the certificate is issued:
@@ -116,6 +122,11 @@ You can override the seeded passwords in `.env`:
 - `SEED_COACH_PASSWORD`
 - `SEED_HEADCOUNT_PASSWORD`
 - `SEED_PARENT_PASSWORD`
+- `DB_CONN_MAX_AGE`
+- `WEB_CONCURRENCY`
+- `GUNICORN_THREADS`
+- `GUNICORN_TIMEOUT`
+- `GUNICORN_KEEPALIVE`
 
 ## Common commands
 
@@ -159,4 +170,25 @@ docker compose down -v
 
 - MySQL data is stored in the `mysql_data` Docker volume
 - uploaded QR codes and payment proofs are stored in the `media_data` Docker volume
+- collected static files are stored in the `static_data` Docker volume
 - Let's Encrypt certificates are stored in the `letsencrypt_certs` Docker volume
+- Ollama models are stored in the `ollama_data` Docker volume
+
+## Local AI Planner
+
+The session planner now supports a floating local AI assistant powered by Ollama.
+
+Default AI settings in `.env`:
+
+- `AI_PLANNER_ENABLED=1`
+- `AI_PLANNER_BACKEND=ollama`
+- `AI_PLANNER_FALLBACK_ENABLED=1`
+- `OLLAMA_BASE_URL=http://ollama:11434`
+- `OLLAMA_MODEL=qwen2.5:3b`
+
+Notes:
+
+- first model pull can take a while depending on VPS network speed
+- until the model is ready, the planner can fall back to the built-in deterministic session blueprint
+- once pulled, the Qwen model stays cached in the `ollama_data` volume
+- repeated prompts can reuse saved session-plan answers for faster responses

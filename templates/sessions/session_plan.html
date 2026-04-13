@@ -4,22 +4,197 @@
 {% block title %}Plan For Today | NYO Admin Dashboard{% endblock %}
 {% block page_heading %}Plan For Today{% endblock %}
 
+{% block extra_head %}
+<style>
+    .planner-hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 13px;
+    }
+    .planner-response-box {
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+        padding: 18px;
+    }
+    .planner-response-box pre,
+    .assistant-response-text {
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: inherit;
+        color: var(--text);
+        font-size: 14px;
+        line-height: 1.8;
+    }
+    .saved-plan-list {
+        display: grid;
+        gap: 14px;
+    }
+    .saved-plan-card {
+        border-radius: 18px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+        padding: 18px;
+    }
+    .saved-plan-card-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+    }
+    .saved-plan-card-meta {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.8;
+    }
+    .assistant-fab {
+        position: fixed;
+        right: 24px;
+        bottom: calc(var(--mob-nav-h) + 24px);
+        z-index: 260;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 18px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #1d4ed8, #2563eb);
+        color: #fff;
+        border: none;
+        box-shadow: 0 18px 40px rgba(37, 99, 235, 0.28);
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 700;
+    }
+    .assistant-fab:hover {
+        transform: translateY(-1px);
+    }
+    .assistant-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 320;
+        background: rgba(2, 6, 23, 0.56);
+        backdrop-filter: blur(8px);
+        padding: 18px;
+    }
+    .assistant-overlay.open {
+        display: flex;
+        align-items: flex-end;
+        justify-content: flex-end;
+    }
+    .assistant-panel {
+        width: min(520px, 100%);
+        max-height: calc(100vh - 36px);
+        overflow: auto;
+        border-radius: 28px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        box-shadow: var(--shadow-md);
+        padding: 22px;
+    }
+    .assistant-prompt {
+        min-height: 122px;
+        resize: vertical;
+    }
+    .assistant-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 14px 0 0;
+    }
+    .assistant-chip {
+        border: 1px solid var(--border2);
+        background: var(--surface2);
+        color: var(--text);
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .assistant-chip:hover {
+        border-color: rgba(79,110,247,.3);
+        color: var(--accent);
+    }
+    .assistant-response-shell {
+        margin-top: 18px;
+        display: none;
+    }
+    .assistant-response-shell.open {
+        display: block;
+    }
+    .assistant-warning {
+        margin-top: 12px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(245,158,11,.24);
+        background: rgba(245,158,11,.12);
+        color: #fbbf24;
+        font-size: 12.5px;
+        line-height: 1.7;
+    }
+    .assistant-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+    }
+    .assistant-status-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .planner-empty-note {
+        padding: 24px;
+        border-radius: 18px;
+        border: 1px dashed var(--border2);
+        background: var(--surface2);
+        color: var(--muted);
+        text-align: center;
+    }
+    @media (max-width: 767px) {
+        .assistant-fab {
+            right: 16px;
+            bottom: calc(var(--mob-nav-h) + 16px);
+            padding: 12px 16px;
+        }
+        .assistant-overlay {
+            padding: 10px;
+        }
+        .assistant-panel {
+            padding: 18px;
+            border-radius: 22px;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="space-y">
     <div class="card">
         <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
-            <div>
+            <div style="max-width:900px;">
                 <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Coach Strategy Workspace</p>
                 <h2 style="font-size:28px;font-weight:700;color:var(--text);">{{ training_session.title }}</h2>
-                <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;">
-                    {{ training_session.session_date }} · {{ training_session.start_time|time:"H:i" }} - {{ training_session.end_time|time:"H:i" }} · Court {{ training_session.court }} · Coach {{ training_session.coach|default:"Unassigned" }}
-                </p>
-                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;max-width:820px;">
-                    This planner behaves like an internal coaching assistant. It reads the admin syllabus, the session roster level mix, recent attendance rhythm, and current payment visibility to propose the plan for today's class.
+                <div class="planner-hero-meta">
+                    <span>{{ training_session.session_date }} &middot; {{ training_session.start_time|time:"H:i" }} - {{ training_session.end_time|time:"H:i" }}</span>
+                    <span>Court {{ training_session.court }}</span>
+                    <span>Coach {{ training_session.coach|default:"Unassigned" }}</span>
+                </div>
+                <p class="text-sm text-muted" style="margin-top:12px;line-height:1.8;max-width:820px;">
+                    Use the structured blueprint for a reliable session outline, then open the floating AI planner for custom prompts such as drill ideas, alternate flow, match-focus work, or how to teach today's syllabus to this exact group.
                 </p>
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                <button type="button" id="generatePlanBtn" class="btn btn-primary"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate Today Plan</button>
+                <button type="button" id="generatePlanBtn" class="btn btn-primary"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate Blueprint</button>
                 <a href="{% url 'sessions:detail' training_session.pk %}" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Back to session</a>
             </div>
         </div>
@@ -36,7 +211,7 @@
                     <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;">
                         <div>
                             <p style="font-weight:700;font-size:14px;color:var(--text);">{{ row.member.full_name }}</p>
-                            <p class="text-sm text-muted" style="margin-top:6px;">{{ row.member.get_skill_level_display }} · {{ row.member.get_membership_type_display }}</p>
+                            <p class="text-sm text-muted" style="margin-top:6px;">{{ row.member.get_skill_level_display }} &middot; {{ row.member.get_membership_type_display }}</p>
                         </div>
                         <span class="badge {{ row.status|status_badge }}">{{ row.get_status_display }}</span>
                     </div>
@@ -56,16 +231,16 @@
             </div>
             <div class="space-y">
                 <div class="card-inset">
-                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">1. Roster level</p>
-                    <p style="font-size:14px;color:var(--text);line-height:1.7;">The engine checks the roster skill mix to choose the most suitable syllabus track from beginner through pro.</p>
+                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">1. Admin syllabus stays primary</p>
+                    <p style="font-size:14px;color:var(--text);line-height:1.7;">The assistant starts from the syllabus week chosen for this session and keeps the badminton teaching direction aligned to that plan.</p>
                 </div>
                 <div class="card-inset">
-                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">2. Weekly syllabus</p>
-                    <p style="font-size:14px;color:var(--text);line-height:1.7;">It resolves the right week in the admin syllabus and uses those objectives as the plan backbone.</p>
+                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">2. Local Qwen reasons on live context</p>
+                    <p style="font-size:14px;color:var(--text);line-height:1.7;">Ollama with Qwen reads the roster mix, attendance rhythm, recent reports, and current staff watch-outs before answering your prompt.</p>
                 </div>
                 <div class="card-inset">
-                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">3. Live session context</p>
-                    <p style="font-size:14px;color:var(--text);line-height:1.7;">Attendance consistency, roster size, and current unpaid-fee visibility are added so the plan feels ready for today's reality, not just a static curriculum.</p>
+                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">3. You stay in control</p>
+                    <p style="font-size:14px;color:var(--text);line-height:1.7;">Any assistant reply can be copied instantly or saved back onto this session page so the team keeps a clear plan history.</p>
                 </div>
             </div>
         </div>
@@ -73,7 +248,7 @@
 
     <div class="card" id="planOutputCard">
         <div class="section-header">
-            <span class="section-title">Generated Plan</span>
+            <span class="section-title">Structured Session Blueprint</span>
             <span class="badge badge-info" id="planStatusBadge">Waiting</span>
         </div>
         <div id="planLoading" class="empty-state" style="display:none;">
@@ -81,12 +256,107 @@
             <p>Reading syllabus, roster, attendance rhythm, and payment status...</p>
         </div>
         <div id="planOutput" style="display:none;"></div>
-        <div id="planEmpty" class="empty-state">
-            <i class="fa-regular fa-lightbulb"></i>
-            <p>Click “Generate Today Plan” to build the session strategy.</p>
+        <div id="planEmpty" class="planner-empty-note">
+            Click "Generate Blueprint" to build the structured session flow before you ask the AI assistant for custom adjustments.
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="section-header">
+            <span class="section-title">Saved Assistant Plans</span>
+            <span class="badge badge-neutral" id="savedPlanCount">{{ saved_plans|length }}</span>
+        </div>
+        <div id="savedPlansList" class="saved-plan-list">
+            {% for item in saved_plans %}
+            <div class="saved-plan-card" data-plan-id="{{ item.pk }}">
+                <div class="saved-plan-card-head">
+                    <div>
+                        <p style="font-weight:700;font-size:15px;color:var(--text);">{{ item.title }}</p>
+                        <p class="saved-plan-card-meta">
+                            Saved by {{ item.saved_by|default:"System" }} &middot; {{ item.created_at|date:"d M Y H:i" }}<br>
+                            {{ item.get_source_display }}{% if item.model_name %} &middot; {{ item.model_name }}{% endif %}
+                        </p>
+                    </div>
+                    <span class="badge {% if item.source == 'ollama' %}badge-info{% else %}badge-warning{% endif %}">{{ item.get_source_display }}</span>
+                </div>
+                <div class="card-inset" style="margin-bottom:12px;">
+                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Prompt</p>
+                    <p style="font-size:13px;color:var(--text);line-height:1.8;">{{ item.user_prompt }}</p>
+                </div>
+                <div class="planner-response-box">
+                    <pre>{{ item.assistant_response }}</pre>
+                </div>
+            </div>
+            {% empty %}
+            <div id="savedPlansEmpty" class="planner-empty-note">
+                No AI replies have been saved for this session yet. Ask the assistant, then save the answer you want to keep.
+            </div>
+            {% endfor %}
         </div>
     </div>
 </div>
+
+{% if ai_planner_enabled %}
+<button type="button" class="assistant-fab" id="assistantFab">
+    <i class="fa-solid fa-robot"></i> Ask AI Planner
+</button>
+
+<div class="assistant-overlay" id="assistantOverlay">
+    <div class="assistant-panel">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+            <div>
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Local AI Planner</p>
+                <h3 style="font-size:24px;font-weight:700;color:var(--text);">Ollama Qwen Assistant</h3>
+                <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;">Ask in natural language. The assistant will answer from the syllabus, roster, and session context, then you can copy or save the result.</p>
+            </div>
+            <button type="button" class="modal-close" id="assistantClose"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="assistant-chip-row">
+            <button type="button" class="assistant-chip" data-prompt-chip="What is the best plan for today for this exact roster?">Plan for today</button>
+            <button type="button" class="assistant-chip" data-prompt-chip="Give me a 60-minute version focused on fundamentals and consistency.">60-minute fundamentals</button>
+            <button type="button" class="assistant-chip" data-prompt-chip="Adjust today's plan if two students are weaker and need simpler progressions.">Adapt for weaker players</button>
+            <button type="button" class="assistant-chip" data-prompt-chip="Suggest coaching cues and corrections I should repeat during today's drills.">Coaching cues</button>
+        </div>
+
+        <div class="form-group" style="margin-top:16px;">
+            <label for="assistantPrompt">Prompt</label>
+            <textarea id="assistantPrompt" class="assistant-prompt" placeholder="Ask anything about today's badminton session, drills, progression, matchplay focus, or how to teach the syllabus to this group."></textarea>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-top:14px;">
+            <span class="text-sm text-muted">Model: Ollama / local Qwen</span>
+            <button type="button" class="btn btn-primary" id="assistantAskBtn"><i class="fa-solid fa-paper-plane"></i> Ask Assistant</button>
+        </div>
+
+        <div id="assistantLoading" class="empty-state" style="display:none;margin-top:18px;">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <p>Thinking through the syllabus and roster...</p>
+        </div>
+
+        <div id="assistantResponseShell" class="assistant-response-shell">
+            <div class="assistant-actions">
+                <div class="assistant-status-row">
+                    <span class="badge badge-info" id="assistantSourceBadge">Ollama</span>
+                    <span class="badge badge-neutral" id="assistantModelBadge">qwen</span>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button type="button" class="btn btn-ghost btn-sm" id="assistantCopyBtn"><i class="fa-regular fa-copy"></i> Copy</button>
+                    <button type="button" class="btn btn-primary btn-sm" id="assistantSaveBtn"><i class="fa-regular fa-bookmark"></i> Save To Session</button>
+                </div>
+            </div>
+            <div class="card-inset" style="margin-top:14px;">
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Prompt</p>
+                <p id="assistantPromptEcho" style="font-size:13px;color:var(--text);line-height:1.8;"></p>
+            </div>
+            <div class="planner-response-box" style="margin-top:14px;">
+                <pre class="assistant-response-text" id="assistantResponseText"></pre>
+            </div>
+            <div id="assistantWarning" class="assistant-warning" style="display:none;"></div>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
@@ -97,44 +367,79 @@
     const emptyEl = document.getElementById('planEmpty');
     const statusBadge = document.getElementById('planStatusBadge');
 
+    const assistantFab = document.getElementById('assistantFab');
+    const assistantOverlay = document.getElementById('assistantOverlay');
+    const assistantClose = document.getElementById('assistantClose');
+    const assistantPrompt = document.getElementById('assistantPrompt');
+    const assistantAskBtn = document.getElementById('assistantAskBtn');
+    const assistantLoading = document.getElementById('assistantLoading');
+    const assistantResponseShell = document.getElementById('assistantResponseShell');
+    const assistantPromptEcho = document.getElementById('assistantPromptEcho');
+    const assistantResponseText = document.getElementById('assistantResponseText');
+    const assistantWarning = document.getElementById('assistantWarning');
+    const assistantSourceBadge = document.getElementById('assistantSourceBadge');
+    const assistantModelBadge = document.getElementById('assistantModelBadge');
+    const assistantCopyBtn = document.getElementById('assistantCopyBtn');
+    const assistantSaveBtn = document.getElementById('assistantSaveBtn');
+    const savedPlansList = document.getElementById('savedPlansList');
+    const savedPlanCount = document.getElementById('savedPlanCount');
+
+    let latestAssistantPayload = null;
+
+    function getCookie(name) {
+        const cookieValue = document.cookie
+            .split('; ')
+            .find(row => row.startsWith(name + '='));
+        return cookieValue ? decodeURIComponent(cookieValue.split('=')[1]) : '';
+    }
+
+    function escapeHtml(value) {
+        return (value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     function renderPlan(plan) {
         const blocks = plan.blocks.map(function(block, index) {
             return `
                 <div class="card-inset" style="margin-top:12px;">
                     <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
                         <div>
-                            <p style="font-weight:700;font-size:15px;color:var(--text);">${index + 1}. ${block.title}</p>
-                            <p class="text-sm text-muted" style="margin-top:6px;">${block.duration}</p>
+                            <p style="font-weight:700;font-size:15px;color:var(--text);">${index + 1}. ${escapeHtml(block.title)}</p>
+                            <p class="text-sm text-muted" style="margin-top:6px;">${escapeHtml(block.duration)}</p>
                         </div>
                     </div>
-                    <p style="font-size:14px;color:var(--text);line-height:1.8;margin-top:12px;">${block.detail}</p>
+                    <p style="font-size:14px;color:var(--text);line-height:1.8;margin-top:12px;">${escapeHtml(block.detail)}</p>
                 </div>
             `;
         }).join('');
 
         const coachPrompts = plan.coach_prompts.map(function(item) {
-            return `<li style="margin-left:18px;color:var(--text);line-height:1.8;">${item}</li>`;
+            return `<li style="margin-left:18px;color:var(--text);line-height:1.8;">${escapeHtml(item)}</li>`;
         }).join('');
 
         outputEl.innerHTML = `
             <div class="grid-2">
                 <div>
                     <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Planner Summary</p>
-                    <h3 style="font-size:26px;font-weight:700;color:var(--text);margin-top:6px;">${plan.plan_title}</h3>
-                    <p style="font-size:14px;color:var(--text);line-height:1.8;margin-top:12px;">${plan.summary}</p>
+                    <h3 style="font-size:26px;font-weight:700;color:var(--text);margin-top:6px;">${escapeHtml(plan.plan_title)}</h3>
+                    <p style="font-size:14px;color:var(--text);line-height:1.8;margin-top:12px;">${escapeHtml(plan.summary)}</p>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;">
-                        <span class="badge badge-info">${plan.track_label}</span>
-                        <span class="badge badge-neutral">Week ${plan.resolved_week}</span>
-                        <span class="badge badge-warning">${plan.roster_size} player(s)</span>
+                        <span class="badge badge-info">${escapeHtml(plan.track_label)}</span>
+                        <span class="badge badge-neutral">Week ${escapeHtml(String(plan.resolved_week))}</span>
+                        <span class="badge badge-warning">${escapeHtml(String(plan.roster_size))} player(s)</span>
                     </div>
                 </div>
                 <div class="card-inset">
                     <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Live Inputs</p>
                     <p style="font-size:14px;color:var(--text);line-height:1.8;margin-top:10px;">
-                        Roster mix: ${plan.roster_level_summary}<br>
-                        Recent attendance: ${plan.attendance_rate}%<br>
-                        Progress score signal: ${plan.average_score || 0}<br>
-                        Fee visibility: ${plan.payment_summary}
+                        Roster mix: ${escapeHtml(plan.roster_level_summary)}<br>
+                        Recent attendance: ${escapeHtml(String(plan.attendance_rate))}%<br>
+                        Progress score signal: ${escapeHtml(String(plan.average_score || 0))}<br>
+                        Fee visibility: ${escapeHtml(plan.payment_summary)}
                     </p>
                 </div>
             </div>
@@ -150,11 +455,11 @@
                 <div class="card-inset">
                     <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Syllabus Reference</p>
                     <p style="font-size:14px;color:var(--text);line-height:1.8;">
-                        ${plan.syllabus_reference.title}<br><br>
-                        ${plan.syllabus_reference.objective}<br><br>
-                        Homework: ${plan.syllabus_reference.homework}
+                        ${escapeHtml(plan.syllabus_reference.title)}<br><br>
+                        ${escapeHtml(plan.syllabus_reference.objective)}<br><br>
+                        Homework: ${escapeHtml(plan.syllabus_reference.homework)}
                     </p>
-                    <p class="text-sm text-muted" style="margin-top:12px;">Generated ${plan.generated_at}</p>
+                    <p class="text-sm text-muted" style="margin-top:12px;">Generated ${escapeHtml(plan.generated_at)}</p>
                 </div>
             </div>
         `;
@@ -179,8 +484,8 @@
             statusBadge.textContent = 'Ready';
             statusBadge.className = 'badge badge-success';
         } catch (error) {
-            emptyEl.style.display = 'flex';
-            emptyEl.innerHTML = '<i class="fa-regular fa-circle-xmark"></i><p>Unable to generate the plan right now.</p>';
+            emptyEl.style.display = 'block';
+            emptyEl.innerHTML = 'Unable to generate the structured blueprint right now.';
             statusBadge.textContent = 'Error';
             statusBadge.className = 'badge badge-danger';
         } finally {
@@ -189,7 +494,166 @@
         }
     }
 
+    function openAssistant() {
+        assistantOverlay.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        setTimeout(function() {
+            assistantPrompt.focus();
+        }, 80);
+    }
+
+    function closeAssistant() {
+        assistantOverlay.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    function renderSavedPlanCard(item) {
+        return `
+            <div class="saved-plan-card" data-plan-id="${item.id}">
+                <div class="saved-plan-card-head">
+                    <div>
+                        <p style="font-weight:700;font-size:15px;color:var(--text);">${escapeHtml(item.title)}</p>
+                        <p class="saved-plan-card-meta">
+                            Saved by ${escapeHtml(item.saved_by)} &middot; ${escapeHtml(item.saved_at)}<br>
+                            ${escapeHtml(item.source_label)}${item.model_name ? ` &middot; ${escapeHtml(item.model_name)}` : ''}
+                        </p>
+                    </div>
+                    <span class="badge ${item.source === 'ollama' ? 'badge-info' : 'badge-warning'}">${escapeHtml(item.source_label)}</span>
+                </div>
+                <div class="card-inset" style="margin-bottom:12px;">
+                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Prompt</p>
+                    <p style="font-size:13px;color:var(--text);line-height:1.8;">${escapeHtml(item.prompt)}</p>
+                </div>
+                <div class="planner-response-box">
+                    <pre>${escapeHtml(item.response)}</pre>
+                </div>
+            </div>
+        `;
+    }
+
+    function updateSavedPlanCount() {
+        const count = savedPlansList.querySelectorAll('.saved-plan-card').length;
+        savedPlanCount.textContent = String(count);
+    }
+
+    async function askAssistant() {
+        const prompt = assistantPrompt.value.trim();
+        if (!prompt) {
+            window.alert('Please enter a planner prompt first.');
+            return;
+        }
+
+        assistantAskBtn.disabled = true;
+        assistantSaveBtn.disabled = true;
+        assistantResponseShell.classList.remove('open');
+        assistantWarning.style.display = 'none';
+        assistantLoading.style.display = 'block';
+
+        try {
+            const response = await fetch('{% url "sessions:plan_assistant" training_session.pk %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify({ prompt: prompt }),
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Unable to get an AI response right now.');
+            }
+
+            latestAssistantPayload = data;
+            assistantPromptEcho.textContent = data.prompt;
+            assistantResponseText.textContent = data.response;
+            assistantSourceBadge.textContent = data.source_label;
+            assistantSourceBadge.className = `badge ${data.source === 'ollama' ? 'badge-info' : 'badge-warning'}`;
+            assistantModelBadge.textContent = data.from_cache ? `${data.model_name || 'local'} / cached` : (data.model_name || 'local');
+            assistantResponseShell.classList.add('open');
+            assistantSaveBtn.disabled = false;
+
+            if (data.warning) {
+                assistantWarning.textContent = data.warning;
+                assistantWarning.style.display = 'block';
+            }
+        } catch (error) {
+            window.alert(error.message);
+        } finally {
+            assistantLoading.style.display = 'none';
+            assistantAskBtn.disabled = false;
+        }
+    }
+
+    async function saveAssistantPlan() {
+        if (!latestAssistantPayload) {
+            return;
+        }
+
+        assistantSaveBtn.disabled = true;
+        try {
+            const response = await fetch('{% url "sessions:plan_save" training_session.pk %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify({
+                    title: latestAssistantPayload.title,
+                    prompt: latestAssistantPayload.prompt,
+                    response: latestAssistantPayload.response,
+                    source: latestAssistantPayload.source,
+                    model_name: latestAssistantPayload.model_name,
+                }),
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Unable to save this AI plan.');
+            }
+
+            const emptyState = document.getElementById('savedPlansEmpty');
+            if (emptyState) {
+                emptyState.remove();
+            }
+            if (!data.already_saved) {
+                savedPlansList.insertAdjacentHTML('afterbegin', renderSavedPlanCard(data));
+            }
+            updateSavedPlanCount();
+        } catch (error) {
+            window.alert(error.message);
+        } finally {
+            assistantSaveBtn.disabled = false;
+        }
+    }
+
+    if (assistantFab) {
+        assistantFab.addEventListener('click', openAssistant);
+        assistantClose.addEventListener('click', closeAssistant);
+        assistantOverlay.addEventListener('click', function(event) {
+            if (event.target === assistantOverlay) {
+                closeAssistant();
+            }
+        });
+        document.querySelectorAll('[data-prompt-chip]').forEach(function(button) {
+            button.addEventListener('click', function() {
+                assistantPrompt.value = button.dataset.promptChip;
+                assistantPrompt.focus();
+            });
+        });
+        assistantAskBtn.addEventListener('click', askAssistant);
+        assistantCopyBtn.addEventListener('click', async function() {
+            if (!latestAssistantPayload) {
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(latestAssistantPayload.response);
+            } catch (error) {
+                window.alert('Copy failed on this browser. Please select the text manually.');
+            }
+        });
+        assistantSaveBtn.addEventListener('click', saveAssistantPlan);
+    }
     generateBtn.addEventListener('click', generatePlan);
+
     {% if autoload_plan %}
     window.addEventListener('load', generatePlan);
     {% endif %}

@@ -154,4 +154,39 @@ class SessionFeedback(models.Model):
     def __str__(self):
         return f"{self.member.full_name} feedback for {self.training_session.title}"
 
+
+class SessionPlannerEntry(models.Model):
+    SOURCE_OLLAMA = "ollama"
+    SOURCE_FALLBACK = "fallback"
+    SOURCE_CHOICES = [
+        (SOURCE_OLLAMA, "Ollama"),
+        (SOURCE_FALLBACK, "Rule-based fallback"),
+    ]
+
+    training_session = models.ForeignKey(
+        TrainingSession,
+        on_delete=models.CASCADE,
+        related_name="planner_entries",
+    )
+    title = models.CharField(max_length=255)
+    user_prompt = models.TextField()
+    assistant_response = models.TextField()
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default=SOURCE_OLLAMA)
+    model_name = models.CharField(max_length=120, blank=True)
+    saved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="saved_session_plans",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.training_session.title} - {self.title}"
+
 # Create your models here.

@@ -12,12 +12,23 @@ services:
       DB_HOST: db
       DB_PORT: 3306
       MEDIA_ROOT: /app/media
+      STATIC_ROOT: /app/staticfiles
     expose:
       - "8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - python -c "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/health/', timeout=5)"
+      interval: 20s
+      timeout: 5s
+      retries: 6
+      start_period: 45s
     volumes:
       - media_data:/app/media
+      - static_data:/app/staticfiles
 
   db:
     image: mysql:8.4
@@ -49,13 +60,15 @@ services:
     env_file:
       - .env
     depends_on:
-      - web
+      web:
+        condition: service_healthy
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - certbot_www:/var/www/certbot
       - letsencrypt_certs:/etc/letsencrypt
+      - static_data:/var/www/static:ro
       - ./docker/nginx/entrypoint.sh:/docker-entrypoint-custom.sh:ro
       - ./docker/nginx/templates:/etc/nginx/templates:ro
     entrypoint: ["/bin/sh", "/docker-entrypoint-custom.sh"]
@@ -74,8 +87,50 @@ services:
       - ./docker/certbot/entrypoint.sh:/entrypoint.sh:ro
     entrypoint: ["/bin/sh", "/entrypoint.sh"]
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: nyo-dashboard-ollama
+    restart: unless-stopped
+    environment:
+      OLLAMA_KEEP_ALIVE: 24h
+    ports:
+      - "11434:11434"
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    volumes:
+      - ollama_data:/root/.ollama
+
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: nyo-dashboard-ollama-init
+    restart: "no"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:3b}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        echo "Waiting for Ollama to become ready..."
+        until ollama list >/dev/null 2>&1; do
+          sleep 3
+        done
+        echo "Pulling model $$OLLAMA_MODEL..."
+        ollama pull "$$OLLAMA_MODEL"
+    volumes:
+      - ollama_data:/root/.ollama
+
 volumes:
   mysql_data:
   media_data:
+  static_data:
   certbot_www:
   letsencrypt_certs:
+  ollama_data:
