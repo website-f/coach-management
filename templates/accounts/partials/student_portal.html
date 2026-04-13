@@ -574,7 +574,7 @@
             {% if student_portal.current_month_fee_count %}
             <div class="student-report-item" style="margin-bottom:12px;background:linear-gradient(180deg, rgba(245,166,35,0.12), rgba(245,166,35,0.04));border-color:rgba(245,166,35,0.22);">
                 <strong>This Month Fee Alert</strong>
-                <small>{{ student_portal.current_month_fee_count }} invoice(s) still need payment attention for this month.</small>
+                <small>{{ student_portal.current_month_fee_count }} invoice(s) still need payment attention for this month. Current fee setup: {{ billing_overview_text }}</small>
             </div>
             {% elif student_portal.featured_invoice_note %}
             <div class="student-report-item" style="margin-bottom:12px;">
@@ -585,7 +585,7 @@
             {% if student_portal.featured_invoice %}
             <div class="student-report-item" style="margin-bottom:12px;">
                 <strong>{{ student_portal.featured_invoice.member.full_name }} - {{ student_portal.featured_invoice.period|date:"F Y" }}</strong>
-                <small>Due {{ student_portal.featured_invoice.due_date }} | RM {{ student_portal.featured_invoice.amount }} | <span class="badge {{ student_portal.featured_invoice.status|status_badge }}">{{ student_portal.featured_invoice.get_status_display }}</span></small>
+                <small>Due {{ student_portal.featured_invoice.due_date }} | RM {{ student_portal.featured_invoice.amount }}{% if student_portal.featured_invoice.description %} | {{ student_portal.featured_invoice.description }}{% endif %} | <span class="badge {{ student_portal.featured_invoice.status|status_badge }}">{{ student_portal.featured_invoice.get_status_display }}</span></small>
             </div>
             {% endif %}
             <div class="student-secondary-list">

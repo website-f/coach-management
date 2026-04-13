@@ -16,10 +16,12 @@ from accounts.utils import (
     ROLE_PARENT,
     bootstrap_groups,
 )
-from finance.models import Invoice, Product
+from finance.models import BillingConfiguration, Invoice, PaymentPlan, Product
+from finance.services import create_initial_invoices_for_member
 from members.models import AdmissionApplication, Member, ProgressReport
 from payments.models import Payment, QRCode
 from sessions.models import AttendanceRecord, TrainingSession
+from sessions.services import ensure_default_syllabus
 
 User = get_user_model()
 STARTER_DATA_FLAG = "starter_dataset_seeded"
@@ -94,6 +96,8 @@ class Command(BaseCommand):
             last_name="Parent",
         )
 
+        ensure_default_syllabus()
+
         landing_content = LandingPageContent.get_solo()
         landing_content.hero_title = "NYO Academy Portal"
         landing_content.hero_subtitle = (
@@ -119,6 +123,44 @@ class Command(BaseCommand):
         landing_content.updated_by = admin_user
         landing_content.save()
 
+        billing_config = BillingConfiguration.get_solo()
+        billing_config.registration_fee_name = "Registration Fee"
+        billing_config.registration_fee_amount = "60.00"
+        billing_config.registration_bonus_text = "1 free training jersey"
+        billing_config.registration_description = "Mandatory one-time onboarding fee charged when a student joins the academy."
+        billing_config.payment_portal_note = (
+            "Scan the QR code, transfer the exact amount, then upload a screenshot for admin verification."
+        )
+        billing_config.updated_by = admin_user
+        billing_config.save()
+
+        package_four, _ = PaymentPlan.objects.update_or_create(
+            code="monthly_4",
+            defaults={
+                "name": "Monthly Package - 4 Sessions",
+                "sessions_per_month": 4,
+                "monthly_fee": "100.00",
+                "description": "Recommended for weekly training rhythm and steady fundamentals.",
+                "is_active": True,
+                "is_default": True,
+                "sort_order": 1,
+                "updated_by": admin_user,
+            },
+        )
+        package_eight, _ = PaymentPlan.objects.update_or_create(
+            code="monthly_8",
+            defaults={
+                "name": "Monthly Package - 8 Sessions",
+                "sessions_per_month": 8,
+                "monthly_fee": "160.00",
+                "description": "Best for players who want a higher-volume training schedule each month.",
+                "is_active": True,
+                "is_default": False,
+                "sort_order": 2,
+                "updated_by": admin_user,
+            },
+        )
+
         member_one, _ = Member.objects.update_or_create(
             full_name="Alya Tan",
             defaults={
@@ -127,7 +169,7 @@ class Command(BaseCommand):
                 "email": "alya@example.com",
                 "emergency_contact_name": "Sarah Tan",
                 "emergency_contact_phone": "012-7771001",
-                "membership_type": Member.MEMBERSHIP_MONTHLY,
+                "payment_plan": package_four,
                 "skill_level": Member.LEVEL_INTERMEDIATE,
                 "assigned_coach": coach_user,
                 "parent_user": parent_user,
@@ -145,7 +187,7 @@ class Command(BaseCommand):
                 "email": "bryan@example.com",
                 "emergency_contact_name": "Sarah Tan",
                 "emergency_contact_phone": "012-7771001",
-                "membership_type": Member.MEMBERSHIP_YEARLY,
+                "payment_plan": package_eight,
                 "skill_level": Member.LEVEL_ADVANCED,
                 "assigned_coach": coach_user,
                 "parent_user": parent_user,
@@ -161,9 +203,10 @@ class Command(BaseCommand):
             period=previous_month,
             invoice_type=Invoice.TYPE_MONTHLY,
             defaults={
-                "description": "Monthly training fee",
+                "payment_plan": package_four,
+                "description": package_four.invoice_description,
                 "is_onboarding_fee": False,
-                "amount": "180.00",
+                "amount": "100.00",
                 "due_date": previous_month.replace(day=7),
                 "status": Invoice.STATUS_PAID,
                 "created_by": admin_user,
@@ -174,9 +217,10 @@ class Command(BaseCommand):
             period=current_month,
             invoice_type=Invoice.TYPE_MONTHLY,
             defaults={
-                "description": "Monthly training fee",
+                "payment_plan": package_four,
+                "description": package_four.invoice_description,
                 "is_onboarding_fee": False,
-                "amount": "180.00",
+                "amount": "100.00",
                 "due_date": current_month.replace(day=7),
                 "status": Invoice.STATUS_UNPAID,
                 "created_by": admin_user,
@@ -187,9 +231,9 @@ class Command(BaseCommand):
             period=current_month,
             invoice_type=Invoice.TYPE_REGISTRATION,
             defaults={
-                "description": "One-time registration fee",
+                "description": billing_config.registration_invoice_description,
                 "is_onboarding_fee": True,
-                "amount": "120.00",
+                "amount": "60.00",
                 "due_date": current_month.replace(day=5),
                 "status": Invoice.STATUS_UNPAID,
                 "created_by": admin_user,
@@ -200,9 +244,10 @@ class Command(BaseCommand):
             period=current_month,
             invoice_type=Invoice.TYPE_MONTHLY,
             defaults={
-                "description": "Initial monthly fee",
+                "payment_plan": package_eight,
+                "description": package_eight.invoice_description,
                 "is_onboarding_fee": True,
-                "amount": "220.00",
+                "amount": "160.00",
                 "due_date": current_month.replace(day=7),
                 "status": Invoice.STATUS_PENDING,
                 "created_by": admin_user,
@@ -250,6 +295,9 @@ class Command(BaseCommand):
                 save=False,
             )
             pending_payment.save()
+
+        create_initial_invoices_for_member(member_one, created_by=admin_user)
+        create_initial_invoices_for_member(member_two, created_by=admin_user)
 
         session_one, _ = TrainingSession.objects.update_or_create(
             title="Footwork Fundamentals",

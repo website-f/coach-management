@@ -38,6 +38,58 @@
                 <div class="stat-icon"><i class="fa-solid fa-file-csv"></i></div>
             </div>
         </div>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Billing Setup</p>
+                    <p class="stat-value" style="font-size:22px;">{{ active_payment_plan_count }} active plan{{ active_payment_plan_count|pluralize }}</p>
+                    <a href="{% url 'finance:billing_settings' %}" class="btn btn-primary btn-sm" style="margin-top:10px;display:inline-flex;">
+                        <i class="fa-solid fa-tags"></i> Manage Pricing
+                    </a>
+                </div>
+                <div class="stat-icon" style="background:rgba(79,110,247,.12);color:#4f6ef7;"><i class="fa-solid fa-tags"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="card">
+            <div class="section-header">
+                <span class="section-title">Current Registration Fee</span>
+                <a href="{% url 'finance:billing_settings' %}" class="section-link">Edit billing setup</a>
+            </div>
+            <div class="card-inset">
+                <p style="font-weight:700;font-size:18px;color:var(--text);">{{ billing_configuration.registration_fee_name }}</p>
+                <p class="text-sm text-muted mt-1">RM {{ billing_configuration.registration_fee_amount|floatformat:0 }}{% if billing_configuration.registration_bonus_text %} · Includes {{ billing_configuration.registration_bonus_text }}{% endif %}</p>
+                {% if billing_configuration.registration_description %}
+                <p class="text-sm text-muted mt-2">{{ billing_configuration.registration_description }}</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card">
+            <div class="section-header">
+                <span class="section-title">Active Monthly Packages</span>
+                <a href="{% url 'finance:billing_settings' %}" class="section-link">Open billing page</a>
+            </div>
+            <div class="space-y">
+                {% for plan in billing_plans %}
+                <div class="card-inset">
+                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+                        <div>
+                            <p style="font-weight:700;font-size:14px;color:var(--text);">{{ plan.name }}</p>
+                            <p class="text-sm text-muted mt-1">{{ plan.sessions_per_month }} session{{ plan.sessions_per_month|pluralize }} per month{% if plan.description %} · {{ plan.description }}{% endif %}</p>
+                        </div>
+                        <span class="badge badge-info">RM {{ plan.monthly_fee|floatformat:0 }}</span>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state" style="padding:24px 0;">
+                    <i class="fa-regular fa-rectangle-list"></i>
+                    <p>No billing plans configured yet.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
     </div>
 
     <!-- Tables -->

@@ -540,7 +540,7 @@
             <div class="point-ico"><i class="fa-solid fa-child-reaching"></i></div>
             <div class="point-body">
               <strong>For Parents</strong>
-              <span>Register your child, track attendance, read progress report cards, and pay monthly fees — all from one parent account, from any device.</span>
+              <span>Register your child, track attendance, read progress report cards, and pay clear package fees — RM100 for 4 sessions or RM160 for 8 sessions — all from one parent account.</span>
             </div>
           </li>
           <li class="point">
@@ -639,7 +639,7 @@
       <div class="glass feat-card">
         <div class="feat-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
         <h3>Invoice &amp; Billing Management</h3>
-        <p>All monthly fees and one-time charges appear as clear, itemised invoices. You can see exactly what you owe, the due date, and whether each invoice is paid, waiting for confirmation, or still outstanding — no guessing.</p>
+        <p>All package fees and one-time charges appear as clear, itemised invoices. Parents can see the mandatory registration fee RM60 with 1 free training jersey, plus the monthly package fee for 4 sessions or 8 sessions, with full payment status.</p>
         <div class="feat-tag">Finance</div>
       </div>
 
@@ -690,7 +690,7 @@
       <div class="step">
         <div class="step-num">4</div>
         <h3>Start Training!</h3>
-        <p>Your child attends their first session. From that point on, you can see attendance, read progress reports, check upcoming sessions, pay monthly fees, and manage everything from your parent dashboard.</p>
+        <p>Your child attends their first session. From that point on, you can see attendance, read progress reports, check upcoming sessions, and manage the selected monthly package fee directly from the parent dashboard.</p>
       </div>
     </div>
   </div>
@@ -853,7 +853,7 @@
           </div>
           <div class="faq-item">
             <button class="faq-q">What fees does the club charge? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
-            <div class="faq-a">There is typically a one-time <strong>enrollment or registration fee</strong> when joining the club, and a recurring <strong>monthly training fee</strong> for ongoing sessions. The exact amounts are set by the club admin and will be shown clearly on each invoice before you need to pay anything.</div>
+            <div class="faq-a">The fee structure is clear: a mandatory <strong>registration fee of RM60</strong> when joining, which includes <strong>1 free training jersey</strong>, plus a recurring monthly training package. Families can choose <strong>RM100 for 4 sessions per month</strong> or <strong>RM160 for 8 sessions per month</strong>. These amounts are shown clearly on every invoice.</div>
           </div>
           <div class="faq-item">
             <button class="faq-q">I uploaded my payment proof but it has not been confirmed yet. <i class="fa-solid fa-chevron-down faq-chev"></i></button>
@@ -910,7 +910,7 @@
     <div class="glass cta-panel">
       <div class="eyebrow">Ready to Start?</div>
       <h2>Join the club today.</h2>
-      <p>Register your child in minutes. The coaching team is ready to welcome your family and get your child into their first session.</p>
+      <p>Register your child in minutes. The coaching team is ready to welcome your family, assign the right monthly package, and get your child into their first session.</p>
       <div class="cta-btns">
         <a href="{% url 'members:apply' %}" class="btn btn-p"><i class="fa-solid fa-user-plus"></i> Apply For Admission</a>
         <a href="/accounts/login/?role=parent" class="btn btn-g"><i class="fa-solid fa-arrow-right-to-bracket"></i> Already a Member? Sign In</a>
@@ -989,6 +989,27 @@ document.querySelectorAll(".faq-q").forEach(btn => {
 /* ── Close mob menu on anchor links ────────────────────────────── */
 document.querySelectorAll(".mob-nav a[href^='#']").forEach(a => {
   a.addEventListener("click", closeMob);
+});
+
+/* Dynamic billing copy */
+const billingPlanSummary = "{{ billing_plan_summary|escapejs }}";
+const registrationFeeSummary = "{{ registration_fee_summary|escapejs }}";
+const billingOverviewText = "{{ billing_overview_text|escapejs }}";
+
+document.querySelectorAll("span, p, .faq-a").forEach((el) => {
+  const text = (el.textContent || "").trim();
+
+  if (text.includes("track attendance, read progress report cards, and pay clear package fees")) {
+    el.textContent = `Register your child, track attendance, read progress report cards, and pay clear package fees - ${billingPlanSummary} - all from one parent account.`;
+  }
+
+  if (text.startsWith("All package fees and one-time charges appear as clear, itemised invoices.")) {
+    el.textContent = `All package fees and one-time charges appear as clear, itemised invoices. Parents can see ${billingOverviewText} with full payment status on every invoice.`;
+  }
+
+  if (text.startsWith("The fee structure is clear:")) {
+    el.innerHTML = `The fee structure is clear and admin-managed. Current pricing is <strong>${registrationFeeSummary}</strong>, plus recurring monthly plans of <strong>${billingPlanSummary}</strong>. These amounts are shown clearly on every invoice and can be updated by the academy whenever packages change.`;
+  }
 });
 </script>
 </body>

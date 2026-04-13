@@ -7,7 +7,6 @@
 {% block content %}
 <div class="space-y">
 
-    <!-- Filter Bar -->
     <div class="filter-bar">
         <form method="get" class="filter-fields">
             <div class="filter-field">
@@ -37,7 +36,6 @@
         </form>
     </div>
 
-    <!-- Page injected table actions -->
     {% if can_manage %}
     <div class="page-table-actions" style="display:none;">
         <a href="{% url 'finance:invoice_create' %}" class="dt-button" style="background:var(--accent)!important;color:#fff!important;border-color:var(--accent-h)!important;">
@@ -46,7 +44,6 @@
     </div>
     {% endif %}
 
-    <!-- Desktop Table -->
     <div class="table-wrap" id="desktopTable" style="display:none;">
         <table class="tbl">
             <thead>
@@ -65,7 +62,7 @@
                     <td style="padding-left: 24px; vertical-align: middle;"><input type="checkbox" class="row-checkbox" value="{{ invoice.id }}"></td>
                     <td>
                         <div class="tbl-name">{{ invoice.created_at|date:"M j, Y"|default:invoice.period|date:"M j, Y" }}</div>
-                        <div class="tbl-sub">10:00 am</div> <!-- Mock time for visual matching -->
+                        <div class="tbl-sub">10:00 am</div>
                     </td>
                     <td>
                         <div style="display:flex;align-items:center;gap:12px;">
@@ -74,7 +71,7 @@
                             </div>
                             <div>
                                 <div class="tbl-name">{{ invoice.member.full_name }}</div>
-                                <div class="tbl-sub">{{ invoice.get_invoice_type_display }} · Invoice #{{ invoice.id|stringformat:"06d" }}</div>
+                                <div class="tbl-sub">{{ invoice.get_invoice_type_display }} · {% if invoice.description %}{{ invoice.description }} · {% endif %}Invoice #{{ invoice.id|stringformat:"06d" }}</div>
                             </div>
                         </div>
                     </td>
@@ -94,14 +91,13 @@
         </table>
     </div>
 
-    <!-- Mobile Cards -->
     <div id="mobileCards">
         {% for invoice in invoices %}
         <div class="card card-sm" style="margin-bottom:10px;">
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
                 <div>
                     <p style="font-weight:700;font-size:14px;color:var(--text);">{{ invoice.member.full_name }}</p>
-                    <p class="text-sm text-muted mt-1">{{ invoice.period|date:"F Y" }}</p>
+                    <p class="text-sm text-muted mt-1">{{ invoice.period|date:"F Y" }}{% if invoice.description %} · {{ invoice.description }}{% endif %}</p>
                     <p style="font-weight:700;color:var(--text);font-size:15px;margin-top:6px;">RM {{ invoice.amount }}</p>
                 </div>
                 <span class="badge {{ invoice.status|status_badge }}">{{ invoice.get_status_display }}</span>

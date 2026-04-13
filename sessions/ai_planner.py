@@ -169,6 +169,7 @@ def compact_blueprint(blueprint):
         "summary": compact_text(blueprint["summary"], 180),
         "track_label": blueprint["track_label"],
         "resolved_week": blueprint["resolved_week"],
+        "phase_label": compact_text(blueprint.get("phase_label", ""), 100),
         "roster_size": blueprint["roster_size"],
         "payment_count": blueprint["payment_count"],
         "payment_summary": blueprint["payment_summary"],
@@ -181,9 +182,29 @@ def compact_blueprint(blueprint):
             for item in blueprint["blocks"][:4]
         ],
         "coach_prompts": blueprint["coach_prompts"][:4],
+        "template_reference": {
+            "name": compact_text(blueprint["template_reference"].get("name", ""), 100),
+            "curriculum_year_label": compact_text(blueprint["template_reference"].get("curriculum_year_label", ""), 40),
+            "source_document_name": compact_text(blueprint["template_reference"].get("source_document_name", ""), 80),
+            "annual_goal": compact_text(blueprint["template_reference"].get("annual_goal", ""), 180),
+            "year_end_outcomes": blueprint["template_reference"].get("year_end_outcomes", [])[:4],
+            "assessment_methods": blueprint["template_reference"].get("assessment_methods", [])[:4],
+            "ai_planner_instructions": compact_text(blueprint["template_reference"].get("ai_planner_instructions", ""), 160),
+        },
+        "standard_reference": {
+            "code": blueprint["standard_reference"].get("code", ""),
+            "title": compact_text(blueprint["standard_reference"].get("title", ""), 100),
+            "focus": compact_text(blueprint["standard_reference"].get("focus", ""), 140),
+            "learning_standards": blueprint["standard_reference"].get("learning_standards", [])[:4],
+            "performance_bands": blueprint["standard_reference"].get("performance_bands", [])[:5],
+            "assessment_focus": compact_text(blueprint["standard_reference"].get("assessment_focus", ""), 120),
+        },
         "syllabus_reference": {
             "title": blueprint["syllabus_reference"]["title"],
             "objective": compact_text(blueprint["syllabus_reference"]["objective"], 150),
+            "phase_label": compact_text(blueprint["syllabus_reference"].get("phase_label", ""), 100),
+            "assessment_focus": compact_text(blueprint["syllabus_reference"].get("assessment_focus", ""), 120),
+            "success_criteria": compact_text(blueprint["syllabus_reference"].get("success_criteria", ""), 140),
             "homework": compact_text(blueprint["syllabus_reference"]["homework"], 120),
         },
     }
@@ -228,24 +249,26 @@ def build_assistant_messages(training_session, user_prompt):
     context = build_planner_context(training_session)
     system_prompt = """
 You are NYO Coach Planner, a badminton session-planning assistant for coaches and admins.
-Your job is to produce practical, session-ready badminton plans grounded in the admin syllabus and live session context.
+Your job is to produce practical, session-ready badminton plans grounded in the admin curriculum template, syllabus standards, and live session context.
 
 Rules:
-- Stay aligned to the syllabus and the actual session roster.
+- Stay aligned to the syllabus template, standard reference, and the actual session roster.
 - Be concrete, structured, and coach-friendly.
 - Do not invent players, progress reports, payment facts, or schedule details.
 - When fees are unpaid, mention them only as a coordination note, not the main coaching focus.
 - Prefer actionable badminton drills, time blocks, coaching cues, match scenarios, and adaptations.
 - Use recent feedback and report trends to personalize the answer when they are available.
+- Respect the curriculum phase, assessment focus, and success criteria when present.
 - Answer in clean markdown.
 - Keep the whole answer concise and practical, ideally under 450 words.
 - Start with a short title line.
 - Then include sections:
   1. Session Goal
-  2. Today's Flow
-  3. Coaching Cues
-  4. Adaptations
-  5. Follow-up
+  2. Curriculum Alignment
+  3. Today's Flow
+  4. Coaching Cues
+  5. Adaptations
+  6. Follow-up
 """.strip()
 
     compact_context = json.dumps(context, separators=(",", ":"), ensure_ascii=False, default=str)
@@ -293,6 +316,12 @@ def render_fallback_response(training_session, user_prompt, context):
         f"## Session Goal\n"
         f"{blueprint['summary']}\n\n"
         f"Coach ask: {user_prompt.strip() or 'Plan for today'}\n\n"
+        f"## Curriculum Alignment\n"
+        f"Phase: {blueprint.get('phase_label') or 'Current syllabus phase'}\n"
+        f"Template: {blueprint['template_reference'].get('name') or 'Current coaching framework'}\n"
+        f"Standard: {blueprint['standard_reference'].get('code', '')} {blueprint['standard_reference'].get('title', '')}\n"
+        f"Assessment focus: {blueprint['syllabus_reference'].get('assessment_focus', '')}\n"
+        f"Success criteria: {blueprint['syllabus_reference'].get('success_criteria', '')}\n\n"
         f"## Today's Flow\n"
         f"{timeline}\n\n"
         f"## Coaching Cues\n"

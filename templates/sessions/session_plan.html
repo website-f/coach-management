@@ -97,7 +97,7 @@
                     <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;">
                         <div>
                             <p style="font-weight:700;font-size:14px;color:var(--text);">{{ row.member.full_name }}</p>
-                            <p class="text-sm text-muted" style="margin-top:6px;">{{ row.member.get_skill_level_display }} &middot; {{ row.member.get_membership_type_display }}</p>
+                            <p class="text-sm text-muted" style="margin-top:6px;">{{ row.member.get_skill_level_display }} &middot; {{ row.member.package_label }}</p>
                         </div>
                         <span class="badge {{ row.status|status_badge }}">{{ row.get_status_display }}</span>
                     </div>
@@ -219,6 +219,13 @@
             return `<li style="margin-left:18px;color:var(--text);line-height:1.8;">${escapeHtml(item)}</li>`;
         }).join('');
 
+        const templateOutcomes = (plan.template_reference.year_end_outcomes || []).map(function(item) {
+            return `<li style="margin-left:18px;color:var(--text);line-height:1.8;">${escapeHtml(item)}</li>`;
+        }).join('');
+        const standardBands = (plan.standard_reference.performance_bands || []).map(function(item) {
+            return `<li style="margin-left:18px;color:var(--text);line-height:1.8;">${escapeHtml(item)}</li>`;
+        }).join('');
+
         outputEl.innerHTML = `
             <div class="grid-2">
                 <div>
@@ -228,6 +235,7 @@
                     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;">
                         <span class="badge badge-info">${escapeHtml(plan.track_label)}</span>
                         <span class="badge badge-neutral">Week ${escapeHtml(String(plan.resolved_week))}</span>
+                        ${plan.phase_label ? `<span class="badge badge-neutral">${escapeHtml(plan.phase_label)}</span>` : ''}
                         <span class="badge badge-warning">${escapeHtml(String(plan.roster_size))} player(s)</span>
                     </div>
                 </div>
@@ -239,6 +247,27 @@
                         Progress score signal: ${escapeHtml(String(plan.average_score || 0))}<br>
                         Fee visibility: ${escapeHtml(plan.payment_summary)}
                     </p>
+                </div>
+            </div>
+            <div class="grid-2" style="margin-top:18px;">
+                <div class="card-inset">
+                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Curriculum Template</p>
+                    <p style="font-size:14px;color:var(--text);line-height:1.8;margin-top:10px;">
+                        ${escapeHtml(plan.template_reference.name || 'Current coaching framework')}<br>
+                        ${escapeHtml(plan.template_reference.curriculum_year_label || '')}${plan.template_reference.source_document_name ? `<br>Source: ${escapeHtml(plan.template_reference.source_document_name)}` : ''}<br><br>
+                        ${escapeHtml(plan.template_reference.annual_goal || '')}
+                    </p>
+                    ${templateOutcomes ? `<ul style="display:grid;gap:6px;margin-top:12px;">${templateOutcomes}</ul>` : ''}
+                </div>
+                <div class="card-inset">
+                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Standard Alignment</p>
+                    <p style="font-size:14px;color:var(--text);line-height:1.8;margin-top:10px;">
+                        ${escapeHtml((plan.standard_reference.code || '') + ' ' + (plan.standard_reference.title || ''))}<br><br>
+                        ${escapeHtml(plan.standard_reference.focus || '')}<br><br>
+                        Assessment focus: ${escapeHtml(plan.syllabus_reference.assessment_focus || '')}<br>
+                        Success criteria: ${escapeHtml(plan.syllabus_reference.success_criteria || '')}
+                    </p>
+                    ${standardBands ? `<ul style="display:grid;gap:6px;margin-top:12px;">${standardBands}</ul>` : ''}
                 </div>
             </div>
             <div style="margin-top:18px;">
@@ -255,6 +284,7 @@
                     <p style="font-size:14px;color:var(--text);line-height:1.8;">
                         ${escapeHtml(plan.syllabus_reference.title)}<br><br>
                         ${escapeHtml(plan.syllabus_reference.objective)}<br><br>
+                        ${plan.syllabus_reference.phase_label ? `Phase: ${escapeHtml(plan.syllabus_reference.phase_label)}<br><br>` : ''}
                         Homework: ${escapeHtml(plan.syllabus_reference.homework)}
                     </p>
                     <p class="text-sm text-muted" style="margin-top:12px;">Generated ${escapeHtml(plan.generated_at)}</p>

@@ -17,7 +17,7 @@ from accounts.decorators import role_required
 from accounts.mixins import AdminOrCoachRequiredMixin, AdminRequiredMixin
 from accounts.utils import ROLE_ADMIN, ROLE_COACH, ROLE_PARENT, has_role
 from accounts.models import LandingPageContent, UserProfile
-from finance.services import create_initial_invoices_for_member
+from finance.services import create_initial_invoices_for_member, get_default_payment_plan
 from finance.models import Invoice
 from members.forms import (
     AdmissionApplicationPublicForm,
@@ -40,7 +40,7 @@ User = get_user_model()
 
 
 def visible_members_for_user(user):
-    queryset = Member.objects.select_related("assigned_coach", "parent_user", "created_by")
+    queryset = Member.objects.select_related("assigned_coach", "parent_user", "created_by", "payment_plan")
     if has_role(user, ROLE_COACH) and not has_role(user, ROLE_ADMIN):
         return queryset.filter(assigned_coach=user)
     if has_role(user, ROLE_PARENT):
@@ -109,7 +109,7 @@ class MemberDetailView(LoginRequiredMixin, DetailView):
         attendance_history = AttendanceRecord.objects.filter(member=member).select_related(
             "training_session"
         )
-        invoices = Invoice.objects.filter(member=member).order_by("-period", "-due_date")
+        invoices = Invoice.objects.select_related("payment_plan").filter(member=member).order_by("-period", "-due_date")
         attendance_logged = attendance_history.exclude(status=AttendanceRecord.STATUS_SCHEDULED)
         attendance_total = attendance_logged.count()
         attendance_present = attendance_logged.filter(
@@ -282,7 +282,7 @@ class AdmissionApplicationReviewView(AdminOrCoachRequiredMixin, UpdateView):
             email=application.guardian_email,
             emergency_contact_name=application.guardian_name,
             emergency_contact_phone=application.contact_number,
-            membership_type=Member.MEMBERSHIP_MONTHLY,
+            payment_plan=get_default_payment_plan(),
             skill_level=application.recommended_level,
             assigned_coach=assigned_coach,
             parent_user=parent_user,
@@ -509,7 +509,7 @@ def export_members_csv(request):
             "Full Name",
             "DOB",
             "Contact",
-            "Membership",
+            "Package",
             "Level",
             "Coach",
             "Status",
@@ -522,7 +522,7 @@ def export_members_csv(request):
                 member.full_name,
                 member.date_of_birth,
                 member.contact_number,
-                member.membership_type,
+                member.package_label,
                 member.skill_level,
                 member.assigned_coach.username if member.assigned_coach else "",
                 member.status,

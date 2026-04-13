@@ -28,6 +28,7 @@ from accounts.utils import (
     has_role,
 )
 from finance.models import Invoice, Product
+from finance.services import billing_context_data
 from members.models import AdmissionApplication, Member, ProgressReport
 from members.services import (
     attendance_streak,
@@ -135,7 +136,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         user = self.request.user
         role = get_user_role(user)
         members = Member.objects.select_related("assigned_coach", "parent_user")
-        invoices = Invoice.objects.select_related("member")
+        invoices = Invoice.objects.select_related("member", "member__payment_plan", "payment_plan")
         attendance = AttendanceRecord.objects.select_related("member", "training_session")
         sessions = TrainingSession.objects.select_related("coach")
 
@@ -288,6 +289,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 {"label": "All Payments", "url": reverse("payments:payment_history"), "icon": "fa-money-check-dollar"},
                 {"label": "Store", "url": reverse("finance:product_list"), "icon": "fa-bag-shopping"},
                 {"label": "Website", "url": reverse("accounts:website"), "icon": "fa-globe"},
+                {"label": "Billing Setup", "url": reverse("finance:billing_settings"), "icon": "fa-tags"},
                 {"label": "Open Finance", "url": reverse("finance:overview"), "icon": "fa-sack-dollar"},
             ]
             workspace_highlights = [
@@ -596,6 +598,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 "student_portal": student_portal,
             }
         )
+        context.update(billing_context_data())
         return context
 
 

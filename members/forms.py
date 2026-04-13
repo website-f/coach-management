@@ -3,6 +3,8 @@ from django.contrib.auth import get_user_model
 
 from accounts.models import LandingPageContent, UserProfile
 from accounts.utils import ROLE_ADMIN, ROLE_COACH, has_role
+from finance.models import PaymentPlan
+from finance.services import get_default_payment_plan
 from members.models import AdmissionApplication, DEFAULT_SKILLS, Member, ProgressReport
 from members.services import pick_best_available_coach
 
@@ -19,7 +21,7 @@ class MemberForm(forms.ModelForm):
             "email",
             "emergency_contact_name",
             "emergency_contact_phone",
-            "membership_type",
+            "payment_plan",
             "skill_level",
             "assigned_coach",
             "parent_user",
@@ -36,6 +38,13 @@ class MemberForm(forms.ModelForm):
     def __init__(self, *args, current_user=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.current_user = current_user
+        self.fields["payment_plan"].label = "Training package"
+        payment_plan_queryset = PaymentPlan.objects.order_by("sort_order", "sessions_per_month", "monthly_fee", "name")
+        if self.instance.pk and self.instance.payment_plan_id:
+            self.fields["payment_plan"].queryset = payment_plan_queryset
+        else:
+            self.fields["payment_plan"].queryset = payment_plan_queryset.filter(is_active=True)
+            self.fields["payment_plan"].initial = get_default_payment_plan()
         self.fields["assigned_coach"].queryset = User.objects.filter(profile__role=UserProfile.ROLE_COACH).order_by(
             "first_name", "username"
         )
@@ -48,6 +57,8 @@ class MemberForm(forms.ModelForm):
 
     def save(self, commit=True):
         instance = super().save(commit=False)
+        if not instance.payment_plan_id:
+            instance.payment_plan = get_default_payment_plan()
         if not instance.assigned_coach_id:
             instance.assigned_coach = pick_best_available_coach(preferred_level=instance.skill_level)
         if commit:

@@ -13,6 +13,9 @@ from sessions.views import (
     SessionUpdateView,
     SyllabusCreateView,
     SyllabusListView,
+    SyllabusStandardCreateView,
+    SyllabusStandardUpdateView,
+    SyllabusTemplateUpdateView,
     SyllabusUpdateView,
 )
 
@@ -23,6 +26,9 @@ urlpatterns = [
     path("syllabus/", SyllabusListView.as_view(), name="syllabus"),
     path("syllabus/create/", SyllabusCreateView.as_view(), name="syllabus_create"),
     path("syllabus/<int:pk>/edit/", SyllabusUpdateView.as_view(), name="syllabus_edit"),
+    path("syllabus/template/<int:pk>/edit/", SyllabusTemplateUpdateView.as_view(), name="syllabus_template_edit"),
+    path("syllabus/standards/create/", SyllabusStandardCreateView.as_view(), name="syllabus_standard_create"),
+    path("syllabus/standards/<int:pk>/edit/", SyllabusStandardUpdateView.as_view(), name="syllabus_standard_edit"),
     path("create/", SessionCreateView.as_view(), name="create"),
     path("<int:pk>/", SessionDetailView.as_view(), name="detail"),
     path("<int:pk>/plan/", SessionPlanView.as_view(), name="plan"),

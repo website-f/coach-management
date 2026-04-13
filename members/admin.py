@@ -5,8 +5,8 @@ from members.models import AdmissionApplication, Member, ProgressReport
 
 @admin.register(Member)
 class MemberAdmin(admin.ModelAdmin):
-    list_display = ("full_name", "membership_type", "assigned_coach", "status", "joined_at")
-    list_filter = ("membership_type", "status")
+    list_display = ("full_name", "payment_plan", "assigned_coach", "status", "joined_at")
+    list_filter = ("payment_plan", "status")
     search_fields = ("full_name", "contact_number", "email")
 
 

@@ -1201,6 +1201,9 @@
             <a href="{% url 'finance:overview' %}" class="nav-link {% nav_active_exact '/finance/' %}">
                 <span class="icon"><i class="fa-solid fa-sack-dollar"></i></span> Finance Overview
             </a>
+            <a href="{% url 'finance:billing_settings' %}" class="nav-link {% nav_active '/finance/billing/' %}">
+                <span class="icon"><i class="fa-solid fa-tags"></i></span> Billing Setup
+            </a>
             <a href="{% url 'finance:invoice_list' %}" class="nav-link {% nav_active '/finance/invoices/' %}">
                 <span class="icon"><i class="fa-solid fa-file-invoice-dollar"></i></span> Invoices
             </a>
@@ -1478,6 +1481,9 @@
         </a>
         <a href="{% url 'finance:overview' %}" class="mob-more-item {% nav_active_exact '/finance/' %}">
             <i class="fa-solid fa-sack-dollar"></i><span>Finance</span>
+        </a>
+        <a href="{% url 'finance:billing_settings' %}" class="mob-more-item {% nav_active '/finance/billing/' %}">
+            <i class="fa-solid fa-tags"></i><span>Billing</span>
         </a>
         <a href="{% url 'accounts:website' %}" class="mob-more-item {% nav_active '/accounts/website/' %}">
             <i class="fa-solid fa-globe"></i><span>Website</span>

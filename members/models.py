@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -23,13 +25,8 @@ class Member(models.Model):
         (LEVEL_ADVANCED, "Advanced"),
     ]
 
-    MEMBERSHIP_MONTHLY = "monthly"
-    MEMBERSHIP_YEARLY = "yearly"
-    MEMBERSHIP_CHOICES = [
-        (MEMBERSHIP_MONTHLY, "Monthly"),
-        (MEMBERSHIP_YEARLY, "Yearly"),
-    ]
-
+    MEMBERSHIP_PACKAGE_4 = "monthly_4"
+    MEMBERSHIP_PACKAGE_8 = "monthly_8"
     STATUS_ACTIVE = "active"
     STATUS_INACTIVE = "inactive"
     STATUS_SUSPENDED = "suspended"
@@ -45,7 +42,14 @@ class Member(models.Model):
     email = models.EmailField(blank=True)
     emergency_contact_name = models.CharField(max_length=255)
     emergency_contact_phone = models.CharField(max_length=30)
-    membership_type = models.CharField(max_length=20, choices=MEMBERSHIP_CHOICES, default=MEMBERSHIP_MONTHLY)
+    membership_type = models.CharField(max_length=50, blank=True, default=MEMBERSHIP_PACKAGE_4)
+    payment_plan = models.ForeignKey(
+        "finance.PaymentPlan",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="members",
+    )
     skill_level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default=LEVEL_BASIC)
     assigned_coach = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -79,6 +83,47 @@ class Member(models.Model):
 
     def __str__(self):
         return self.full_name
+
+    def save(self, *args, **kwargs):
+        if self.payment_plan_id and self.membership_type != self.payment_plan.code:
+            self.membership_type = self.payment_plan.code
+        super().save(*args, **kwargs)
+
+    @property
+    def active_payment_plan(self):
+        return self.payment_plan
+
+    @property
+    def package_label(self):
+        if self.payment_plan_id and self.payment_plan:
+            return self.payment_plan.name
+        if self.membership_type == self.MEMBERSHIP_PACKAGE_8:
+            return "Monthly Package - 8 Sessions"
+        return "Monthly Package - 4 Sessions"
+
+    @property
+    def package_sessions(self):
+        if self.payment_plan_id and self.payment_plan:
+            return self.payment_plan.sessions_per_month
+        if self.membership_type == self.MEMBERSHIP_PACKAGE_8:
+            return 8
+        return 4
+
+    @property
+    def package_amount(self):
+        if self.payment_plan_id and self.payment_plan:
+            return self.payment_plan.monthly_fee
+        if self.membership_type == self.MEMBERSHIP_PACKAGE_8:
+            return Decimal("160.00")
+        return Decimal("100.00")
+
+    @property
+    def package_summary(self):
+        if self.payment_plan_id and self.payment_plan:
+            return self.payment_plan.summary
+        if self.membership_type == self.MEMBERSHIP_PACKAGE_8:
+            return "RM160 per month for 8 sessions"
+        return "RM100 per month for 4 sessions"
 
 
 class AdmissionApplication(models.Model):

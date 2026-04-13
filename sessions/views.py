@@ -20,8 +20,22 @@ from accounts.notifications import notify_users
 from accounts.utils import ROLE_ADMIN, ROLE_COACH, ROLE_HEADCOUNT, ROLE_PARENT, has_role
 from members.models import Member
 from sessions.ai_planner import PlannerAssistantError, generate_ai_planner_reply
-from sessions.forms import SessionFeedbackForm, TrainingSessionForm, WeeklySyllabusForm
-from sessions.models import AttendanceRecord, SessionFeedback, SessionPlannerEntry, TrainingSession, WeeklySyllabus
+from sessions.forms import (
+    SessionFeedbackForm,
+    SyllabusStandardForm,
+    SyllabusTemplateForm,
+    TrainingSessionForm,
+    WeeklySyllabusForm,
+)
+from sessions.models import (
+    AttendanceRecord,
+    SessionFeedback,
+    SessionPlannerEntry,
+    SyllabusStandard,
+    SyllabusTemplate,
+    TrainingSession,
+    WeeklySyllabus,
+)
 from sessions.services import build_session_plan, ensure_default_syllabus
 from sessions.video_utils import compress_session_feedback_video
 
@@ -38,6 +52,7 @@ AttendanceFormSet = modelformset_factory(
 def visible_sessions_for_user(user):
     queryset = TrainingSession.objects.select_related("coach", "created_by").prefetch_related(
         "attendance_records__member",
+        "attendance_records__member__payment_plan",
         "attendance_records__member__assigned_coach",
         "attendance_records__member__parent_user",
         "feedback_entries__member",
@@ -51,7 +66,7 @@ def visible_sessions_for_user(user):
 
 
 def visible_members_for_session_filters(user):
-    queryset = Member.objects.select_related("assigned_coach", "parent_user").order_by("full_name")
+    queryset = Member.objects.select_related("assigned_coach", "parent_user", "payment_plan").order_by("full_name")
     if has_role(user, ROLE_COACH) and not has_role(user, ROLE_ADMIN):
         return queryset.filter(assigned_coach=user)
     if has_role(user, ROLE_PARENT):
@@ -97,7 +112,10 @@ def notify_schedule_participants(training_sessions, updated=False):
         return
 
     primary_session = sessions[0]
-    roster = Member.objects.filter(attendance_records__training_session__in=sessions).select_related("parent_user").distinct()
+    roster = Member.objects.filter(attendance_records__training_session__in=sessions).select_related(
+        "parent_user",
+        "payment_plan",
+    ).distinct()
     coach = primary_session.coach
     coach_name = "To be assigned"
     if coach:
@@ -167,7 +185,7 @@ class SyllabusListView(AdminRequiredMixin, ListView):
 
     def get_queryset(self):
         ensure_default_syllabus()
-        queryset = WeeklySyllabus.objects.order_by("track", "week_number")
+        queryset = WeeklySyllabus.objects.select_related("template", "standard").order_by("track", "month_number", "week_number")
         track = self.request.GET.get("track", "").strip()
         if track:
             queryset = queryset.filter(track=track)
@@ -176,14 +194,34 @@ class SyllabusListView(AdminRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         rows = list(context["syllabus_rows"])
+        selected_track = self.request.GET.get("track", "").strip()
+        templates = {
+            item.track: item
+            for item in SyllabusTemplate.objects.order_by("track")
+        }
+        standards_by_track = {}
+        for item in SyllabusStandard.objects.select_related("template").order_by("template__track", "sort_order", "code"):
+            standards_by_track.setdefault(item.template.track, []).append(item)
         grouped_rows = []
         for track_value, track_label in WeeklySyllabus.TRACK_CHOICES:
+            if selected_track and track_value != selected_track:
+                continue
             track_rows = [row for row in rows if row.track == track_value]
-            if track_rows:
-                grouped_rows.append({"track": track_value, "label": track_label, "rows": track_rows})
+            template = templates.get(track_value)
+            standards = standards_by_track.get(track_value, [])
+            if track_rows or template or standards:
+                grouped_rows.append(
+                    {
+                        "track": track_value,
+                        "label": track_label,
+                        "rows": track_rows,
+                        "template": template,
+                        "standards": standards,
+                    }
+                )
         context["grouped_rows"] = grouped_rows
         context["track_choices"] = WeeklySyllabus.TRACK_CHOICES
-        context["selected_track"] = self.request.GET.get("track", "").strip()
+        context["selected_track"] = selected_track
         return context
 
 
@@ -210,6 +248,59 @@ class SyllabusUpdateView(AdminRequiredMixin, UpdateView):
         form.instance.updated_by = self.request.user
         response = super().form_valid(form)
         messages.success(self.request, "Syllabus week updated successfully.")
+        return response
+
+
+class SyllabusTemplateUpdateView(AdminRequiredMixin, UpdateView):
+    model = SyllabusTemplate
+    form_class = SyllabusTemplateForm
+    template_name = "sessions/syllabus_template_form.html"
+    success_url = reverse_lazy("sessions:syllabus")
+
+    def get_queryset(self):
+        ensure_default_syllabus()
+        return SyllabusTemplate.objects.order_by("track")
+
+    def form_valid(self, form):
+        form.instance.updated_by = self.request.user
+        response = super().form_valid(form)
+        messages.success(self.request, "Syllabus template updated successfully.")
+        return response
+
+
+class SyllabusStandardCreateView(AdminRequiredMixin, CreateView):
+    model = SyllabusStandard
+    form_class = SyllabusStandardForm
+    template_name = "sessions/syllabus_standard_form.html"
+    success_url = reverse_lazy("sessions:syllabus")
+
+    def get_initial(self):
+        ensure_default_syllabus()
+        initial = super().get_initial()
+        track = self.request.GET.get("track", "").strip()
+        if track:
+            template = SyllabusTemplate.objects.filter(track=track).first()
+            if template:
+                initial["template"] = template
+        return initial
+
+    def form_valid(self, form):
+        form.instance.updated_by = self.request.user
+        response = super().form_valid(form)
+        messages.success(self.request, "Syllabus standard created successfully.")
+        return response
+
+
+class SyllabusStandardUpdateView(AdminRequiredMixin, UpdateView):
+    model = SyllabusStandard
+    form_class = SyllabusStandardForm
+    template_name = "sessions/syllabus_standard_form.html"
+    success_url = reverse_lazy("sessions:syllabus")
+
+    def form_valid(self, form):
+        form.instance.updated_by = self.request.user
+        response = super().form_valid(form)
+        messages.success(self.request, "Syllabus standard updated successfully.")
         return response
 
 
@@ -299,6 +390,7 @@ class SessionDetailView(LoginRequiredMixin, DetailView):
         records = list(
             self.object.attendance_records.select_related(
                 "member",
+                "member__payment_plan",
                 "member__assigned_coach",
                 "member__parent_user",
             ).order_by("member__full_name")
@@ -359,7 +451,7 @@ class SessionPlanView(AdminOrCoachRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         roster = list(
-            self.training_session.attendance_records.select_related("member").order_by("member__full_name")
+            self.training_session.attendance_records.select_related("member", "member__payment_plan").order_by("member__full_name")
         )
         context.update(
             {
@@ -523,7 +615,7 @@ class AttendanceUpdateView(HeadcountOrAboveRequiredMixin, View):
         return get_object_or_404(visible_sessions_for_user(self.request.user), pk=self.kwargs["pk"])
 
     def render_page(self, request, training_session, formset):
-        queryset = training_session.attendance_records.select_related("member").order_by("member__full_name")
+        queryset = training_session.attendance_records.select_related("member", "member__payment_plan").order_by("member__full_name")
         return render(
             request,
             self.template_name,
@@ -536,13 +628,13 @@ class AttendanceUpdateView(HeadcountOrAboveRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         training_session = self.get_training_session()
-        queryset = training_session.attendance_records.select_related("member").order_by("member__full_name")
+        queryset = training_session.attendance_records.select_related("member", "member__payment_plan").order_by("member__full_name")
         formset = AttendanceFormSet(queryset=queryset)
         return self.render_page(request, training_session, formset)
 
     def post(self, request, *args, **kwargs):
         training_session = self.get_training_session()
-        queryset = training_session.attendance_records.select_related("member").order_by("member__full_name")
+        queryset = training_session.attendance_records.select_related("member", "member__payment_plan").order_by("member__full_name")
         formset = AttendanceFormSet(request.POST, queryset=queryset)
         if formset.is_valid():
             for form in formset.forms:

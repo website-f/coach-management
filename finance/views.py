@@ -12,13 +12,20 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, T
 from accounts.decorators import role_required
 from accounts.mixins import AdminOrCoachRequiredMixin, AdminRequiredMixin
 from accounts.utils import ROLE_ADMIN, ROLE_COACH, has_role
-from finance.forms import InvoiceForm, ProductForm
-from finance.models import Invoice, Product
+from finance.forms import BillingConfigurationForm, InvoiceForm, PaymentPlanForm, ProductForm
+from finance.models import BillingConfiguration, Invoice, PaymentPlan, Product
+from finance.services import billing_context_data
 from payments.models import Payment
 
 
 def visible_invoices_for_user(user):
-    queryset = Invoice.objects.select_related("member", "member__assigned_coach", "member__parent_user")
+    queryset = Invoice.objects.select_related(
+        "member",
+        "member__assigned_coach",
+        "member__parent_user",
+        "member__payment_plan",
+        "payment_plan",
+    )
     if has_role(user, ROLE_COACH) and not has_role(user, ROLE_ADMIN):
         return queryset.filter(member__assigned_coach=user)
     return queryset
@@ -53,9 +60,60 @@ class FinanceOverviewView(AdminRequiredMixin, TemplateView):
                 "recent_payments": Payment.objects.select_related("invoice", "invoice__member", "paid_by", "reviewed_by")
                 .order_by("-submitted_at")[:10],
                 "invoice_rows": current_month_invoices.order_by("member__full_name")[:10],
+                "payment_plan_count": PaymentPlan.objects.count(),
+                "active_payment_plan_count": PaymentPlan.objects.filter(is_active=True).count(),
             }
         )
+        context.update(billing_context_data())
         return context
+
+
+class BillingSettingsView(AdminRequiredMixin, UpdateView):
+    model = BillingConfiguration
+    form_class = BillingConfigurationForm
+    template_name = "finance/billing_settings.html"
+    success_url = reverse_lazy("finance:billing_settings")
+
+    def get_object(self, queryset=None):
+        return BillingConfiguration.get_solo()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["payment_plans"] = PaymentPlan.objects.order_by("sort_order", "sessions_per_month", "monthly_fee", "name")
+        context.update(billing_context_data())
+        return context
+
+    def form_valid(self, form):
+        form.instance.updated_by = self.request.user
+        response = super().form_valid(form)
+        messages.success(self.request, "Billing settings updated successfully.")
+        return response
+
+
+class PaymentPlanCreateView(AdminRequiredMixin, CreateView):
+    model = PaymentPlan
+    form_class = PaymentPlanForm
+    template_name = "finance/payment_plan_form.html"
+    success_url = reverse_lazy("finance:billing_settings")
+
+    def form_valid(self, form):
+        form.instance.updated_by = self.request.user
+        response = super().form_valid(form)
+        messages.success(self.request, "Payment plan created successfully.")
+        return response
+
+
+class PaymentPlanUpdateView(AdminRequiredMixin, UpdateView):
+    model = PaymentPlan
+    form_class = PaymentPlanForm
+    template_name = "finance/payment_plan_form.html"
+    success_url = reverse_lazy("finance:billing_settings")
+
+    def form_valid(self, form):
+        form.instance.updated_by = self.request.user
+        response = super().form_valid(form)
+        messages.success(self.request, "Payment plan updated successfully.")
+        return response
 
 
 class InvoiceListView(AdminOrCoachRequiredMixin, ListView):

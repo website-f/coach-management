@@ -13,6 +13,7 @@ from accounts.notifications import notify_users
 from accounts.utils import ROLE_ADMIN, ROLE_COACH, has_role
 from accounts.models import UserProfile
 from finance.models import Invoice
+from finance.services import billing_context_data
 from members.models import Member
 from payments.forms import PaymentReviewForm, PaymentSubmissionForm, QRCodeForm
 from payments.models import Payment, QRCode
@@ -73,7 +74,9 @@ class MyPaymentsView(ParentRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        return Invoice.objects.select_related("member").filter(member__parent_user=self.request.user)
+        return Invoice.objects.select_related("member", "member__payment_plan", "payment_plan").filter(
+            member__parent_user=self.request.user
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -120,6 +123,7 @@ class MyPaymentsView(ParentRequiredMixin, ListView):
                 "child_summaries": child_summaries,
             }
         )
+        context.update(billing_context_data())
         return context
 
 

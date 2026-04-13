@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from accounts.models import UserProfile
 from accounts.utils import ROLE_ADMIN, ROLE_COACH, has_role
 from members.models import Member
-from sessions.models import SessionFeedback, TrainingSession, WeeklySyllabus
+from sessions.models import SessionFeedback, SyllabusStandard, SyllabusTemplate, TrainingSession, WeeklySyllabus
 
 User = get_user_model()
 
@@ -179,6 +179,10 @@ class WeeklySyllabusForm(forms.ModelForm):
         model = WeeklySyllabus
         fields = [
             "track",
+            "template",
+            "standard",
+            "month_number",
+            "phase_name",
             "week_number",
             "title",
             "objective",
@@ -186,14 +190,85 @@ class WeeklySyllabusForm(forms.ModelForm):
             "technical_focus",
             "tactical_focus",
             "coaching_cues",
+            "assessment_focus",
+            "success_criteria",
+            "coach_notes",
             "homework",
             "is_active",
         ]
         widgets = {
+            "month_number": forms.NumberInput(attrs={"min": 1, "max": 12}),
             "objective": forms.Textarea(attrs={"rows": 3}),
             "warm_up_plan": forms.Textarea(attrs={"rows": 3}),
             "technical_focus": forms.Textarea(attrs={"rows": 4}),
             "tactical_focus": forms.Textarea(attrs={"rows": 4}),
             "coaching_cues": forms.Textarea(attrs={"rows": 4}),
+            "assessment_focus": forms.Textarea(attrs={"rows": 3}),
+            "success_criteria": forms.Textarea(attrs={"rows": 3}),
+            "coach_notes": forms.Textarea(attrs={"rows": 3}),
             "homework": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["template"].queryset = SyllabusTemplate.objects.order_by("track", "name")
+        self.fields["standard"].queryset = SyllabusStandard.objects.select_related("template").order_by(
+            "template__track",
+            "sort_order",
+            "code",
+        )
+        if self.instance.pk and self.instance.template_id:
+            self.fields["standard"].queryset = self.fields["standard"].queryset.filter(template=self.instance.template)
+
+
+class SyllabusTemplateForm(forms.ModelForm):
+    class Meta:
+        model = SyllabusTemplate
+        fields = [
+            "track",
+            "name",
+            "source_document_name",
+            "curriculum_year_label",
+            "annual_goal",
+            "year_end_outcomes",
+            "assessment_approach",
+            "assessment_methods",
+            "curriculum_values",
+            "annual_phase_notes",
+            "ai_planner_instructions",
+            "is_active",
+        ]
+        widgets = {
+            "annual_goal": forms.Textarea(attrs={"rows": 4}),
+            "year_end_outcomes": forms.Textarea(attrs={"rows": 5}),
+            "assessment_approach": forms.Textarea(attrs={"rows": 3}),
+            "assessment_methods": forms.Textarea(attrs={"rows": 4}),
+            "curriculum_values": forms.Textarea(attrs={"rows": 3}),
+            "annual_phase_notes": forms.Textarea(attrs={"rows": 4}),
+            "ai_planner_instructions": forms.Textarea(attrs={"rows": 4}),
+        }
+
+
+class SyllabusStandardForm(forms.ModelForm):
+    class Meta:
+        model = SyllabusStandard
+        fields = [
+            "template",
+            "sort_order",
+            "code",
+            "title",
+            "focus",
+            "learning_standard_items",
+            "performance_band_items",
+            "coach_hints",
+            "assessment_focus",
+            "is_active",
+        ]
+        widgets = {
+            "sort_order": forms.NumberInput(attrs={"min": 1}),
+            "focus": forms.Textarea(attrs={"rows": 3}),
+            "learning_standard_items": forms.Textarea(attrs={"rows": 5}),
+            "performance_band_items": forms.Textarea(attrs={"rows": 5}),
+            "coach_hints": forms.Textarea(attrs={"rows": 3}),
+            "assessment_focus": forms.Textarea(attrs={"rows": 3}),
         }

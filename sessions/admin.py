@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from sessions.models import AttendanceRecord, SessionPlannerEntry, TrainingSession, WeeklySyllabus
+from sessions.models import AttendanceRecord, SessionPlannerEntry, SyllabusStandard, SyllabusTemplate, TrainingSession, WeeklySyllabus
 
 
 class AttendanceInline(admin.TabularInline):
@@ -22,11 +22,25 @@ class AttendanceRecordAdmin(admin.ModelAdmin):
     list_filter = ("status",)
 
 
+@admin.register(SyllabusTemplate)
+class SyllabusTemplateAdmin(admin.ModelAdmin):
+    list_display = ("track", "name", "curriculum_year_label", "is_active", "updated_at")
+    list_filter = ("track", "is_active")
+    search_fields = ("name", "annual_goal", "source_document_name")
+
+
+@admin.register(SyllabusStandard)
+class SyllabusStandardAdmin(admin.ModelAdmin):
+    list_display = ("template", "code", "title", "is_active", "updated_at")
+    list_filter = ("template__track", "is_active")
+    search_fields = ("code", "title", "focus", "learning_standard_items")
+
+
 @admin.register(WeeklySyllabus)
 class WeeklySyllabusAdmin(admin.ModelAdmin):
-    list_display = ("track", "week_number", "title", "is_active", "updated_by", "updated_at")
+    list_display = ("track", "month_number", "week_number", "title", "standard", "is_active", "updated_at")
     list_filter = ("track", "is_active")
-    search_fields = ("title", "objective", "technical_focus", "tactical_focus")
+    search_fields = ("title", "objective", "technical_focus", "tactical_focus", "phase_name")
 
 
 @admin.register(SessionPlannerEntry)

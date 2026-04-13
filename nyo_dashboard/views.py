@@ -6,6 +6,7 @@ from django.views.generic import ListView, TemplateView
 
 from accounts.models import LandingPageContent, UserProfile
 from finance.models import Invoice, Product
+from finance.services import billing_context_data
 from members.models import AdmissionApplication, Member
 from payments.models import Payment
 from sessions.models import TrainingSession
@@ -97,4 +98,5 @@ class LandingPageView(TemplateView):
                 ],
             }
         )
+        context.update(billing_context_data())
         return context

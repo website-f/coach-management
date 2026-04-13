@@ -16,7 +16,7 @@
                 <div>
                     <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Member profile</p>
                     <h2 style="font-size:28px;font-weight:700;color:var(--text);letter-spacing:-.03em;">{{ member.full_name }}</h2>
-                    <p class="text-sm text-muted" style="margin-top:6px;">Coach: {{ member.assigned_coach|default:"Unassigned" }} · Membership: {{ member.get_membership_type_display }}</p>
+                    <p class="text-sm text-muted" style="margin-top:6px;">Coach: {{ member.assigned_coach|default:"Unassigned" }} · Package: {{ member.package_label }}</p>
                 </div>
             </div>
             <span class="badge {{ member.status|status_badge }}">{{ member.get_status_display }}</span>
@@ -74,6 +74,11 @@
                 <div class="card-inset">
                     <p class="text-xs text-muted" style="margin-bottom:4px;">Current Level</p>
                     <p style="font-weight:600;color:var(--text);font-size:13.5px;">{{ member.get_skill_level_display }}</p>
+                </div>
+                <div class="card-inset">
+                    <p class="text-xs text-muted" style="margin-bottom:4px;">Training Package</p>
+                    <p style="font-weight:600;color:var(--text);font-size:13.5px;">{{ member.package_label }}</p>
+                    <p class="text-sm text-muted">{{ member.package_summary }}</p>
                 </div>
                 <div class="card-inset">
                     <p class="text-xs text-muted" style="margin-bottom:4px;">Emergency Contact</p>
