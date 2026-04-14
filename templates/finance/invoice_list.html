@@ -38,6 +38,12 @@
 
     {% if can_manage %}
     <div class="page-table-actions" style="display:none;">
+        <a href="{% url 'finance:cash_flow' %}" class="dt-button">
+            <i class="fa-solid fa-chart-line"></i> Cash Flow
+        </a>
+        <a href="{% url 'members:crm' %}" class="dt-button">
+            <i class="fa-brands fa-whatsapp"></i> CRM
+        </a>
         <a href="{% url 'finance:invoice_create' %}" class="dt-button" style="background:var(--accent)!important;color:#fff!important;border-color:var(--accent-h)!important;">
             <i class="fa-solid fa-plus"></i> Generate Invoice
         </a>
@@ -79,7 +85,12 @@
                     <td><span class="badge {{ invoice.status|status_badge }}">{{ invoice.get_status_display|lower }}</span></td>
                     <td>
                         {% if can_manage %}
-                        <a href="{% url 'finance:invoice_edit' invoice.pk %}" class="btn btn-xs" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:99px;padding:4px 12px;">Edit</a>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            {% if invoice.member.contact_number|whatsapp_url %}
+                            <a href="{{ invoice.member.contact_number|whatsapp_url }}?text={{ 'Hi '|add:invoice.member.full_name|add:', this is NYO Badminton Club regarding your latest invoice.'|whatsapp_text }}" target="_blank" rel="noopener" class="btn btn-success btn-xs">WhatsApp</a>
+                            {% endif %}
+                            <a href="{% url 'finance:invoice_edit' invoice.pk %}" class="btn btn-xs" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:99px;padding:4px 12px;">Edit</a>
+                        </div>
                         {% else %}
                         <span class="text-sm text-muted">Read only</span>
                         {% endif %}
@@ -104,7 +115,12 @@
             </div>
             <div style="margin-top:12px;">
                 {% if can_manage %}
-                <a href="{% url 'finance:invoice_edit' invoice.pk %}" class="btn btn-sm w-full" style="justify-content:center;background:rgba(79,110,247,.1);color:var(--accent);border:1px solid rgba(79,110,247,.25);">Edit Invoice</a>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    {% if invoice.member.contact_number|whatsapp_url %}
+                    <a href="{{ invoice.member.contact_number|whatsapp_url }}?text={{ 'Hi '|add:invoice.member.full_name|add:', this is NYO Badminton Club regarding your latest invoice.'|whatsapp_text }}" target="_blank" rel="noopener" class="btn btn-success btn-sm" style="justify-content:center;flex:1;">WhatsApp</a>
+                    {% endif %}
+                    <a href="{% url 'finance:invoice_edit' invoice.pk %}" class="btn btn-sm w-full" style="justify-content:center;background:rgba(79,110,247,.1);color:var(--accent);border:1px solid rgba(79,110,247,.25);flex:1;">Edit Invoice</a>
+                </div>
                 {% else %}
                 <span class="badge badge-neutral" style="margin-top:8px;">Read only</span>
                 {% endif %}

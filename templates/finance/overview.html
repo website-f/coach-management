@@ -1,53 +1,87 @@
 {% extends "base.html" %}
 {% load ui_tags %}
 
-{% block title %}Finance Overview | NYO Admin Dashboard{% endblock %}
-{% block page_heading %}Finance Overview{% endblock %}
+{% block title %}Cash Flow | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}Cash Flow{% endblock %}
 
 {% block content %}
 <div class="space-y">
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
+            <div>
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Owner finance monitor</p>
+                <h2 style="font-size:28px;font-weight:700;color:var(--text);">Cash flow and collection visibility</h2>
+                <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;max-width:820px;">
+                    This view is for the business owner to monitor billed revenue, collected cash, pending verification, and overdue receivables from one place.
+                </p>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <a href="{% url 'finance:invoice_create' %}" class="btn btn-primary">
+                    <i class="fa-solid fa-plus"></i> Generate Invoice
+                </a>
+                <a href="{% url 'payments:pending_reviews' %}" class="btn btn-ghost">
+                    <i class="fa-solid fa-receipt"></i> Verification Queue
+                </a>
+                <a href="{% url 'finance:export' %}" class="btn btn-ghost">
+                    <i class="fa-solid fa-download"></i> Export CSV
+                </a>
+            </div>
+        </div>
+    </div>
 
-    <!-- Summary Cards -->
     <div class="stat-cards">
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Billed This Month</p>
+                    <p class="stat-value" style="font-size:22px;">RM {{ total_billed }}</p>
+                </div>
+                <div class="stat-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+            </div>
+        </div>
         <div class="stat-card">
             <div class="stat-card-top">
                 <div>
                     <p class="stat-label">Collected This Month</p>
                     <p class="stat-value" style="font-size:22px;">RM {{ total_collected }}</p>
                 </div>
-                <div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-circle-check"></i></div>
+                <div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-wallet"></i></div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-card-top">
                 <div>
-                    <p class="stat-label">Outstanding Balances</p>
+                    <p class="stat-label">Collection Rate</p>
+                    <p class="stat-value">{{ collection_rate }}%</p>
+                </div>
+                <div class="stat-icon" style="background:rgba(79,110,247,.12);color:#93c5fd;"><i class="fa-solid fa-chart-line"></i></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Pending Verification</p>
+                    <p class="stat-value" style="font-size:22px;">RM {{ pending_verification_total }}</p>
+                </div>
+                <div class="stat-icon" style="background:rgba(245,158,11,.12);color:#fbbf24;"><i class="fa-solid fa-hourglass-half"></i></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Outstanding</p>
                     <p class="stat-value" style="font-size:22px;">RM {{ outstanding_balances }}</p>
                 </div>
-                <div class="stat-icon" style="background:rgba(245,158,11,.12);color:#fbbf24;"><i class="fa-solid fa-clock"></i></div>
+                <div class="stat-icon" style="background:rgba(239,68,68,.12);color:#f87171;"><i class="fa-solid fa-triangle-exclamation"></i></div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-card-top">
                 <div>
-                    <p class="stat-label">Export Data</p>
-                    <a href="{% url 'finance:export' %}" class="btn btn-primary btn-sm" style="margin-top:10px;display:inline-flex;">
-                        <i class="fa-solid fa-download"></i> Download CSV
-                    </a>
+                    <p class="stat-label">Projected MRR</p>
+                    <p class="stat-value" style="font-size:22px;">RM {{ projected_mrr }}</p>
                 </div>
-                <div class="stat-icon"><i class="fa-solid fa-file-csv"></i></div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div>
-                    <p class="stat-label">Billing Setup</p>
-                    <p class="stat-value" style="font-size:22px;">{{ active_payment_plan_count }} active plan{{ active_payment_plan_count|pluralize }}</p>
-                    <a href="{% url 'finance:billing_settings' %}" class="btn btn-primary btn-sm" style="margin-top:10px;display:inline-flex;">
-                        <i class="fa-solid fa-tags"></i> Manage Pricing
-                    </a>
-                </div>
-                <div class="stat-icon" style="background:rgba(79,110,247,.12);color:#4f6ef7;"><i class="fa-solid fa-tags"></i></div>
+                <div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-sack-dollar"></i></div>
             </div>
         </div>
     </div>
@@ -55,69 +89,187 @@
     <div class="grid-2">
         <div class="card">
             <div class="section-header">
-                <span class="section-title">Current Registration Fee</span>
-                <a href="{% url 'finance:billing_settings' %}" class="section-link">Edit billing setup</a>
+                <span class="section-title">Cash Flow Trend</span>
+                <a href="{% url 'payments:payment_history' %}" class="section-link">Open payment history</a>
             </div>
-            <div class="card-inset">
-                <p style="font-weight:700;font-size:18px;color:var(--text);">{{ billing_configuration.registration_fee_name }}</p>
-                <p class="text-sm text-muted mt-1">RM {{ billing_configuration.registration_fee_amount|floatformat:0 }}{% if billing_configuration.registration_bonus_text %} · Includes {{ billing_configuration.registration_bonus_text }}{% endif %}</p>
-                {% if billing_configuration.registration_description %}
-                <p class="text-sm text-muted mt-2">{{ billing_configuration.registration_description }}</p>
-                {% endif %}
+            <div class="chart-wrap" id="cashflowChartWrap">
+                <canvas id="cashflowChart"></canvas>
             </div>
         </div>
         <div class="card">
             <div class="section-header">
-                <span class="section-title">Active Monthly Packages</span>
-                <a href="{% url 'finance:billing_settings' %}" class="section-link">Open billing page</a>
+                <span class="section-title">Receivables Aging</span>
+                <a href="{% url 'members:crm' %}?segment=overdue" class="section-link">Open CRM follow-up</a>
+            </div>
+            <div class="chart-wrap" id="receivableChartWrap">
+                <canvas id="receivableChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="card">
+            <div class="section-header">
+                <span class="section-title">Receivable Buckets</span>
             </div>
             <div class="space-y">
-                {% for plan in billing_plans %}
+                <div class="card-inset">
+                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;">
+                        <span style="font-weight:600;color:var(--text);">Current</span>
+                        <span class="badge badge-info">RM {{ aging_buckets.current }}</span>
+                    </div>
+                </div>
+                <div class="card-inset">
+                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;">
+                        <span style="font-weight:600;color:var(--text);">1-30 days overdue</span>
+                        <span class="badge badge-warning">RM {{ aging_buckets.days_1_30 }}</span>
+                    </div>
+                </div>
+                <div class="card-inset">
+                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;">
+                        <span style="font-weight:600;color:var(--text);">31-60 days overdue</span>
+                        <span class="badge badge-danger">RM {{ aging_buckets.days_31_60 }}</span>
+                    </div>
+                </div>
+                <div class="card-inset">
+                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;">
+                        <span style="font-weight:600;color:var(--text);">61+ days overdue</span>
+                        <span class="badge badge-danger">RM {{ aging_buckets.days_61_plus }}</span>
+                    </div>
+                </div>
+                <div class="card-inset">
+                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Owner note</p>
+                    <p style="font-size:14px;color:var(--text);line-height:1.7;">
+                        Overdue total is currently <strong>RM {{ overdue_total }}</strong>. Use the CRM workspace to follow up quickly by WhatsApp with the affected customers.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="section-header">
+                <span class="section-title">Due Soon This Week</span>
+                <a href="{% url 'members:crm' %}?segment=due_soon" class="section-link">Open follow-up queue</a>
+            </div>
+            <div class="space-y">
+                {% for invoice in due_soon_rows %}
                 <div class="card-inset">
                     <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
                         <div>
-                            <p style="font-weight:700;font-size:14px;color:var(--text);">{{ plan.name }}</p>
-                            <p class="text-sm text-muted mt-1">{{ plan.sessions_per_month }} session{{ plan.sessions_per_month|pluralize }} per month{% if plan.description %} · {{ plan.description }}{% endif %}</p>
+                            <p style="font-weight:700;font-size:14px;color:var(--text);">{{ invoice.member.full_name }}</p>
+                            <p class="text-sm text-muted" style="margin-top:6px;">
+                                {{ invoice.period|date:"F Y" }} · Due {{ invoice.due_date }}<br>
+                                {{ invoice.get_invoice_type_display }}{% if invoice.member.assigned_coach %} · Coach {{ invoice.member.assigned_coach }}{% endif %}
+                            </p>
                         </div>
-                        <span class="badge badge-info">RM {{ plan.monthly_fee|floatformat:0 }}</span>
+                        <span class="badge {{ invoice.status|status_badge }}">RM {{ invoice.amount }}</span>
                     </div>
                 </div>
                 {% empty %}
-                <div class="empty-state" style="padding:24px 0;">
-                    <i class="fa-regular fa-rectangle-list"></i>
-                    <p>No billing plans configured yet.</p>
+                <div class="empty-state">
+                    <i class="fa-regular fa-calendar-check"></i>
+                    <p>No unpaid invoices are due in the next 7 days.</p>
                 </div>
                 {% endfor %}
             </div>
         </div>
     </div>
 
-    <!-- Tables -->
     <div class="grid-2">
-        <!-- Payment History -->
+        <div class="card">
+            <div class="section-header">
+                <span class="section-title">Plan Revenue Mix</span>
+                <a href="{% url 'finance:billing_settings' %}" class="section-link">Manage billing</a>
+            </div>
+            <div class="space-y">
+                {% for plan in plan_rows %}
+                <div class="card-inset">
+                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+                        <div>
+                            <p style="font-weight:700;font-size:14px;color:var(--text);">{{ plan.name }}</p>
+                            <p class="text-sm text-muted" style="margin-top:6px;">
+                                {{ plan.active_members }} active member{{ plan.active_members|pluralize }} · {{ plan.sessions_per_month }} session{{ plan.sessions_per_month|pluralize }} per month
+                            </p>
+                        </div>
+                        <div style="text-align:right;">
+                            <p style="font-weight:700;color:var(--text);">RM {{ plan.projected_revenue }}</p>
+                            <span class="badge {% if plan.is_active %}badge-success{% else %}badge-neutral{% endif %}">{% if plan.is_active %}Active{% else %}Inactive{% endif %}</span>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    <i class="fa-regular fa-rectangle-list"></i>
+                    <p>No payment plans configured yet.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="section-header">
+                <span class="section-title">Coach Collection Summary</span>
+                <a href="{% url 'members:crm' %}" class="section-link">Open CRM</a>
+            </div>
+            <div class="space-y">
+                {% for row in coach_rows %}
+                <div class="card-inset">
+                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+                        <div>
+                            <p style="font-weight:700;font-size:14px;color:var(--text);">{{ row.coach_name }}</p>
+                            <p class="text-sm text-muted" style="margin-top:6px;">
+                                {{ row.active_students }} active student{{ row.active_students|pluralize }}<br>
+                                Outstanding RM {{ row.outstanding_total }}
+                            </p>
+                        </div>
+                        <span class="badge badge-success">Collected RM {{ row.collected_this_month }}</span>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    <i class="fa-regular fa-user"></i>
+                    <p>No coach-linked finance data available yet.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-2">
         <div class="card">
             <div class="section-header">
                 <span class="section-title">Recent Payment History</span>
+                <a href="{% url 'payments:payment_history' %}" class="section-link">Open full history</a>
             </div>
-            <div class="overflow-x">
-                <table class="tbl">
+            <div class="table-wrap">
+                <table class="tbl native-stack">
                     <thead>
                         <tr>
                             <th>Member</th>
-                            <th>Paid By</th>
+                            <th>Submitted By</th>
                             <th>Status</th>
+                            <th>Amount</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for payment in recent_payments %}
                         <tr>
-                            <td class="tbl-name">{{ payment.invoice.member.full_name }}</td>
-                            <td class="muted">{{ payment.paid_by|default:"Unknown" }}</td>
-                            <td><span class="badge {{ payment.status|status_badge }}">{{ payment.get_status_display }}</span></td>
+                            <td data-label="Member">
+                                <div class="tbl-name">{{ payment.invoice.member.full_name }}</div>
+                                <div class="tbl-sub">{{ payment.invoice.period|date:"F Y" }}</div>
+                            </td>
+                            <td data-label="Submitted By">{{ payment.paid_by|default:"Unknown" }}</td>
+                            <td data-label="Status"><span class="badge {{ payment.status|status_badge }}">{{ payment.get_status_display }}</span></td>
+                            <td data-label="Amount">RM {{ payment.invoice.amount }}</td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="3" style="text-align:center;padding:28px;color:var(--muted);">No payments yet.</td>
+                            <td colspan="4">
+                                <div class="empty-state">
+                                    <i class="fa-regular fa-credit-card"></i>
+                                    <p>No payments recorded yet.</p>
+                                </div>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -125,34 +277,114 @@
             </div>
         </div>
 
-        <!-- Invoice Snapshot -->
         <div class="card">
             <div class="section-header">
                 <span class="section-title">Current Invoice Snapshot</span>
+                <a href="{% url 'finance:invoice_list' %}" class="section-link">Open invoices</a>
             </div>
             <div class="space-y">
                 {% for invoice in invoice_rows %}
                 <div class="card-inset">
-                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
                         <div>
-                            <p style="font-weight:600;font-size:13.5px;color:var(--text);">{{ invoice.member.full_name }}</p>
-                            <p class="text-sm text-muted mt-1">{{ invoice.period|date:"F Y" }} &nbsp;·&nbsp; Due {{ invoice.due_date }}</p>
+                            <p style="font-weight:700;font-size:14px;color:var(--text);">{{ invoice.member.full_name }}</p>
+                            <p class="text-sm text-muted" style="margin-top:6px;">
+                                {{ invoice.period|date:"F Y" }} · Due {{ invoice.due_date }}<br>
+                                {{ invoice.get_invoice_type_display }}
+                            </p>
                         </div>
-                        <div style="text-align:right;flex-shrink:0;">
-                            <p style="font-weight:700;color:var(--text);font-size:14px;">RM {{ invoice.amount }}</p>
-                            <span class="badge {{ invoice.status|status_badge }}" style="margin-top:4px;">{{ invoice.get_status_display }}</span>
+                        <div style="text-align:right;">
+                            <p style="font-weight:700;color:var(--text);">RM {{ invoice.amount }}</p>
+                            <span class="badge {{ invoice.status|status_badge }}">{{ invoice.get_status_display }}</span>
                         </div>
                     </div>
                 </div>
                 {% empty %}
-                <div class="empty-state" style="padding:24px 0;">
+                <div class="empty-state">
                     <i class="fa-regular fa-file-alt"></i>
-                    <p>No invoices generated for current month.</p>
+                    <p>No invoices generated for the current month.</p>
                 </div>
                 {% endfor %}
             </div>
         </div>
     </div>
-
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const anchor = document.getElementById('cashflowChart') || document.getElementById('receivableChart');
+        if (!anchor) return;
+
+        let chartsBooted = false;
+
+        function chartDefaults() {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#8a8a9a'
+                        }
+                    }
+                }
+            };
+        }
+
+        async function bootCharts() {
+            if (chartsBooted) return;
+            chartsBooted = true;
+            await window.ensureChartJs();
+
+            const cashflowCtx = document.getElementById('cashflowChart');
+            if (cashflowCtx) {
+                new Chart(cashflowCtx, {
+                    type: 'line',
+                    data: JSON.parse('{{ cashflow_chart_data|escapejs }}'),
+                    options: {
+                        ...chartDefaults(),
+                        scales: {
+                            y: {
+                                ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#8a8a9a' },
+                                grid: { color: 'rgba(255,255,255,.08)' }
+                            },
+                            x: {
+                                ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#8a8a9a' },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+
+            const receivableCtx = document.getElementById('receivableChart');
+            if (receivableCtx) {
+                new Chart(receivableCtx, {
+                    type: 'doughnut',
+                    data: JSON.parse('{{ receivable_chart_data|escapejs }}'),
+                    options: {
+                        ...chartDefaults(),
+                        cutout: '62%'
+                    }
+                });
+            }
+        }
+
+        if (window.nyoIsMobileViewport && 'IntersectionObserver' in window) {
+            const observer = new IntersectionObserver(function(entries) {
+                if (entries.some(function(entry) { return entry.isIntersecting; })) {
+                    bootCharts();
+                    observer.disconnect();
+                }
+            }, { rootMargin: '120px 0px' });
+            observer.observe(anchor);
+        } else if ('requestIdleCallback' in window) {
+            requestIdleCallback(bootCharts, { timeout: 1400 });
+        } else {
+            setTimeout(bootCharts, 0);
+        }
+    });
+</script>
 {% endblock %}

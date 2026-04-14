@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+
+{% block title %}CRM Workspace | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}CRM Workspace{% endblock %}
+
+{% block content %}
+<div class="space-y">
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
+            <div>
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Business owner CRM</p>
+                <h2 style="font-size:28px;font-weight:700;color:var(--text);">Customer relationship command center</h2>
+                <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;max-width:800px;">
+                    Track leads, active members, payment follow-ups, and direct WhatsApp contact from one owner-facing view. This workspace is focused on business follow-up, not only operations.
+                </p>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <a href="{% url 'members:create' %}" class="btn btn-primary">
+                    <i class="fa-solid fa-user-plus"></i> Add Member
+                </a>
+                <a href="{% url 'members:application_list' %}" class="btn btn-ghost">
+                    <i class="fa-solid fa-user-plus"></i> Open Leads
+                </a>
+                <a href="{% url 'finance:cash_flow' %}" class="btn btn-ghost">
+                    <i class="fa-solid fa-sack-dollar"></i> Cash Flow
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-cards">
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Total Customers</p>
+                    <p class="stat-value">{{ owner_kpis.total_customers }}</p>
+                </div>
+                <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Active Customers</p>
+                    <p class="stat-value">{{ owner_kpis.active_customers }}</p>
+                </div>
+                <div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-user-check"></i></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Open Leads</p>
+                    <p class="stat-value">{{ owner_kpis.open_leads }}</p>
+                </div>
+                <div class="stat-icon" style="background:rgba(79,110,247,.12);color:#93c5fd;"><i class="fa-solid fa-filter-circle-dollar"></i></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Need Follow Up</p>
+                    <p class="stat-value">{{ owner_kpis.payment_follow_ups }}</p>
+                </div>
+                <div class="stat-icon" style="background:rgba(245,158,11,.12);color:#fbbf24;"><i class="fa-solid fa-phone-volume"></i></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Projected MRR</p>
+                    <p class="stat-value" style="font-size:22px;">RM {{ owner_kpis.projected_mrr }}</p>
+                </div>
+                <div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-chart-line"></i></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Outstanding</p>
+                    <p class="stat-value" style="font-size:22px;">RM {{ owner_kpis.outstanding_total }}</p>
+                </div>
+                <div class="stat-icon" style="background:rgba(239,68,68,.12);color:#f87171;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="filter-bar">
+        <form method="get" class="filter-fields">
+            <div class="filter-field">
+                <label>Search customer</label>
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Name, phone, email, guardian...">
+            </div>
+            <div class="filter-field">
+                <label>Segment</label>
+                <select name="segment">
+                    {% for value, label in crm_segments %}
+                    <option value="{{ value }}" {% if selected_segment == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-field">
+                <label>Status</label>
+                <select name="status">
+                    <option value="">All statuses</option>
+                    {% for value, label in statuses %}
+                    <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-field">
+                <label>Coach</label>
+                <select name="coach">
+                    <option value="">All coaches</option>
+                    {% for coach in coaches %}
+                    <option value="{{ coach.id }}" {% if selected_coach == coach.id|stringformat:"s" %}selected{% endif %}>
+                        {{ coach.get_full_name|default:coach.username }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-actions" style="margin-top:auto;">
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Apply</button>
+                <a href="{% url 'members:crm' %}" class="btn btn-ghost">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="grid-2">
+        <div class="card">
+            <div class="section-header">
+                <span class="section-title">Priority Collection Watchlist</span>
+                <a href="{% url 'finance:invoice_list' %}" class="section-link">Open invoices</a>
+            </div>
+            <div class="space-y">
+                {% for member in overdue_watchlist %}
+                <div class="card-inset">
+                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+                        <div>
+                            <p style="font-weight:700;font-size:14px;color:var(--text);">{{ member.full_name }}</p>
+                            <p class="text-sm text-muted" style="margin-top:6px;">
+                                Coach: {{ member.assigned_coach|default:"Unassigned" }}<br>
+                                Overdue: RM {{ member.overdue_total }} · Outstanding: RM {{ member.outstanding_total }}
+                            </p>
+                        </div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            {% if member.contact_number|whatsapp_url %}
+                            <a href="{{ member.contact_number|whatsapp_url }}?text={{ 'Hi '|add:member.full_name|add:', this is NYO Badminton Club regarding your account follow-up.'|whatsapp_text }}" target="_blank" rel="noopener" class="btn btn-success btn-xs">
+                                <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'members:detail' member.pk %}" class="btn btn-ghost btn-xs">Profile</a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    <i class="fa-regular fa-circle-check"></i>
+                    <p>No overdue accounts in the current watchlist.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="section-header">
+                <span class="section-title">New Leads Waiting</span>
+                <a href="{% url 'members:application_list' %}" class="section-link">Open lead queue</a>
+            </div>
+            <div class="space-y">
+                {% for lead in recent_leads %}
+                <div class="card-inset">
+                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+                        <div>
+                            <p style="font-weight:700;font-size:14px;color:var(--text);">{{ lead.student_name }}</p>
+                            <p class="text-sm text-muted" style="margin-top:6px;">
+                                Guardian: {{ lead.guardian_name }} · {{ lead.contact_number }}<br>
+                                {{ lead.preferred_program }} · {{ lead.preferred_location }} · {{ lead.submitted_at|date:"d M Y" }}
+                            </p>
+                        </div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            {% if lead.contact_number|whatsapp_url %}
+                            <a href="{{ lead.contact_number|whatsapp_url }}?text={{ 'Hi '|add:lead.guardian_name|add:', this is NYO Badminton Club following up on the application for '|add:lead.student_name|add:'.'|whatsapp_text }}" target="_blank" rel="noopener" class="btn btn-success btn-xs">
+                                <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'members:application_review' lead.pk %}" class="btn btn-ghost btn-xs">Review</a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    <i class="fa-regular fa-address-card"></i>
+                    <p>No pending leads right now.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="section-header">
+            <span class="section-title">Customer Follow-Up Table</span>
+            <a href="{% url 'members:export' %}" class="section-link">Export members CSV</a>
+        </div>
+        <div class="table-wrap">
+            <table class="tbl native-stack">
+                <thead>
+                    <tr>
+                        <th>Customer</th>
+                        <th>CRM Stage</th>
+                        <th>Coach & Package</th>
+                        <th>Attendance</th>
+                        <th>Billing</th>
+                        <th>Relationship Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in customer_rows %}
+                    <tr>
+                        <td data-label="Customer">
+                            <div class="tbl-name">{{ row.member.full_name }}</div>
+                            <div class="tbl-sub">{{ row.member.contact_number }}{% if row.member.email %} · {{ row.member.email }}{% endif %}</div>
+                        </td>
+                        <td data-label="CRM Stage">
+                            <span class="badge {{ row.stage.badge }}">{{ row.stage.label }}</span>
+                            <div class="tbl-sub" style="margin-top:6px;">{{ row.stage.summary }}</div>
+                        </td>
+                        <td data-label="Coach & Package">
+                            <div class="tbl-name">{{ row.member.assigned_coach|default:"Unassigned" }}</div>
+                            <div class="tbl-sub">{{ row.member.package_label }}</div>
+                        </td>
+                        <td data-label="Attendance">
+                            <div class="tbl-name">{{ row.attendance_rate }}%</div>
+                            <div class="tbl-sub">
+                                {% if row.member.next_session_date %}
+                                Next: {{ row.member.next_session_date|date:"d M Y" }}{% if row.member.next_session_title %} · {{ row.member.next_session_title }}{% endif %}
+                                {% else %}
+                                No upcoming session
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td data-label="Billing">
+                            <div class="tbl-name">Outstanding RM {{ row.member.outstanding_total }}</div>
+                            <div class="tbl-sub">
+                                {% if row.member.latest_invoice_period %}
+                                Latest: {{ row.member.latest_invoice_period|date:"M Y" }} · {{ row.member.latest_invoice_status|default:"-"|title }}
+                                {% else %}
+                                No invoice yet
+                                {% endif %}
+                                {% if row.member.last_payment_at %}
+                                <br>Last paid: {{ row.member.last_payment_at|date:"d M Y" }}{% if row.member.last_payment_amount %} · RM {{ row.member.last_payment_amount }}{% endif %}
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td data-label="Relationship Actions">
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                {% if row.member.contact_number|whatsapp_url %}
+                                <a href="{{ row.member.contact_number|whatsapp_url }}?text={{ 'Hi '|add:row.member.full_name|add:', this is NYO Badminton Club. We are reaching out regarding your training account.'|whatsapp_text }}" target="_blank" rel="noopener" class="btn btn-success btn-xs">
+                                    <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                                </a>
+                                {% endif %}
+                                <a href="{% url 'members:detail' row.member.pk %}" class="btn btn-ghost btn-xs">Profile</a>
+                                <a href="{% url 'finance:invoice_list' %}?member={{ row.member.pk }}" class="btn btn-ghost btn-xs">Invoices</a>
+                                <a href="{% url 'payments:payment_history' %}?member={{ row.member.pk }}" class="btn btn-ghost btn-xs">Payments</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <i class="fa-regular fa-user"></i>
+                                <p>No customer records match the current CRM filters.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px;">
+            <p class="text-sm text-muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                {% if page_obj.has_previous %}
+                <a href="?{% querystring page=page_obj.previous_page_number %}" class="btn btn-ghost btn-xs">Previous</a>
+                {% endif %}
+                {% if page_obj.has_next %}
+                <a href="?{% querystring page=page_obj.next_page_number %}" class="btn btn-ghost btn-xs">Next</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

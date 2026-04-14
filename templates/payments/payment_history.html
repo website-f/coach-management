@@ -26,6 +26,12 @@
                 <a href="{% url 'payments:pending_reviews' %}" class="btn btn-primary">
                     <i class="fa-solid fa-receipt"></i> Open Verification Queue
                 </a>
+                <a href="{% url 'members:crm' %}" class="btn btn-ghost">
+                    <i class="fa-brands fa-whatsapp"></i> Open CRM
+                </a>
+                <a href="{% url 'finance:cash_flow' %}" class="btn btn-ghost">
+                    <i class="fa-solid fa-chart-line"></i> Cash Flow
+                </a>
                 {% endif %}
                 <a href="{% url 'finance:invoice_list' %}" class="btn btn-ghost">
                     <i class="fa-solid fa-file-invoice-dollar"></i> View Invoices
@@ -109,6 +115,9 @@
                         <div style="display:flex;gap:8px;flex-wrap:wrap;">
                             {% if payment.proof_image %}
                             <a href="{{ payment.proof_image.url }}" target="_blank" class="btn btn-ghost btn-xs">Proof</a>
+                            {% endif %}
+                            {% if can_review and payment.invoice.member.contact_number|whatsapp_url %}
+                            <a href="{{ payment.invoice.member.contact_number|whatsapp_url }}?text={{ 'Hi '|add:payment.invoice.member.full_name|add:', this is NYO Badminton Club regarding your payment submission.'|whatsapp_text }}" target="_blank" rel="noopener" class="btn btn-success btn-xs">WhatsApp</a>
                             {% endif %}
                             {% if can_review and payment.status == 'pending' %}
                             <a href="{% url 'payments:review' payment.pk %}" class="btn btn-xs" style="background:rgba(79,110,247,.1);color:var(--accent);border:1px solid rgba(79,110,247,.25);border-radius:99px;padding:4px 12px;">Review</a>

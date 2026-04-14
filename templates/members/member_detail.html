@@ -19,7 +19,18 @@
                     <p class="text-sm text-muted" style="margin-top:6px;">Coach: {{ member.assigned_coach|default:"Unassigned" }} · Package: {{ member.package_label }}</p>
                 </div>
             </div>
-            <span class="badge {{ member.status|status_badge }}">{{ member.get_status_display }}</span>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;">
+                <span class="badge {{ member.status|status_badge }}">{{ member.get_status_display }}</span>
+                {% if current_role == 'admin' and member.contact_number|whatsapp_url %}
+                <a href="{{ member.contact_number|whatsapp_url }}?text={{ 'Hi '|add:member.full_name|add:', this is NYO Badminton Club reaching out regarding your training account.'|whatsapp_text }}" target="_blank" rel="noopener" class="btn btn-success btn-xs">
+                    <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                </a>
+                {% endif %}
+                {% if current_role == 'admin' or current_role == 'coach' %}
+                <a href="{% url 'finance:invoice_list' %}?member={{ member.pk }}" class="btn btn-ghost btn-xs">Invoices</a>
+                <a href="{% url 'payments:payment_history' %}?member={{ member.pk }}" class="btn btn-ghost btn-xs">Payments</a>
+                {% endif %}
+            </div>
         </div>
     </div>
 

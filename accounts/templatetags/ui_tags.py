@@ -1,4 +1,5 @@
 from django import template
+from urllib.parse import quote
 
 register = template.Library()
 
@@ -94,3 +95,29 @@ def querystring(context, **kwargs):
         else:
             query[key] = value
     return query.urlencode()
+
+
+def _normalize_phone_number(value):
+    digits = "".join(ch for ch in str(value or "") if ch.isdigit())
+    if not digits:
+        return ""
+    if digits.startswith("00"):
+        digits = digits[2:]
+    if digits.startswith("60"):
+        return digits
+    if digits.startswith("0"):
+        return f"60{digits[1:]}"
+    return digits
+
+
+@register.filter
+def whatsapp_url(value):
+    normalized = _normalize_phone_number(value)
+    if not normalized:
+        return ""
+    return f"https://wa.me/{normalized}"
+
+
+@register.filter
+def whatsapp_text(value):
+    return quote(str(value or ""))

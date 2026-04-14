@@ -44,6 +44,9 @@
     <!-- Page injected table actions -->
     {% if can_manage %}
     <div class="page-table-actions" style="display:none;">
+        <a href="{% url 'members:crm' %}" class="dt-button">
+            <i class="fa-brands fa-whatsapp"></i> CRM Workspace
+        </a>
         <a href="{% url 'members:create' %}" class="dt-button" style="background:var(--accent)!important;color:#fff!important;border-color:var(--accent-h)!important;">
             <i class="fa-solid fa-plus"></i> Add Member
         </a>
@@ -86,6 +89,11 @@
                     <td>
                         <div style="display:flex;gap:6px;flex-wrap:wrap;">
                             <a href="{% url 'members:detail' member.pk %}" class="btn btn-ghost btn-xs">View</a>
+                            {% if is_admin and member.contact_number|whatsapp_url %}
+                            <a href="{{ member.contact_number|whatsapp_url }}?text={{ 'Hi '|add:member.full_name|add:', this is NYO Badminton Club reaching out regarding your training account.'|whatsapp_text }}" target="_blank" rel="noopener" class="btn btn-success btn-xs">
+                                <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                            </a>
+                            {% endif %}
                             {% if can_manage %}
                             <a href="{% url 'members:edit' member.pk %}" class="btn btn-xs" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:99px;padding:4px 12px;">Edit</a>
                             {% endif %}

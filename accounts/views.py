@@ -277,6 +277,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 "meta": f"{pending_count} payment review(s) waiting",
             }
             dashboard_actions = [
+                {"label": "CRM Workspace", "url": reverse("members:crm"), "icon": "fa-address-book"},
                 {"label": "Manage Members", "url": reverse("members:list"), "icon": "fa-users"},
                 {"label": "Coach Accounts", "url": reverse("accounts:coaches"), "icon": "fa-user-tie"},
                 {"label": "Plan Sessions", "url": reverse("sessions:list"), "icon": "fa-calendar-days"},
@@ -298,7 +299,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 {"label": "Store", "url": reverse("finance:product_list"), "icon": "fa-bag-shopping"},
                 {"label": "Website", "url": reverse("accounts:website"), "icon": "fa-globe"},
                 {"label": "Billing Setup", "url": reverse("finance:billing_settings"), "icon": "fa-tags"},
-                {"label": "Open Finance", "url": reverse("finance:overview"), "icon": "fa-sack-dollar"},
+                {"label": "Cash Flow", "url": reverse("finance:cash_flow"), "icon": "fa-sack-dollar"},
             ]
             workspace_highlights = [
                 {"label": "Sessions This Week", "value": sessions.filter(session_date__range=(today, week_window_end)).count(), "tone": "info"},

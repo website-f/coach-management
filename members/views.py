@@ -1,16 +1,20 @@
 import csv
 import json
+from datetime import timedelta
+from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q, Sum
-from django.http import HttpResponse
+from django.core.paginator import Paginator
 from django.db import transaction
+from django.db.models import Count, DateField, DateTimeField, DecimalField, Q, Subquery, Sum, Value, OuterRef
+from django.db.models.functions import Coalesce
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
 
 from accounts.notifications import notify_users
 from accounts.decorators import role_required
@@ -19,6 +23,7 @@ from accounts.utils import ROLE_ADMIN, ROLE_COACH, ROLE_PARENT, has_role
 from accounts.models import LandingPageContent, UserProfile
 from finance.services import create_initial_invoices_for_member, get_default_payment_plan
 from finance.models import Invoice
+from payments.models import Payment
 from members.forms import (
     AdmissionApplicationPublicForm,
     AdmissionApplicationReviewForm,
@@ -65,6 +70,263 @@ def visible_reports_for_user(user):
     if has_role(user, ROLE_ADMIN):
         return queryset
     return queryset.none()
+
+
+def crm_stage_for_member(member):
+    if member.status == Member.STATUS_SUSPENDED:
+        return {
+            "label": "Suspended",
+            "badge": "badge-danger",
+            "summary": "Account is suspended and needs owner attention.",
+        }
+    if member.status == Member.STATUS_INACTIVE:
+        return {
+            "label": "Inactive",
+            "badge": "badge-neutral",
+            "summary": "Customer is inactive and may need reactivation follow-up.",
+        }
+    if getattr(member, "pending_review_count", 0):
+        return {
+            "label": "Pending Verification",
+            "badge": "badge-warning",
+            "summary": "Payment proof is waiting for admin verification.",
+        }
+    if getattr(member, "overdue_invoice_count", 0):
+        return {
+            "label": "Overdue",
+            "badge": "badge-danger",
+            "summary": "Customer has overdue invoices that need collection follow-up.",
+        }
+    if getattr(member, "unpaid_invoice_count", 0):
+        return {
+            "label": "Follow Up",
+            "badge": "badge-warning",
+            "summary": "Customer has unpaid invoices that are not overdue yet.",
+        }
+    return {
+        "label": "Healthy",
+        "badge": "badge-success",
+        "summary": "Customer is active and financially up to date.",
+    }
+
+
+class CRMWorkspaceView(AdminRequiredMixin, TemplateView):
+    template_name = "members/crm_workspace.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        today = timezone.localdate()
+        week_ahead = today + timedelta(days=7)
+        month_start = today.replace(day=1)
+
+        zero_money = Value(Decimal("0.00"), output_field=DecimalField(max_digits=10, decimal_places=2))
+        next_session_queryset = AttendanceRecord.objects.filter(
+            member=OuterRef("pk"),
+            training_session__session_date__gte=today,
+        ).order_by("training_session__session_date", "training_session__start_time")
+        latest_invoice_queryset = Invoice.objects.filter(member=OuterRef("pk")).order_by("-period", "-due_date", "-pk")
+        outstanding_total_queryset = (
+            Invoice.objects.filter(member=OuterRef("pk"))
+            .exclude(status=Invoice.STATUS_PAID)
+            .values("member")
+            .annotate(total=Sum("amount"))
+            .values("total")
+        )
+        overdue_total_queryset = (
+            Invoice.objects.filter(member=OuterRef("pk"), due_date__lt=today)
+            .exclude(status=Invoice.STATUS_PAID)
+            .values("member")
+            .annotate(total=Sum("amount"))
+            .values("total")
+        )
+        latest_approved_payment_queryset = Payment.objects.filter(
+            invoice__member=OuterRef("pk"),
+            status=Payment.STATUS_APPROVED,
+            reviewed_at__isnull=False,
+        ).order_by("-reviewed_at")
+
+        base_queryset = (
+            Member.objects.select_related("assigned_coach", "parent_user", "payment_plan")
+            .annotate(
+                outstanding_total=Coalesce(
+                    Subquery(outstanding_total_queryset, output_field=DecimalField(max_digits=10, decimal_places=2)),
+                    zero_money,
+                ),
+                overdue_total=Coalesce(
+                    Subquery(overdue_total_queryset, output_field=DecimalField(max_digits=10, decimal_places=2)),
+                    zero_money,
+                ),
+                unpaid_invoice_count=Count(
+                    "invoices",
+                    filter=~Q(invoices__status=Invoice.STATUS_PAID),
+                    distinct=True,
+                ),
+                overdue_invoice_count=Count(
+                    "invoices",
+                    filter=Q(invoices__due_date__lt=today) & ~Q(invoices__status=Invoice.STATUS_PAID),
+                    distinct=True,
+                ),
+                pending_review_count=Count(
+                    "invoices__payments",
+                    filter=Q(invoices__payments__status=Payment.STATUS_PENDING),
+                    distinct=True,
+                ),
+                due_this_week_count=Count(
+                    "invoices",
+                    filter=Q(invoices__due_date__range=(today, week_ahead)) & ~Q(invoices__status=Invoice.STATUS_PAID),
+                    distinct=True,
+                ),
+                total_attendance_logged=Count(
+                    "attendance_records",
+                    filter=~Q(attendance_records__status=AttendanceRecord.STATUS_SCHEDULED),
+                    distinct=True,
+                ),
+                total_attendance_good=Count(
+                    "attendance_records",
+                    filter=Q(
+                        attendance_records__status__in=[
+                            AttendanceRecord.STATUS_PRESENT,
+                            AttendanceRecord.STATUS_LATE,
+                        ]
+                    ),
+                    distinct=True,
+                ),
+                next_session_date=Subquery(
+                    next_session_queryset.values("training_session__session_date")[:1],
+                    output_field=DateField(),
+                ),
+                next_session_title=Subquery(next_session_queryset.values("training_session__title")[:1]),
+                latest_invoice_period=Subquery(
+                    latest_invoice_queryset.values("period")[:1],
+                    output_field=DateField(),
+                ),
+                latest_invoice_due_date=Subquery(
+                    latest_invoice_queryset.values("due_date")[:1],
+                    output_field=DateField(),
+                ),
+                latest_invoice_amount=Subquery(
+                    latest_invoice_queryset.values("amount")[:1],
+                    output_field=DecimalField(max_digits=10, decimal_places=2),
+                ),
+                latest_invoice_status=Subquery(latest_invoice_queryset.values("status")[:1]),
+                last_payment_at=Subquery(
+                    latest_approved_payment_queryset.values("reviewed_at")[:1],
+                    output_field=DateTimeField(),
+                ),
+                last_payment_amount=Subquery(
+                    latest_approved_payment_queryset.values("invoice__amount")[:1],
+                    output_field=DecimalField(max_digits=10, decimal_places=2),
+                ),
+            )
+            .order_by("full_name")
+        )
+
+        search = self.request.GET.get("q", "").strip()
+        status = self.request.GET.get("status", "").strip()
+        coach = self.request.GET.get("coach", "").strip()
+        segment = self.request.GET.get("segment", "").strip()
+
+        filtered_queryset = base_queryset
+        if search:
+            filtered_queryset = filtered_queryset.filter(
+                Q(full_name__icontains=search)
+                | Q(contact_number__icontains=search)
+                | Q(email__icontains=search)
+                | Q(emergency_contact_name__icontains=search)
+            )
+        if status:
+            filtered_queryset = filtered_queryset.filter(status=status)
+        if coach:
+            filtered_queryset = filtered_queryset.filter(assigned_coach_id=coach)
+        if segment == "healthy":
+            filtered_queryset = filtered_queryset.filter(
+                status=Member.STATUS_ACTIVE,
+                unpaid_invoice_count=0,
+                pending_review_count=0,
+            )
+        elif segment == "follow_up":
+            filtered_queryset = filtered_queryset.filter(unpaid_invoice_count__gt=0, overdue_invoice_count=0)
+        elif segment == "overdue":
+            filtered_queryset = filtered_queryset.filter(overdue_invoice_count__gt=0)
+        elif segment == "pending":
+            filtered_queryset = filtered_queryset.filter(pending_review_count__gt=0)
+        elif segment == "inactive":
+            filtered_queryset = filtered_queryset.filter(status__in=[Member.STATUS_INACTIVE, Member.STATUS_SUSPENDED])
+        elif segment == "due_soon":
+            filtered_queryset = filtered_queryset.filter(due_this_week_count__gt=0)
+
+        paginator = Paginator(filtered_queryset, 12)
+        page_obj = paginator.get_page(self.request.GET.get("page"))
+        customer_rows = []
+        for member in page_obj.object_list:
+            attendance_rate = 0
+            if member.total_attendance_logged:
+                attendance_rate = round((member.total_attendance_good / member.total_attendance_logged) * 100, 1)
+            customer_rows.append(
+                {
+                    "member": member,
+                    "attendance_rate": attendance_rate,
+                    "stage": crm_stage_for_member(member),
+                }
+            )
+
+        lead_queryset = visible_applications_for_user(self.request.user).filter(
+            status=AdmissionApplication.STATUS_PENDING
+        )
+        if search:
+            lead_queryset = lead_queryset.filter(
+                Q(student_name__icontains=search)
+                | Q(guardian_name__icontains=search)
+                | Q(contact_number__icontains=search)
+            )
+        recent_leads = lead_queryset.order_by("-submitted_at")[:8]
+
+        outstanding_queryset = base_queryset.filter(outstanding_total__gt=0).order_by("-overdue_total", "-outstanding_total", "full_name")
+        owner_kpis = {
+            "total_customers": base_queryset.count(),
+            "active_customers": base_queryset.filter(status=Member.STATUS_ACTIVE).count(),
+            "open_leads": visible_applications_for_user(self.request.user).filter(
+                status=AdmissionApplication.STATUS_PENDING
+            ).count(),
+            "payment_follow_ups": base_queryset.filter(
+                Q(overdue_invoice_count__gt=0) | Q(pending_review_count__gt=0) | Q(unpaid_invoice_count__gt=0)
+            ).count(),
+            "projected_mrr": base_queryset.filter(status=Member.STATUS_ACTIVE).aggregate(
+                total=Sum("payment_plan__monthly_fee")
+            )["total"]
+            or Decimal("0.00"),
+            "outstanding_total": Invoice.objects.exclude(status=Invoice.STATUS_PAID).aggregate(total=Sum("amount"))["total"]
+            or Decimal("0.00"),
+        }
+
+        context.update(
+            {
+                "page_obj": page_obj,
+                "members": page_obj.object_list,
+                "customer_rows": customer_rows,
+                "crm_segments": [
+                    ("", "All Customers"),
+                    ("healthy", "Healthy"),
+                    ("follow_up", "Need Follow Up"),
+                    ("overdue", "Overdue"),
+                    ("pending", "Pending Verification"),
+                    ("due_soon", "Due This Week"),
+                    ("inactive", "Inactive / Suspended"),
+                ],
+                "selected_segment": segment,
+                "selected_status": status,
+                "selected_coach": coach,
+                "search_query": search,
+                "statuses": Member.STATUS_CHOICES,
+                "coaches": User.objects.filter(profile__role=UserProfile.ROLE_COACH).order_by("first_name", "username"),
+                "owner_kpis": owner_kpis,
+                "recent_leads": recent_leads,
+                "overdue_watchlist": outstanding_queryset[:8],
+                "new_this_month_count": base_queryset.filter(joined_at__year=today.year, joined_at__month=today.month).count(),
+                "month_start": month_start,
+            }
+        )
+        return context
 
 
 class MemberListView(LoginRequiredMixin, ListView):

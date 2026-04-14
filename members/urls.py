@@ -4,6 +4,7 @@ from members.views import (
     AdmissionApplicationCreateView,
     AdmissionApplicationListView,
     AdmissionApplicationReviewView,
+    CRMWorkspaceView,
     MemberCreateView,
     MemberDeleteView,
     MemberDetailView,
@@ -21,6 +22,7 @@ app_name = "members"
 
 urlpatterns = [
     path("", MemberListView.as_view(), name="list"),
+    path("crm/", CRMWorkspaceView.as_view(), name="crm"),
     path("apply/", AdmissionApplicationCreateView.as_view(), name="apply"),
     path("applications/", AdmissionApplicationListView.as_view(), name="application_list"),
     path("applications/<int:pk>/", AdmissionApplicationReviewView.as_view(), name="application_review"),

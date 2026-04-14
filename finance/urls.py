@@ -20,6 +20,7 @@ app_name = "finance"
 
 urlpatterns = [
     path("", FinanceOverviewView.as_view(), name="overview"),
+    path("cash-flow/", FinanceOverviewView.as_view(), name="cash_flow"),
     path("billing/", BillingSettingsView.as_view(), name="billing_settings"),
     path("billing/plans/create/", PaymentPlanCreateView.as_view(), name="payment_plan_create"),
     path("billing/plans/<int:pk>/edit/", PaymentPlanUpdateView.as_view(), name="payment_plan_edit"),
