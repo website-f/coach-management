@@ -243,48 +243,67 @@ def build_finance_snapshot(today=None, scenario=None):
     )
     scenario = scenario or ForecastScenario.objects.filter(is_primary=True).first() or ForecastScenario.objects.order_by("title").first()
 
-    monthly_recurring_revenue = sum(decimal_or_zero(member.payment_plan.monthly_fee if member.payment_plan_id else ZERO_DECIMAL) for member in active_members)
+    monthly_recurring_revenue = sum(
+        (decimal_or_zero(member.payment_plan.monthly_fee if member.payment_plan_id else ZERO_DECIMAL) for member in active_members),
+        ZERO_DECIMAL,
+    )
     active_student_count = len(active_members)
     average_revenue_per_student = (
         monthly_recurring_revenue / active_student_count if active_student_count else ZERO_DECIMAL
     )
 
     current_month_revenue = sum(
-        decimal_or_zero(payment.amount_received)
-        for payment in approved_payments
-        if payment.reviewed_at
-        and payment.reviewed_at.year == today.year
-        and payment.reviewed_at.month == today.month
+        (
+            decimal_or_zero(payment.amount_received)
+            for payment in approved_payments
+            if payment.reviewed_at
+            and payment.reviewed_at.year == today.year
+            and payment.reviewed_at.month == today.month
+        ),
+        ZERO_DECIMAL,
     )
     billed_this_month = sum(
-        decimal_or_zero(invoice.amount) for invoice in invoices if invoice.period.year == today.year and invoice.period.month == today.month
+        (
+            decimal_or_zero(invoice.amount)
+            for invoice in invoices
+            if invoice.period.year == today.year and invoice.period.month == today.month
+        ),
+        ZERO_DECIMAL,
     )
     outstanding_invoices = [invoice for invoice in invoices if invoice.status != Invoice.STATUS_PAID]
     overdue_invoices = [invoice for invoice in invoices if invoice.is_overdue]
     pending_verification_total = sum(
-        decimal_or_zero(invoice.amount) for invoice in invoices if invoice.status == Invoice.STATUS_PENDING
+        (decimal_or_zero(invoice.amount) for invoice in invoices if invoice.status == Invoice.STATUS_PENDING),
+        ZERO_DECIMAL,
     )
-    overdue_total = sum(decimal_or_zero(invoice.outstanding_amount) for invoice in overdue_invoices)
-    outstanding_total = sum(decimal_or_zero(invoice.outstanding_amount) for invoice in outstanding_invoices)
+    overdue_total = sum((decimal_or_zero(invoice.outstanding_amount) for invoice in overdue_invoices), ZERO_DECIMAL)
+    outstanding_total = sum((decimal_or_zero(invoice.outstanding_amount) for invoice in outstanding_invoices), ZERO_DECIMAL)
     collection_rate = round((current_month_revenue / billed_this_month) * 100, 1) if billed_this_month else 0
 
     current_month_expenses = [expense for expense in expenses if expense.expense_date.year == today.year and expense.expense_date.month == today.month]
-    fixed_expenses = sum(decimal_or_zero(expense.amount) for expense in current_month_expenses if expense.expense_type == ExpenseEntry.TYPE_FIXED)
-    variable_expenses = sum(decimal_or_zero(expense.amount) for expense in current_month_expenses if expense.expense_type == ExpenseEntry.TYPE_VARIABLE)
+    fixed_expenses = sum(
+        (decimal_or_zero(expense.amount) for expense in current_month_expenses if expense.expense_type == ExpenseEntry.TYPE_FIXED),
+        ZERO_DECIMAL,
+    )
+    variable_expenses = sum(
+        (decimal_or_zero(expense.amount) for expense in current_month_expenses if expense.expense_type == ExpenseEntry.TYPE_VARIABLE),
+        ZERO_DECIMAL,
+    )
     paid_payroll_rows = [
         payroll
         for payroll in payroll_rows
         if payroll.status == PayrollRecord.STATUS_PAID and payroll.period.year == today.year and payroll.period.month == today.month
     ]
-    payroll_total = sum(decimal_or_zero(payroll.total_pay) for payroll in paid_payroll_rows)
+    payroll_total = sum((decimal_or_zero(payroll.total_pay) for payroll in paid_payroll_rows), ZERO_DECIMAL)
     total_expenses = fixed_expenses + variable_expenses + payroll_total
     gross_profit = current_month_revenue - (variable_expenses + payroll_total)
     net_profit = current_month_revenue - total_expenses
     margin = round((net_profit / current_month_revenue) * 100, 1) if current_month_revenue else 0
 
-    all_time_cash_in = sum(decimal_or_zero(payment.amount_received) for payment in approved_payments)
-    all_time_cash_out = sum(decimal_or_zero(expense.amount) for expense in expenses) + sum(
-        decimal_or_zero(payroll.total_pay) for payroll in payroll_rows if payroll.status == PayrollRecord.STATUS_PAID
+    all_time_cash_in = sum((decimal_or_zero(payment.amount_received) for payment in approved_payments), ZERO_DECIMAL)
+    all_time_cash_out = sum((decimal_or_zero(expense.amount) for expense in expenses), ZERO_DECIMAL) + sum(
+        (decimal_or_zero(payroll.total_pay) for payroll in payroll_rows if payroll.status == PayrollRecord.STATUS_PAID),
+        ZERO_DECIMAL,
     )
     cash_balance = decimal_or_zero(config.opening_cash_balance) + all_time_cash_in - all_time_cash_out
 
@@ -347,10 +366,14 @@ def build_finance_snapshot(today=None, scenario=None):
             if payroll_month in cash_out_trend:
                 cash_out_trend[payroll_month] += decimal_or_zero(payroll.total_pay)
 
-    total_shared_expenses = sum(decimal_or_zero(expense.amount) for expense in expenses if not expense.branch_tag) + sum(
-        decimal_or_zero(payroll.total_pay) for payroll in payroll_rows if not payroll.branch_tag
+    total_shared_expenses = sum(
+        (decimal_or_zero(expense.amount) for expense in expenses if not expense.branch_tag),
+        ZERO_DECIMAL,
+    ) + sum(
+        (decimal_or_zero(payroll.total_pay) for payroll in payroll_rows if not payroll.branch_tag),
+        ZERO_DECIMAL,
     )
-    total_revenue_for_allocation = sum(revenue_by_branch.values()) or ZERO_DECIMAL
+    total_revenue_for_allocation = sum(revenue_by_branch.values(), ZERO_DECIMAL) or ZERO_DECIMAL
 
     branch_pnl_rows = []
     for branch_label, revenue_amount in sorted(revenue_by_branch.items(), key=lambda item: item[1], reverse=True):
@@ -368,9 +391,10 @@ def build_finance_snapshot(today=None, scenario=None):
             }
         )
 
-    total_revenue_for_program_allocation = sum(revenue_by_program.values()) or ZERO_DECIMAL
-    total_operating_expenses = sum(decimal_or_zero(expense.amount) for expense in expenses) + sum(
-        decimal_or_zero(payroll.total_pay) for payroll in payroll_rows
+    total_revenue_for_program_allocation = sum(revenue_by_program.values(), ZERO_DECIMAL) or ZERO_DECIMAL
+    total_operating_expenses = sum((decimal_or_zero(expense.amount) for expense in expenses), ZERO_DECIMAL) + sum(
+        (decimal_or_zero(payroll.total_pay) for payroll in payroll_rows),
+        ZERO_DECIMAL,
     )
     program_pnl_rows = []
     for program_label, revenue_amount in sorted(revenue_by_program.items(), key=lambda item: item[1], reverse=True):
@@ -391,14 +415,20 @@ def build_finance_snapshot(today=None, scenario=None):
     monthly_report_rows = []
     for month in months:
         month_expenses = sum(
-            decimal_or_zero(expense.amount)
-            for expense in expenses
-            if expense.expense_date.year == month.year and expense.expense_date.month == month.month
+            (
+                decimal_or_zero(expense.amount)
+                for expense in expenses
+                if expense.expense_date.year == month.year and expense.expense_date.month == month.month
+            ),
+            ZERO_DECIMAL,
         )
         month_payroll = sum(
-            decimal_or_zero(payroll.total_pay)
-            for payroll in payroll_rows
-            if payroll.status == PayrollRecord.STATUS_PAID and payroll.period.year == month.year and payroll.period.month == month.month
+            (
+                decimal_or_zero(payroll.total_pay)
+                for payroll in payroll_rows
+                if payroll.status == PayrollRecord.STATUS_PAID and payroll.period.year == month.year and payroll.period.month == month.month
+            ),
+            ZERO_DECIMAL,
         )
         month_revenue = revenue_trend.get(month, ZERO_DECIMAL)
         month_net = month_revenue - month_expenses - month_payroll
@@ -497,13 +527,28 @@ def build_finance_snapshot(today=None, scenario=None):
 
     tax_summary = {
         "year_to_date_revenue": sum(
-            decimal_or_zero(payment.amount_received) for payment in approved_payments if payment.reviewed_at and payment.reviewed_at.year == today.year
+            (
+                decimal_or_zero(payment.amount_received)
+                for payment in approved_payments
+                if payment.reviewed_at and payment.reviewed_at.year == today.year
+            ),
+            ZERO_DECIMAL,
         ),
         "year_to_date_deductible_expenses": sum(
-            decimal_or_zero(expense.amount) for expense in expenses if expense.is_tax_deductible and expense.expense_date.year == today.year
+            (
+                decimal_or_zero(expense.amount)
+                for expense in expenses
+                if expense.is_tax_deductible and expense.expense_date.year == today.year
+            ),
+            ZERO_DECIMAL,
         ),
         "year_to_date_payroll": sum(
-            decimal_or_zero(payroll.total_pay) for payroll in payroll_rows if payroll.status == PayrollRecord.STATUS_PAID and payroll.period.year == today.year
+            (
+                decimal_or_zero(payroll.total_pay)
+                for payroll in payroll_rows
+                if payroll.status == PayrollRecord.STATUS_PAID and payroll.period.year == today.year
+            ),
+            ZERO_DECIMAL,
         ),
     }
 

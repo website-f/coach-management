@@ -3,6 +3,7 @@ from datetime import timedelta
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
+from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import UserProfile
@@ -55,6 +56,16 @@ class FinanceSnapshotTests(TestCase):
             program_enrolled="Elite Juniors",
             assigned_coach=self.coach,
         )
+
+    def test_finance_pages_render_with_active_students_and_no_variable_expenses(self):
+        member = self.create_member()
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse("finance:overview"))
+        self.assertEqual(response.status_code, 200)
+
+        forecast_response = self.client.get(reverse("finance:forecasting"))
+        self.assertEqual(forecast_response.status_code, 200)
 
     def test_build_finance_snapshot_answers_owner_questions(self):
         today = timezone.localdate()
