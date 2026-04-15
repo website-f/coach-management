@@ -1,11 +1,12 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.urls import reverse
 
 from accounts.models import UserProfile
 from finance.models import BillingConfiguration, PaymentPlan
 from members.models import Member
 from sessions.forms import TrainingSessionForm
-from sessions.models import TrainingSession
+from sessions.models import SyllabusRoot, TrainingSession
 
 
 User = get_user_model()
@@ -62,3 +63,37 @@ class TrialSessionLimitTests(TestCase):
 
         self.assertFalse(form.is_valid())
         self.assertIn("Trial limit exceeded", form.errors["members"][0])
+
+
+class SyllabusPageTests(TestCase):
+    def create_user(self, username, role):
+        user = User.objects.create_user(username=username, password="testpass123")
+        user.profile.role = role
+        user.profile.save()
+        return user
+
+    def setUp(self):
+        self.admin = self.create_user("syllabus_admin", UserProfile.ROLE_ADMIN)
+        self.client.force_login(self.admin)
+
+    def test_syllabus_page_does_not_auto_open_first_root(self):
+        response = self.client.get(reverse("sessions:syllabus"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.context["selected_root"])
+        self.assertContains(response, "Choose a syllabus root above")
+        self.assertTrue(SyllabusRoot.objects.exists())
+
+    def test_syllabus_page_opens_details_when_root_selected(self):
+        root = SyllabusRoot.objects.create(
+            name="Holiday Camp Curriculum",
+            code="holiday_camp_curriculum",
+            description="Short-format holiday programme.",
+            updated_by=self.admin,
+        )
+
+        response = self.client.get(reverse("sessions:syllabus"), {"root": root.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["selected_root"].pk, root.pk)
+        self.assertContains(response, "Holiday Camp Curriculum")

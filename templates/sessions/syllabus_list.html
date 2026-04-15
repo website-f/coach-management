@@ -3,23 +3,120 @@
 {% block title %}Syllabus | NYO Admin Dashboard{% endblock %}
 {% block page_heading %}Class Syllabuses{% endblock %}
 
+{% block extra_head %}
+<style>
+    .syllabus-root-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+    }
+    .syllabus-root-card {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        height: 100%;
+        padding: 18px;
+        border-radius: 18px;
+        border: 1px solid var(--border2);
+        background:
+            linear-gradient(180deg, rgba(79,110,247,.08), rgba(79,110,247,0)),
+            var(--surface2);
+        box-shadow: var(--shadow);
+    }
+    .syllabus-root-card.is-selected {
+        border-color: rgba(79,110,247,.42);
+        box-shadow: 0 0 0 1px rgba(79,110,247,.18), var(--shadow-md);
+    }
+    .syllabus-root-card-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+    .syllabus-root-card-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text);
+        line-height: 1.25;
+    }
+    .syllabus-root-card-code {
+        font-size: 11px;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 6px;
+    }
+    .syllabus-root-card-body {
+        color: var(--muted);
+        line-height: 1.8;
+        font-size: 13.5px;
+        min-height: 74px;
+    }
+    .syllabus-root-metrics {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+    .syllabus-root-metric {
+        border: 1px solid var(--border);
+        background: var(--surface);
+        border-radius: 14px;
+        padding: 12px;
+    }
+    .syllabus-root-metric-label {
+        font-size: 11px;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--muted);
+    }
+    .syllabus-root-metric-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text);
+        margin-top: 6px;
+    }
+    .syllabus-root-actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: auto;
+    }
+    .syllabus-track-summary {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+    }
+    .syllabus-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+    @media (max-width: 700px) {
+        .syllabus-detail-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="space-y">
     <div class="card">
         <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
             <div>
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Root-First Curriculum</p>
-                <h2 style="font-size:28px;font-weight:700;color:var(--text);">Manage multiple class syllabuses from one curriculum workspace.</h2>
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Root-first curriculum</p>
+                <h2 style="font-size:28px;font-weight:700;color:var(--text);">Choose a syllabus root first, then open and manage its curriculum details.</h2>
                 <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;max-width:860px;">
-                    Start from a syllabus root, then drill into the track templates, standards, and weekly units underneath it. This lets the academy run different class types instead of one global syllabus only.
+                    This page now keeps the syllabus roots as the main entry point. Pick the root you want, then the filters
+                    and the full syllabus details for that curriculum will appear underneath.
                 </p>
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;">
                 <a href="{% url 'sessions:syllabus_root_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Syllabus Root</a>
-                {% if selected_root %}
-                <a href="{% url 'sessions:syllabus_create' %}?root={{ selected_root.pk }}" class="btn btn-ghost"><i class="fa-solid fa-calendar-plus"></i> Add Weekly Unit</a>
-                <a href="{% url 'sessions:syllabus_standard_create' %}?root={{ selected_root.pk }}" class="btn btn-ghost"><i class="fa-solid fa-layer-group"></i> Add Standard</a>
-                {% endif %}
                 <a href="{% url 'sessions:list' %}" class="btn btn-ghost"><i class="fa-solid fa-calendar-days"></i> Back to Sessions</a>
             </div>
         </div>
@@ -29,24 +126,50 @@
         <div class="section-header">
             <span class="section-title">Syllabus Roots</span>
         </div>
-        <div class="grid-2 mt-3">
-            {% for root in syllabus_roots %}
-            <a href="{% url 'sessions:syllabus' %}?root={{ root.pk }}" class="card-inset" style="{% if selected_root and selected_root.pk == root.pk %}border-color:rgba(79,110,247,.42);box-shadow:0 0 0 1px rgba(79,110,247,.18);{% endif %}text-decoration:none;">
-                <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+        <div class="syllabus-root-grid" style="margin-top:16px;">
+            {% for card in root_cards %}
+            <div class="syllabus-root-card {% if card.is_selected %}is-selected{% endif %}">
+                <div class="syllabus-root-card-header">
                     <div>
-                        <p style="font-weight:700;font-size:18px;color:var(--text);">{{ root.name }}</p>
-                        <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;">{{ root.description|default:"No description yet." }}</p>
+                        <p class="syllabus-root-card-code">{{ card.root.code }}</p>
+                        <p class="syllabus-root-card-title">{{ card.root.name }}</p>
                     </div>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                        {% if root.is_default %}<span class="badge badge-info">Default</span>{% endif %}
-                        <span class="badge {% if root.is_active %}badge-success{% else %}badge-neutral{% endif %}">{% if root.is_active %}Active{% else %}Inactive{% endif %}</span>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+                        {% if card.root.is_default %}<span class="badge badge-info">Default</span>{% endif %}
+                        <span class="badge {% if card.root.is_active %}badge-success{% else %}badge-neutral{% endif %}">{% if card.root.is_active %}Active{% else %}Inactive{% endif %}</span>
                     </div>
                 </div>
-                <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-top:14px;">
-                    <span class="text-sm text-muted">Open curriculum</span>
-                    <span class="text-sm" style="color:var(--accent);font-weight:600;">View root</span>
+
+                <div class="syllabus-root-card-body">
+                    {{ card.root.description|default:"No description added yet." }}
                 </div>
-            </a>
+
+                <div class="syllabus-root-metrics">
+                    <div class="syllabus-root-metric">
+                        <div class="syllabus-root-metric-label">Tracks</div>
+                        <div class="syllabus-root-metric-value">{{ card.track_count }}</div>
+                    </div>
+                    <div class="syllabus-root-metric">
+                        <div class="syllabus-root-metric-label">Templates</div>
+                        <div class="syllabus-root-metric-value">{{ card.root.template_count }}</div>
+                    </div>
+                    <div class="syllabus-root-metric">
+                        <div class="syllabus-root-metric-label">Standards</div>
+                        <div class="syllabus-root-metric-value">{{ card.root.standard_count }}</div>
+                    </div>
+                    <div class="syllabus-root-metric">
+                        <div class="syllabus-root-metric-label">Weekly Units</div>
+                        <div class="syllabus-root-metric-value">{{ card.root.weekly_unit_count }}</div>
+                    </div>
+                </div>
+
+                <div class="syllabus-root-actions">
+                    <a href="{% url 'sessions:syllabus' %}?root={{ card.root.pk }}" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-book-open"></i> {% if card.is_selected %}Open Details{% else %}View Root{% endif %}
+                    </a>
+                    <a href="{% url 'sessions:syllabus_root_edit' card.root.pk %}" class="btn btn-ghost btn-sm">Edit Root</a>
+                </div>
+            </div>
             {% empty %}
             <div class="empty-state">
                 <i class="fa-regular fa-clipboard"></i>
@@ -79,10 +202,21 @@
     <div class="card">
         <div class="section-header">
             <span class="section-title">{{ selected_root.name }}</span>
-            <a href="{% url 'sessions:syllabus_root_edit' selected_root.pk %}" class="section-link">Edit root</a>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <a href="{% url 'sessions:syllabus_root_edit' selected_root.pk %}" class="btn btn-ghost btn-xs">Edit Root</a>
+                <a href="{% url 'sessions:syllabus_create' %}?root={{ selected_root.pk }}" class="btn btn-ghost btn-xs">Add Weekly Unit</a>
+                <a href="{% url 'sessions:syllabus_standard_create' %}?root={{ selected_root.pk }}" class="btn btn-ghost btn-xs">Add Standard</a>
+            </div>
         </div>
-        <div class="card-inset mt-3">
+        <div class="card-inset" style="margin-top:14px;">
             <p class="text-sm text-muted" style="line-height:1.8;">{{ selected_root.description|default:"No description added yet." }}</p>
+            <div class="syllabus-track-summary">
+                {% if selected_root.is_default %}<span class="badge badge-info">Default root</span>{% endif %}
+                <span class="badge {% if selected_root.is_active %}badge-success{% else %}badge-neutral{% endif %}">{% if selected_root.is_active %}Active{% else %}Inactive{% endif %}</span>
+                <span class="badge badge-neutral">{{ selected_root.template_count }} template{{ selected_root.template_count|pluralize }}</span>
+                <span class="badge badge-neutral">{{ selected_root.standard_count }} standard{{ selected_root.standard_count|pluralize }}</span>
+                <span class="badge badge-neutral">{{ selected_root.weekly_unit_count }} weekly unit{{ selected_root.weekly_unit_count|pluralize }}</span>
+            </div>
         </div>
     </div>
 
@@ -95,11 +229,12 @@
                 <a href="{% url 'sessions:syllabus_template_edit' group.template.pk %}" class="btn btn-ghost btn-xs">Edit Template</a>
                 {% endif %}
                 <a href="{% url 'sessions:syllabus_standard_create' %}?root={{ selected_root.pk }}&track={{ group.track }}" class="btn btn-ghost btn-xs">Add Standard</a>
+                <a href="{% url 'sessions:syllabus_create' %}?root={{ selected_root.pk }}" class="btn btn-ghost btn-xs">Add Weekly Unit</a>
             </div>
         </div>
 
         {% if group.template %}
-        <div class="card-inset">
+        <div class="card-inset" style="margin-top:14px;">
             <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;">
                 <div style="max-width:840px;">
                     <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">{{ group.template.curriculum_year_label }}{% if group.template.source_document_name %} · Source {{ group.template.source_document_name }}{% endif %}</p>
@@ -111,7 +246,7 @@
         </div>
         {% endif %}
 
-        <div class="space-y mt-3">
+        <div class="space-y" style="margin-top:18px;">
             <div class="section-header">
                 <span class="section-title">Curriculum Standards</span>
             </div>
@@ -137,7 +272,7 @@
             {% endfor %}
         </div>
 
-        <div class="space-y mt-3">
+        <div class="space-y" style="margin-top:18px;">
             <div class="section-header">
                 <span class="section-title">Weekly Session Units</span>
             </div>
@@ -154,7 +289,7 @@
                         <a href="{% url 'sessions:syllabus_edit' row.pk %}" class="btn btn-ghost btn-xs">Edit</a>
                     </div>
                 </div>
-                <div class="grid-2 mt-3">
+                <div class="syllabus-detail-grid" style="margin-top:14px;">
                     <div>
                         <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Warm-up</p>
                         <p style="font-size:13.5px;color:var(--text);line-height:1.8;">{{ row.warm_up_plan }}</p>
@@ -181,6 +316,13 @@
         </div>
     </div>
     {% endfor %}
+    {% else %}
+    <div class="card">
+        <div class="empty-state">
+            <i class="fa-regular fa-book-open"></i>
+            <p>Choose a syllabus root above to open its filters, curriculum details, and edit actions.</p>
+        </div>
+    </div>
     {% endif %}
 </div>
 {% endblock %}

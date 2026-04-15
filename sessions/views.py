@@ -1,5 +1,6 @@
 import calendar
 import json
+from collections import defaultdict
 from datetime import date
 
 from django import forms
@@ -260,19 +261,33 @@ class SyllabusListView(AdminRequiredMixin, ListView):
 
     def get_queryset(self):
         ensure_default_syllabus()
-        return SyllabusRoot.objects.order_by("name")
+        return SyllabusRoot.objects.annotate(
+            template_count=Count("templates", distinct=True),
+            standard_count=Count("templates__standards", distinct=True),
+            weekly_unit_count=Count("weekly_units", distinct=True),
+            session_count=Count("training_sessions", distinct=True),
+        ).order_by("name")
 
     def get_selected_root(self):
         selected_root = self.request.GET.get("root", "").strip()
-        queryset = self.get_queryset()
         if selected_root:
-            return queryset.filter(pk=selected_root).first()
-        return queryset.first()
+            return self.get_queryset().filter(pk=selected_root).first()
+        return None
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        syllabus_roots = list(context["syllabus_roots"])
+        root_ids = [root.pk for root in syllabus_roots]
         selected_track = self.request.GET.get("track", "").strip()
         selected_root = self.get_selected_root()
+        track_sets = defaultdict(set)
+        for root_id, track in SyllabusTemplate.objects.filter(root_id__in=root_ids).values_list("root_id", "track"):
+            if root_id and track:
+                track_sets[root_id].add(track)
+        for root_id, track in WeeklySyllabus.objects.filter(root_id__in=root_ids).values_list("root_id", "track"):
+            if root_id and track:
+                track_sets[root_id].add(track)
+
         rows = []
         templates = {}
         standards_by_track = {}
@@ -309,7 +324,14 @@ class SyllabusListView(AdminRequiredMixin, ListView):
                         "standards": standards,
                     }
                 )
-        track = self.request.GET.get("track", "").strip()
+        context["root_cards"] = [
+            {
+                "root": root,
+                "track_count": len(track_sets.get(root.pk, set())),
+                "is_selected": bool(selected_root and selected_root.pk == root.pk),
+            }
+            for root in syllabus_roots
+        ]
         context["grouped_rows"] = grouped_rows
         context["track_choices"] = WeeklySyllabus.TRACK_CHOICES
         context["selected_track"] = selected_track
