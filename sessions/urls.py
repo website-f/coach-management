@@ -13,6 +13,8 @@ from sessions.views import (
     SessionUpdateView,
     SyllabusCreateView,
     SyllabusListView,
+    SyllabusRootCreateView,
+    SyllabusRootUpdateView,
     SyllabusStandardCreateView,
     SyllabusStandardUpdateView,
     SyllabusTemplateUpdateView,
@@ -24,6 +26,8 @@ app_name = "sessions"
 urlpatterns = [
     path("", SessionListView.as_view(), name="list"),
     path("syllabus/", SyllabusListView.as_view(), name="syllabus"),
+    path("syllabus/root/create/", SyllabusRootCreateView.as_view(), name="syllabus_root_create"),
+    path("syllabus/root/<int:pk>/edit/", SyllabusRootUpdateView.as_view(), name="syllabus_root_edit"),
     path("syllabus/create/", SyllabusCreateView.as_view(), name="syllabus_create"),
     path("syllabus/<int:pk>/edit/", SyllabusUpdateView.as_view(), name="syllabus_edit"),
     path("syllabus/template/<int:pk>/edit/", SyllabusTemplateUpdateView.as_view(), name="syllabus_template_edit"),

@@ -1,12 +1,14 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 from accounts.models import LandingPageContent, UserProfile
-from accounts.utils import ROLE_ADMIN, ROLE_COACH, has_role
+from accounts.utils import ROLE_ADMIN, ROLE_COACH, ROLE_HEADCOUNT, has_role
 from finance.models import PaymentPlan
 from finance.services import get_default_payment_plan
-from members.models import AdmissionApplication, DEFAULT_SKILLS, Member, ProgressReport
+from members.models import AdmissionApplication, CommunicationLog, DEFAULT_SKILLS, Member, ProgressReport
 from members.services import pick_best_available_coach
+from sessions.models import SyllabusRoot
 
 User = get_user_model()
 
@@ -21,17 +23,36 @@ class MemberForm(forms.ModelForm):
             "email",
             "emergency_contact_name",
             "emergency_contact_phone",
+            "program_enrolled",
+            "syllabus_root",
             "payment_plan",
             "skill_level",
+            "assigned_staff",
             "assigned_coach",
             "parent_user",
             "status",
             "joined_at",
+            "trial_linked_date",
+            "trial_date",
+            "trial_outcome",
+            "parent_feedback",
+            "conversion_reason",
+            "subscription_started_at",
+            "retention_risk_score",
+            "churn_reason",
+            "next_action",
             "notes",
         ]
         widgets = {
             "date_of_birth": forms.DateInput(attrs={"type": "date"}),
             "joined_at": forms.DateInput(attrs={"type": "date"}),
+            "trial_linked_date": forms.DateInput(attrs={"type": "date"}),
+            "trial_date": forms.DateInput(attrs={"type": "date"}),
+            "subscription_started_at": forms.DateInput(attrs={"type": "date"}),
+            "parent_feedback": forms.Textarea(attrs={"rows": 3}),
+            "conversion_reason": forms.Textarea(attrs={"rows": 3}),
+            "churn_reason": forms.Textarea(attrs={"rows": 3}),
+            "next_action": forms.Textarea(attrs={"rows": 3}),
             "notes": forms.Textarea(attrs={"rows": 4}),
         }
 
@@ -45,15 +66,25 @@ class MemberForm(forms.ModelForm):
         else:
             self.fields["payment_plan"].queryset = payment_plan_queryset.filter(is_active=True)
             self.fields["payment_plan"].initial = get_default_payment_plan()
+        self.fields["syllabus_root"].queryset = SyllabusRoot.objects.filter(is_active=True).order_by("name")
+        self.fields["assigned_staff"].queryset = User.objects.filter(
+            profile__role__in=[UserProfile.ROLE_ADMIN, UserProfile.ROLE_HEADCOUNT]
+        ).order_by("first_name", "username")
         self.fields["assigned_coach"].queryset = User.objects.filter(profile__role=UserProfile.ROLE_COACH).order_by(
             "first_name", "username"
         )
         self.fields["parent_user"].queryset = User.objects.filter(profile__role=UserProfile.ROLE_PARENT).order_by(
             "first_name", "username"
         )
+        if not self.instance.pk:
+            self.fields["status"].initial = Member.STATUS_TRIAL
+            self.fields["trial_linked_date"].initial = timezone.localdate()
         if current_user and has_role(current_user, ROLE_COACH) and not has_role(current_user, ROLE_ADMIN):
             self.fields["assigned_coach"].queryset = User.objects.filter(pk=current_user.pk)
             self.fields["assigned_coach"].initial = current_user
+        if current_user and has_role(current_user, ROLE_HEADCOUNT) and not has_role(current_user, ROLE_ADMIN):
+            self.fields["assigned_staff"].queryset = User.objects.filter(pk=current_user.pk)
+            self.fields["assigned_staff"].initial = current_user
 
     def save(self, commit=True):
         instance = super().save(commit=False)
@@ -78,6 +109,7 @@ class AdmissionApplicationPublicForm(forms.ModelForm):
             "guardian_name",
             "guardian_email",
             "contact_number",
+            "source",
             "preferred_program",
             "preferred_location",
             "playing_experience",
@@ -110,10 +142,29 @@ class AdmissionApplicationPublicForm(forms.ModelForm):
 class AdmissionApplicationReviewForm(forms.ModelForm):
     class Meta:
         model = AdmissionApplication
-        fields = ["status", "rejection_reason"]
+        fields = [
+            "source",
+            "interest_level",
+            "assigned_staff",
+            "last_followed_up_at",
+            "next_action",
+            "status",
+            "rejection_reason",
+        ]
         widgets = {
+            "last_followed_up_at": forms.DateInput(attrs={"type": "date"}),
+            "next_action": forms.Textarea(attrs={"rows": 3}),
             "rejection_reason": forms.Textarea(attrs={"rows": 4}),
         }
+
+    def __init__(self, *args, current_user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["assigned_staff"].queryset = User.objects.filter(
+            profile__role__in=[UserProfile.ROLE_ADMIN, UserProfile.ROLE_HEADCOUNT]
+        ).order_by("first_name", "username")
+        if current_user and has_role(current_user, ROLE_HEADCOUNT) and not has_role(current_user, ROLE_ADMIN):
+            self.fields["assigned_staff"].queryset = User.objects.filter(pk=current_user.pk)
+            self.fields["assigned_staff"].initial = current_user
 
     def clean(self):
         cleaned_data = super().clean()
@@ -122,6 +173,16 @@ class AdmissionApplicationReviewForm(forms.ModelForm):
         if status == AdmissionApplication.STATUS_REJECTED and not rejection_reason:
             self.add_error("rejection_reason", "Please explain why this application is being rejected.")
         return cleaned_data
+
+
+class CommunicationLogForm(forms.ModelForm):
+    class Meta:
+        model = CommunicationLog
+        fields = ["happened_at", "channel", "message_type", "outcome", "notes", "next_step"]
+        widgets = {
+            "happened_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "notes": forms.Textarea(attrs={"rows": 3}),
+        }
 
 
 class ProgressReportForm(forms.ModelForm):

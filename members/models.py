@@ -27,13 +27,28 @@ class Member(models.Model):
 
     MEMBERSHIP_PACKAGE_4 = "monthly_4"
     MEMBERSHIP_PACKAGE_8 = "monthly_8"
+    STATUS_TRIAL = "trial"
     STATUS_ACTIVE = "active"
     STATUS_INACTIVE = "inactive"
-    STATUS_SUSPENDED = "suspended"
+    STATUS_CHURNED = "churned"
     STATUS_CHOICES = [
+        (STATUS_TRIAL, "Trial"),
         (STATUS_ACTIVE, "Active"),
         (STATUS_INACTIVE, "Inactive"),
-        (STATUS_SUSPENDED, "Suspended"),
+        (STATUS_CHURNED, "Churned"),
+    ]
+
+    TRIAL_OUTCOME_PENDING = "pending"
+    TRIAL_OUTCOME_CONVERTED = "converted"
+    TRIAL_OUTCOME_NO_SHOW = "no_show"
+    TRIAL_OUTCOME_NOT_READY = "not_ready"
+    TRIAL_OUTCOME_DECLINED = "declined"
+    TRIAL_OUTCOME_CHOICES = [
+        (TRIAL_OUTCOME_PENDING, "Pending"),
+        (TRIAL_OUTCOME_CONVERTED, "Converted"),
+        (TRIAL_OUTCOME_NO_SHOW, "No Show"),
+        (TRIAL_OUTCOME_NOT_READY, "Not Ready"),
+        (TRIAL_OUTCOME_DECLINED, "Declined"),
     ]
 
     full_name = models.CharField(max_length=255)
@@ -51,12 +66,27 @@ class Member(models.Model):
         related_name="members",
     )
     skill_level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default=LEVEL_BASIC)
+    program_enrolled = models.CharField(max_length=255, blank=True)
+    syllabus_root = models.ForeignKey(
+        "club_sessions.SyllabusRoot",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="members",
+    )
     assigned_coach = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="assigned_members",
+    )
+    assigned_staff = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="managed_students",
     )
     parent_user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -67,6 +97,20 @@ class Member(models.Model):
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_ACTIVE)
     joined_at = models.DateField(default=timezone.localdate)
+    trial_linked_date = models.DateField(null=True, blank=True)
+    trial_date = models.DateField(null=True, blank=True)
+    trial_outcome = models.CharField(
+        max_length=20,
+        choices=TRIAL_OUTCOME_CHOICES,
+        default=TRIAL_OUTCOME_PENDING,
+    )
+    parent_feedback = models.TextField(blank=True)
+    conversion_reason = models.TextField(blank=True)
+    subscription_started_at = models.DateField(null=True, blank=True)
+    retention_risk_score = models.PositiveSmallIntegerField(default=0)
+    churn_reason = models.TextField(blank=True)
+    next_action = models.TextField(blank=True)
+    last_contacted_at = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -88,6 +132,24 @@ class Member(models.Model):
         if self.payment_plan_id and self.membership_type != self.payment_plan.code:
             self.membership_type = self.payment_plan.code
         super().save(*args, **kwargs)
+
+    @property
+    def start_date(self):
+        return self.subscription_started_at or self.joined_at
+
+    @property
+    def latest_application(self):
+        return self.admission_applications.order_by("-submitted_at").first()
+
+    @property
+    def lead_source(self):
+        application = self.latest_application
+        return application.source if application else ""
+
+    @property
+    def interest_level(self):
+        application = self.latest_application
+        return application.interest_level if application else ""
 
     @property
     def active_payment_plan(self):
@@ -127,6 +189,32 @@ class Member(models.Model):
 
 
 class AdmissionApplication(models.Model):
+    SOURCE_WEBSITE = "website"
+    SOURCE_WHATSAPP = "whatsapp"
+    SOURCE_REFERRAL = "referral"
+    SOURCE_INSTAGRAM = "instagram"
+    SOURCE_TIKTOK = "tiktok"
+    SOURCE_WALK_IN = "walk_in"
+    SOURCE_OTHER = "other"
+    SOURCE_CHOICES = [
+        (SOURCE_WEBSITE, "Website"),
+        (SOURCE_WHATSAPP, "WhatsApp"),
+        (SOURCE_REFERRAL, "Referral"),
+        (SOURCE_INSTAGRAM, "Instagram"),
+        (SOURCE_TIKTOK, "TikTok"),
+        (SOURCE_WALK_IN, "Walk-in"),
+        (SOURCE_OTHER, "Other"),
+    ]
+
+    INTEREST_COLD = "cold"
+    INTEREST_WARM = "warm"
+    INTEREST_HOT = "hot"
+    INTEREST_LEVEL_CHOICES = [
+        (INTEREST_COLD, "Cold"),
+        (INTEREST_WARM, "Warm"),
+        (INTEREST_HOT, "Hot"),
+    ]
+
     EXPERIENCE_NONE = "none"
     EXPERIENCE_SCHOOL = "school"
     EXPERIENCE_COMPETITIVE = "competitive"
@@ -168,6 +256,8 @@ class AdmissionApplication(models.Model):
     guardian_name = models.CharField(max_length=255)
     guardian_email = models.EmailField(blank=True)
     contact_number = models.CharField(max_length=30)
+    source = models.CharField(max_length=30, choices=SOURCE_CHOICES, default=SOURCE_WEBSITE)
+    interest_level = models.CharField(max_length=20, choices=INTEREST_LEVEL_CHOICES, default=INTEREST_WARM)
     preferred_program = models.CharField(max_length=255)
     preferred_location = models.CharField(max_length=255)
     playing_experience = models.CharField(max_length=20, choices=EXPERIENCE_CHOICES, default=EXPERIENCE_NONE)
@@ -192,6 +282,15 @@ class AdmissionApplication(models.Model):
         blank=True,
         related_name="submitted_applications",
     )
+    assigned_staff = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assigned_admission_applications",
+    )
+    last_followed_up_at = models.DateField(null=True, blank=True)
+    next_action = models.TextField(blank=True)
     reviewed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -230,6 +329,88 @@ class AdmissionApplication(models.Model):
             self.recommended_level = Member.LEVEL_INTERMEDIATE
         else:
             self.recommended_level = Member.LEVEL_BASIC
+
+
+class CommunicationLog(models.Model):
+    CHANNEL_WHATSAPP = "whatsapp"
+    CHANNEL_CALL = "call"
+    CHANNEL_EMAIL = "email"
+    CHANNEL_INTERNAL = "internal"
+    CHANNEL_CHOICES = [
+        (CHANNEL_WHATSAPP, "WhatsApp"),
+        (CHANNEL_CALL, "Call"),
+        (CHANNEL_EMAIL, "Email"),
+        (CHANNEL_INTERNAL, "Internal"),
+    ]
+
+    TYPE_FOLLOW_UP = "follow_up"
+    TYPE_TRIAL = "trial"
+    TYPE_PAYMENT = "payment"
+    TYPE_RETENTION = "retention"
+    TYPE_CHURN = "churn"
+    TYPE_NOTE = "note"
+    MESSAGE_TYPE_CHOICES = [
+        (TYPE_FOLLOW_UP, "Follow Up"),
+        (TYPE_TRIAL, "Trial Update"),
+        (TYPE_PAYMENT, "Payment Update"),
+        (TYPE_RETENTION, "Retention"),
+        (TYPE_CHURN, "Churn"),
+        (TYPE_NOTE, "General Note"),
+    ]
+
+    lead = models.ForeignKey(
+        "members.AdmissionApplication",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="communication_logs",
+    )
+    member = models.ForeignKey(
+        "members.Member",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="communication_logs",
+    )
+    happened_at = models.DateTimeField(default=timezone.now)
+    channel = models.CharField(max_length=20, choices=CHANNEL_CHOICES, default=CHANNEL_WHATSAPP)
+    message_type = models.CharField(max_length=20, choices=MESSAGE_TYPE_CHOICES, default=TYPE_FOLLOW_UP)
+    staff = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="communication_logs",
+    )
+    outcome = models.CharField(max_length=255)
+    notes = models.TextField(blank=True)
+    next_step = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-happened_at", "-created_at"]
+
+    def __str__(self):
+        target = self.member or self.lead
+        return f"{target} - {self.get_channel_display()}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        happened_date = timezone.localtime(self.happened_at).date()
+        if self.lead_id:
+            update_fields = ["last_followed_up_at"]
+            self.lead.last_followed_up_at = happened_date
+            if self.next_step:
+                self.lead.next_action = self.next_step
+                update_fields.append("next_action")
+            self.lead.save(update_fields=update_fields + ["updated_at"])
+        if self.member_id:
+            update_fields = ["last_contacted_at"]
+            self.member.last_contacted_at = happened_date
+            if self.next_step:
+                self.member.next_action = self.next_step
+                update_fields.append("next_action")
+            self.member.save(update_fields=update_fields + ["updated_at"])
 
 
 class ProgressReport(models.Model):

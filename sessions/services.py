@@ -2,12 +2,13 @@ from collections import Counter
 from statistics import mean
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from finance.models import Invoice
 from members.models import Member
 from members.services import calculate_report_overall_score
-from sessions.models import AttendanceRecord, SyllabusStandard, SyllabusTemplate, WeeklySyllabus
+from sessions.models import AttendanceRecord, SyllabusRoot, SyllabusStandard, SyllabusTemplate, WeeklySyllabus
 
 
 DEFAULT_BASIC_TEMPLATE = {
@@ -54,6 +55,13 @@ DEFAULT_BASIC_TEMPLATE = {
         "Keep the coaching output playful, highly structured, and beginner-safe. Prioritize movement, "
         "shuttle contact quality, discipline, and simple game understanding before advanced techniques."
     ),
+}
+
+DEFAULT_SYLLABUS_ROOT = {
+    "name": "Core Academy Syllabus",
+    "description": "Default academy-wide syllabus root used when a class-specific syllabus has not been assigned yet.",
+    "is_active": True,
+    "is_default": True,
 }
 
 
@@ -565,9 +573,13 @@ DEFAULT_STANDARDS_BY_TRACK = {
 
 @transaction.atomic
 def ensure_default_syllabus():
+    default_root, _ = SyllabusRoot.objects.get_or_create(code="core_academy_syllabus", defaults=DEFAULT_SYLLABUS_ROOT)
+    if not default_root.is_default:
+        default_root.is_default = True
+        default_root.save(update_fields=["is_default", "updated_at"])
     template_map = {}
     for track, template_defaults in DEFAULT_TEMPLATE_BY_TRACK.items():
-        template, _ = SyllabusTemplate.objects.get_or_create(track=track, defaults=template_defaults)
+        template, _ = SyllabusTemplate.objects.get_or_create(root=default_root, track=track, defaults=template_defaults)
         template_map[track] = template
 
         standard_map = {item.code: item for item in template.standards.all()}
@@ -582,15 +594,20 @@ def ensure_default_syllabus():
         for row in DEFAULT_SYLLABUS_BLUEPRINT.get(track, []):
             defaults = row.copy()
             standard_code = defaults.pop("standard_code", "")
+            defaults["root"] = default_root
             defaults["template"] = template
             defaults["standard"] = standard_map.get(standard_code)
             syllabus_week, created = WeeklySyllabus.objects.get_or_create(
+                root=default_root,
                 track=track,
                 week_number=row["week_number"],
                 defaults=defaults,
             )
             if not created:
                 updated_fields = []
+                if not syllabus_week.root_id:
+                    syllabus_week.root = default_root
+                    updated_fields.append("root")
                 if not syllabus_week.template_id:
                     syllabus_week.template = template
                     updated_fields.append("template")
@@ -605,15 +622,30 @@ def ensure_default_syllabus():
                     syllabus_week.save(update_fields=updated_fields)
 
 
-def get_active_syllabus_template(track):
+def get_active_syllabus_template(track, syllabus_root=None):
     ensure_default_syllabus()
-    return SyllabusTemplate.objects.filter(track=track, is_active=True).first() or SyllabusTemplate.objects.filter(track=track).first()
+    syllabus_root = syllabus_root or SyllabusRoot.get_default()
+    queryset = SyllabusTemplate.objects.filter(track=track)
+    if syllabus_root:
+        queryset = queryset.filter(Q(root=syllabus_root) | Q(root__isnull=True))
+    return queryset.filter(is_active=True).first() or queryset.first()
+
+
+def resolve_syllabus_root(training_session, roster):
+    ensure_default_syllabus()
+    if training_session.syllabus_root_id:
+        return training_session.syllabus_root
+    root_ids = [member.syllabus_root_id for member in roster if member.syllabus_root_id]
+    if root_ids:
+        dominant_root_id = Counter(root_ids).most_common(1)[0][0]
+        return SyllabusRoot.objects.filter(pk=dominant_root_id).first() or SyllabusRoot.get_default()
+    return SyllabusRoot.get_default()
 
 
 def determine_session_track(training_session):
     roster = list(
         Member.objects.filter(attendance_records__training_session=training_session)
-        .select_related("assigned_coach", "parent_user", "payment_plan")
+        .select_related("assigned_coach", "assigned_staff", "parent_user", "payment_plan", "syllabus_root")
         .distinct()
     )
     if not roster:
@@ -634,10 +666,12 @@ def determine_session_track(training_session):
     return track, roster, average_score
 
 
-def resolve_syllabus_week(training_session, roster, track):
+def resolve_syllabus_week(training_session, roster, track, syllabus_root=None):
     ensure_default_syllabus()
+    syllabus_root = syllabus_root or resolve_syllabus_root(training_session, roster)
     weeks = list(
         WeeklySyllabus.objects.filter(track=track, is_active=True)
+        .filter(Q(root=syllabus_root) | Q(root__isnull=True))
         .select_related("template", "standard")
         .order_by("week_number")
     )
@@ -705,8 +739,13 @@ def build_standard_reference(standard):
 
 def build_session_plan(training_session):
     track, roster, average_score = determine_session_track(training_session)
-    syllabus_week, resolved_week = resolve_syllabus_week(training_session, roster, track)
-    template = syllabus_week.template if syllabus_week and syllabus_week.template_id else get_active_syllabus_template(track)
+    syllabus_root = resolve_syllabus_root(training_session, roster)
+    syllabus_week, resolved_week = resolve_syllabus_week(training_session, roster, track, syllabus_root=syllabus_root)
+    template = (
+        syllabus_week.template
+        if syllabus_week and syllabus_week.template_id
+        else get_active_syllabus_template(track, syllabus_root=syllabus_root)
+    )
     standard = syllabus_week.standard if syllabus_week and syllabus_week.standard_id else None
 
     roster_size = len(roster)
@@ -828,6 +867,7 @@ def build_session_plan(training_session):
         "summary": summary,
         "track": track,
         "track_label": dict(WeeklySyllabus.TRACK_CHOICES).get(track, track.title()),
+        "syllabus_root_name": syllabus_root.name if syllabus_root else "",
         "resolved_week": resolved_week,
         "phase_label": phase_detail,
         "roster_size": roster_size,

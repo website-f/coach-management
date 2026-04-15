@@ -1,333 +1,517 @@
 {% extends "base.html" %}
 {% load ui_tags %}
 
-{% block title %}Cash Flow | NYO Admin Dashboard{% endblock %}
-{% block page_heading %}Cash Flow{% endblock %}
+{% block title %}Finance | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}Finance{% endblock %}
 
 {% block content %}
 <div class="space-y">
     <div class="card">
         <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
-            <div>
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Owner finance monitor</p>
-                <h2 style="font-size:28px;font-weight:700;color:var(--text);">Cash flow and collection visibility</h2>
-                <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;max-width:820px;">
-                    This view is for the business owner to monitor billed revenue, collected cash, pending verification, and overdue receivables from one place.
+            <div style="max-width:860px;">
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.14em;margin-bottom:8px;">Finance workspace</p>
+                <h2 style="font-size:28px;font-weight:700;color:var(--text);letter-spacing:-.03em;">Revenue, collections, payroll, cashflow, forecasting, and compliance in one place.</h2>
+                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">
+                    Use this page to answer the owner questions quickly: are we profitable, where is money leaking,
+                    can we hire another coach, can we open another branch, and how long can we survive if revenue drops.
                 </p>
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                <a href="{% url 'finance:invoice_create' %}" class="btn btn-primary">
-                    <i class="fa-solid fa-plus"></i> Generate Invoice
-                </a>
-                <a href="{% url 'payments:pending_reviews' %}" class="btn btn-ghost">
-                    <i class="fa-solid fa-receipt"></i> Verification Queue
-                </a>
-                <a href="{% url 'finance:export' %}" class="btn btn-ghost">
-                    <i class="fa-solid fa-download"></i> Export CSV
-                </a>
+                <a href="{% url 'finance:invoice_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New Invoice</a>
+                <a href="{% url 'finance:expense_create' %}" class="btn btn-ghost"><i class="fa-solid fa-receipt"></i> Add Expense</a>
+                <a href="{% url 'finance:payroll_create' %}" class="btn btn-ghost"><i class="fa-solid fa-money-check-dollar"></i> Add Payroll</a>
+                <a href="{% url 'finance:forecasting' %}" class="btn btn-ghost"><i class="fa-solid fa-chart-line"></i> Forecasting</a>
+                <a href="{% url 'finance:export' %}" class="btn btn-ghost"><i class="fa-solid fa-download"></i> Export</a>
             </div>
         </div>
+    </div>
+
+    <div class="card">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            {% for section_id, section_label in quick_sections %}
+            <a href="#{{ section_id }}" class="badge badge-neutral" style="text-decoration:none;padding:10px 14px;">{{ section_label }}</a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="grid-3">
+        {% for card in answer_cards %}
+        <div class="card">
+            <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;">{{ card.question }}</p>
+            <p style="font-size:24px;font-weight:800;color:var(--text);margin-top:8px;">{{ card.answer }}</p>
+            <p class="text-sm text-muted" style="margin-top:10px;line-height:1.7;">{{ card.detail }}</p>
+        </div>
+        {% endfor %}
     </div>
 
     <div class="stat-cards">
         <div class="stat-card">
             <div class="stat-card-top">
-                <div>
-                    <p class="stat-label">Billed This Month</p>
-                    <p class="stat-value" style="font-size:22px;">RM {{ total_billed }}</p>
-                </div>
-                <div class="stat-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                <div><p class="stat-label">MRR</p><p class="stat-value">RM {{ monthly_recurring_revenue|floatformat:2 }}</p></div>
+                <div class="stat-icon"><i class="fa-solid fa-repeat"></i></div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-card-top">
-                <div>
-                    <p class="stat-label">Collected This Month</p>
-                    <p class="stat-value" style="font-size:22px;">RM {{ total_collected }}</p>
-                </div>
-                <div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-wallet"></i></div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div>
-                    <p class="stat-label">Collection Rate</p>
-                    <p class="stat-value">{{ collection_rate }}%</p>
-                </div>
-                <div class="stat-icon" style="background:rgba(79,110,247,.12);color:#93c5fd;"><i class="fa-solid fa-chart-line"></i></div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div>
-                    <p class="stat-label">Pending Verification</p>
-                    <p class="stat-value" style="font-size:22px;">RM {{ pending_verification_total }}</p>
-                </div>
-                <div class="stat-icon" style="background:rgba(245,158,11,.12);color:#fbbf24;"><i class="fa-solid fa-hourglass-half"></i></div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div>
-                    <p class="stat-label">Outstanding</p>
-                    <p class="stat-value" style="font-size:22px;">RM {{ outstanding_balances }}</p>
-                </div>
-                <div class="stat-icon" style="background:rgba(239,68,68,.12);color:#f87171;"><i class="fa-solid fa-triangle-exclamation"></i></div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div>
-                    <p class="stat-label">Projected MRR</p>
-                    <p class="stat-value" style="font-size:22px;">RM {{ projected_mrr }}</p>
-                </div>
+                <div><p class="stat-label">Revenue This Month</p><p class="stat-value">RM {{ revenue_this_month|floatformat:2 }}</p></div>
                 <div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-sack-dollar"></i></div>
             </div>
         </div>
-    </div>
-
-    <div class="grid-2">
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Cash Flow Trend</span>
-                <a href="{% url 'payments:payment_history' %}" class="section-link">Open payment history</a>
-            </div>
-            <div class="chart-wrap" id="cashflowChartWrap">
-                <canvas id="cashflowChart"></canvas>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div><p class="stat-label">Total Expenses</p><p class="stat-value">RM {{ total_expenses|floatformat:2 }}</p></div>
+                <div class="stat-icon" style="background:rgba(239,68,68,.12);color:#f87171;"><i class="fa-solid fa-arrow-trend-down"></i></div>
             </div>
         </div>
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Receivables Aging</span>
-                <a href="{% url 'members:crm' %}?segment=overdue" class="section-link">Open CRM follow-up</a>
-            </div>
-            <div class="chart-wrap" id="receivableChartWrap">
-                <canvas id="receivableChart"></canvas>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div><p class="stat-label">Net Profit</p><p class="stat-value">RM {{ net_profit|floatformat:2 }}</p></div>
+                <div class="stat-icon" style="background:rgba(79,110,247,.12);color:#93c5fd;"><i class="fa-solid fa-scale-balanced"></i></div>
             </div>
         </div>
-    </div>
-
-    <div class="grid-2">
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Receivable Buckets</span>
-            </div>
-            <div class="space-y">
-                <div class="card-inset">
-                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;">
-                        <span style="font-weight:600;color:var(--text);">Current</span>
-                        <span class="badge badge-info">RM {{ aging_buckets.current }}</span>
-                    </div>
-                </div>
-                <div class="card-inset">
-                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;">
-                        <span style="font-weight:600;color:var(--text);">1-30 days overdue</span>
-                        <span class="badge badge-warning">RM {{ aging_buckets.days_1_30 }}</span>
-                    </div>
-                </div>
-                <div class="card-inset">
-                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;">
-                        <span style="font-weight:600;color:var(--text);">31-60 days overdue</span>
-                        <span class="badge badge-danger">RM {{ aging_buckets.days_31_60 }}</span>
-                    </div>
-                </div>
-                <div class="card-inset">
-                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;">
-                        <span style="font-weight:600;color:var(--text);">61+ days overdue</span>
-                        <span class="badge badge-danger">RM {{ aging_buckets.days_61_plus }}</span>
-                    </div>
-                </div>
-                <div class="card-inset">
-                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Owner note</p>
-                    <p style="font-size:14px;color:var(--text);line-height:1.7;">
-                        Overdue total is currently <strong>RM {{ overdue_total }}</strong>. Use the CRM workspace to follow up quickly by WhatsApp with the affected customers.
-                    </p>
-                </div>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div><p class="stat-label">Cash Balance</p><p class="stat-value">RM {{ cash_balance|floatformat:2 }}</p></div>
+                <div class="stat-icon" style="background:rgba(6,182,212,.12);color:#67e8f9;"><i class="fa-solid fa-wallet"></i></div>
             </div>
         </div>
-
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Due Soon This Week</span>
-                <a href="{% url 'members:crm' %}?segment=due_soon" class="section-link">Open follow-up queue</a>
-            </div>
-            <div class="space-y">
-                {% for invoice in due_soon_rows %}
-                <div class="card-inset">
-                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
-                        <div>
-                            <p style="font-weight:700;font-size:14px;color:var(--text);">{{ invoice.member.full_name }}</p>
-                            <p class="text-sm text-muted" style="margin-top:6px;">
-                                {{ invoice.period|date:"F Y" }} · Due {{ invoice.due_date }}<br>
-                                {{ invoice.get_invoice_type_display }}{% if invoice.member.assigned_coach %} · Coach {{ invoice.member.assigned_coach }}{% endif %}
-                            </p>
-                        </div>
-                        <span class="badge {{ invoice.status|status_badge }}">RM {{ invoice.amount }}</span>
-                    </div>
-                </div>
-                {% empty %}
-                <div class="empty-state">
-                    <i class="fa-regular fa-calendar-check"></i>
-                    <p>No unpaid invoices are due in the next 7 days.</p>
-                </div>
-                {% endfor %}
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div><p class="stat-label">Break-even Students</p><p class="stat-value">{% if break_even_students %}{{ break_even_students }}{% else %}N/A{% endif %}</p></div>
+                <div class="stat-icon" style="background:rgba(168,85,247,.12);color:#d8b4fe;"><i class="fa-solid fa-users"></i></div>
             </div>
         </div>
     </div>
 
-    <div class="grid-2">
+    <section id="revenue" class="space-y">
         <div class="card">
             <div class="section-header">
-                <span class="section-title">Plan Revenue Mix</span>
-                <a href="{% url 'finance:billing_settings' %}" class="section-link">Manage billing</a>
+                <span class="section-title">Revenue</span>
+                <a href="{% url 'finance:invoice_list' %}" class="section-link">Open invoices</a>
             </div>
-            <div class="space-y">
-                {% for plan in plan_rows %}
-                <div class="card-inset">
-                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
-                        <div>
-                            <p style="font-weight:700;font-size:14px;color:var(--text);">{{ plan.name }}</p>
-                            <p class="text-sm text-muted" style="margin-top:6px;">
-                                {{ plan.active_members }} active member{{ plan.active_members|pluralize }} · {{ plan.sessions_per_month }} session{{ plan.sessions_per_month|pluralize }} per month
-                            </p>
-                        </div>
-                        <div style="text-align:right;">
-                            <p style="font-weight:700;color:var(--text);">RM {{ plan.projected_revenue }}</p>
-                            <span class="badge {% if plan.is_active %}badge-success{% else %}badge-neutral{% endif %}">{% if plan.is_active %}Active{% else %}Inactive{% endif %}</span>
-                        </div>
-                    </div>
+        </div>
+        <div class="grid-2">
+            <div class="card">
+                <div class="section-header"><span class="section-title">Revenue Trend</span></div>
+                <div class="chart-wrap" style="height:320px;"><canvas id="revenueChart"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="section-header"><span class="section-title">Revenue Breakdown</span></div>
+                <div class="space-y">
+                    {% for label, amount in revenue_by_program|slice:":4" %}
+                    <div class="card-inset"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;"><span style="font-weight:600;color:var(--text);">{{ label }}</span><span class="badge badge-info">RM {{ amount|floatformat:2 }}</span></div></div>
+                    {% empty %}
+                    <div class="empty-state"><i class="fa-regular fa-chart-bar"></i><p>No revenue captured yet.</p></div>
+                    {% endfor %}
+                    {% for label, amount in revenue_by_branch|slice:":4" %}
+                    <div class="card-inset"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;"><span style="font-weight:600;color:var(--text);">{{ label }}</span><span class="badge badge-success">RM {{ amount|floatformat:2 }}</span></div></div>
+                    {% endfor %}
                 </div>
-                {% empty %}
-                <div class="empty-state">
-                    <i class="fa-regular fa-rectangle-list"></i>
-                    <p>No payment plans configured yet.</p>
+            </div>
+        </div>
+        <div class="grid-2">
+            <div class="card">
+                <div class="section-header"><span class="section-title">Revenue By Coach</span></div>
+                <div class="space-y">
+                    {% for label, amount in revenue_by_coach|slice:":6" %}
+                    <div class="card-inset"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;"><span style="font-weight:600;color:var(--text);">{{ label }}</span><span class="badge badge-neutral">RM {{ amount|floatformat:2 }}</span></div></div>
+                    {% empty %}
+                    <div class="empty-state"><i class="fa-regular fa-user"></i><p>No coach-linked revenue yet.</p></div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
+            </div>
+            <div class="card">
+                <div class="section-header"><span class="section-title">Revenue By Student</span></div>
+                <div class="space-y">
+                    {% for label, amount in revenue_by_student|slice:":6" %}
+                    <div class="card-inset"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;"><span style="font-weight:600;color:var(--text);">{{ label }}</span><span class="badge badge-info">RM {{ amount|floatformat:2 }}</span></div></div>
+                    {% empty %}
+                    <div class="empty-state"><i class="fa-regular fa-id-card"></i><p>No student revenue yet.</p></div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="collections" class="space-y">
+        <div class="card">
+            <div class="section-header">
+                <span class="section-title">Payment and Collection</span>
+                <a href="{% url 'payments:pending_reviews' %}" class="section-link">Review queue</a>
+            </div>
+        </div>
+        <div class="stat-cards">
+            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Billed This Month</p><p class="stat-value">RM {{ billed_this_month|floatformat:2 }}</p></div><div class="stat-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div></div></div>
+            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Pending Verification</p><p class="stat-value">RM {{ pending_verification_total|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(245,158,11,.12);color:#fbbf24;"><i class="fa-solid fa-hourglass-half"></i></div></div></div>
+            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Outstanding</p><p class="stat-value">RM {{ outstanding_total|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(239,68,68,.12);color:#f87171;"><i class="fa-solid fa-triangle-exclamation"></i></div></div></div>
+            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Overdue</p><p class="stat-value">RM {{ overdue_total|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(239,68,68,.12);color:#f87171;"><i class="fa-solid fa-calendar-xmark"></i></div></div></div>
+            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Collection Rate</p><p class="stat-value">{{ collection_rate }}%</p></div><div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-percent"></i></div></div></div>
+        </div>
+        <div class="grid-2">
+            <div class="card">
+                <div class="section-header"><span class="section-title">Payment Method Mix</span></div>
+                <div class="chart-wrap" style="height:320px;"><canvas id="paymentMethodChart"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="section-header"><span class="section-title">Outstanding Queue</span><a href="{% url 'members:crm' %}" class="section-link">Open CRM</a></div>
+                <div class="table-wrap">
+                    <table class="tbl native-stack">
+                        <thead><tr><th>Student</th><th>Due Date</th><th>Outstanding</th><th>Status</th></tr></thead>
+                        <tbody>
+                            {% for invoice in outstanding_rows %}
+                            <tr>
+                                <td data-label="Student"><div class="tbl-name">{{ invoice.student_label }}</div><div class="tbl-sub">{{ invoice.branch_label }} - {{ invoice.program_label }}</div></td>
+                                <td data-label="Due Date" class="muted">{{ invoice.due_date }}</td>
+                                <td data-label="Outstanding">RM {{ invoice.outstanding_amount|floatformat:2 }}</td>
+                                <td data-label="Status"><span class="badge {{ invoice.status|status_badge }}">{{ invoice.get_status_display }}</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4"><div class="empty-state"><i class="fa-regular fa-circle-check"></i><p>No outstanding invoices right now.</p></div></td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Coach Collection Summary</span>
-                <a href="{% url 'members:crm' %}" class="section-link">Open CRM</a>
+        <div class="grid-2">
+            <div class="card">
+                <div class="section-header"><span class="section-title">Recent Receipts</span><a href="{% url 'payments:payment_history' %}" class="section-link">Full history</a></div>
+                <div class="table-wrap">
+                    <table class="tbl native-stack">
+                        <thead><tr><th>Student</th><th>Method</th><th>Amount</th><th>Status</th></tr></thead>
+                        <tbody>
+                            {% for payment in payment_rows %}
+                            <tr>
+                                <td data-label="Student"><div class="tbl-name">{{ payment.invoice.member.full_name }}</div><div class="tbl-sub">{{ payment.invoice.period|date:"F Y" }}</div></td>
+                                <td data-label="Method"><div class="tbl-name">{{ payment.get_payment_method_display }}</div><div class="tbl-sub">{{ payment.receipt_reference|default:"No reference" }}</div></td>
+                                <td data-label="Amount">RM {{ payment.amount_received|floatformat:2 }}</td>
+                                <td data-label="Status"><span class="badge {{ payment.status|status_badge }}">{{ payment.get_status_display }}</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4"><div class="empty-state"><i class="fa-regular fa-credit-card"></i><p>No payment submissions yet.</p></div></td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div class="space-y">
-                {% for row in coach_rows %}
-                <div class="card-inset">
-                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
-                        <div>
-                            <p style="font-weight:700;font-size:14px;color:var(--text);">{{ row.coach_name }}</p>
-                            <p class="text-sm text-muted" style="margin-top:6px;">
-                                {{ row.active_students }} active student{{ row.active_students|pluralize }}<br>
-                                Outstanding RM {{ row.outstanding_total }}
-                            </p>
-                        </div>
-                        <span class="badge badge-success">Collected RM {{ row.collected_this_month }}</span>
-                    </div>
+            <div class="card">
+                <div class="section-header"><span class="section-title">Latest Invoices</span><a href="{% url 'finance:invoice_list' %}" class="section-link">All invoices</a></div>
+                <div class="table-wrap">
+                    <table class="tbl native-stack">
+                        <thead><tr><th>Student</th><th>Due Date</th><th>Approved</th><th>Outstanding</th></tr></thead>
+                        <tbody>
+                            {% for invoice in invoice_rows %}
+                            <tr>
+                                <td data-label="Student"><div class="tbl-name">{{ invoice.student_label }}</div><div class="tbl-sub">{{ invoice.get_invoice_type_display }} - {{ invoice.branch_label }}</div></td>
+                                <td data-label="Due Date" class="muted">{{ invoice.due_date }}</td>
+                                <td data-label="Approved">RM {{ invoice.approved_amount|floatformat:2 }}</td>
+                                <td data-label="Outstanding">RM {{ invoice.outstanding_amount|floatformat:2 }}<div class="tbl-sub">{{ invoice.payment_method_label }}</div></td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4"><div class="empty-state"><i class="fa-regular fa-file-lines"></i><p>No invoices recorded yet.</p></div></td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-                {% empty %}
-                <div class="empty-state">
-                    <i class="fa-regular fa-user"></i>
-                    <p>No coach-linked finance data available yet.</p>
-                </div>
-                {% endfor %}
             </div>
         </div>
-    </div>
+    </section>
 
-    <div class="grid-2">
+    <section id="expenses" class="space-y">
         <div class="card">
             <div class="section-header">
-                <span class="section-title">Recent Payment History</span>
-                <a href="{% url 'payments:payment_history' %}" class="section-link">Open full history</a>
+                <span class="section-title">Expenses</span>
+                <a href="{% url 'finance:expense_list' %}" class="section-link">Manage expenses</a>
             </div>
+        </div>
+        <div class="stat-cards">
+            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Fixed Expenses</p><p class="stat-value">RM {{ fixed_expenses|floatformat:2 }}</p></div><div class="stat-icon"><i class="fa-solid fa-building-circle-check"></i></div></div></div>
+            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Variable Expenses</p><p class="stat-value">RM {{ variable_expenses|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(245,158,11,.12);color:#fbbf24;"><i class="fa-solid fa-sliders"></i></div></div></div>
+            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Risk Buffer</p><p class="stat-value">RM {{ target_buffer|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(79,110,247,.12);color:#93c5fd;"><i class="fa-solid fa-shield-halved"></i></div></div></div>
+        </div>
+        <div class="grid-2">
+            <div class="card">
+                <div class="section-header"><span class="section-title">Expense Categories</span></div>
+                <div class="space-y">
+                    {% for label, amount in expense_by_category|slice:":8" %}
+                    <div class="card-inset"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;"><span style="font-weight:600;color:var(--text);">{{ label }}</span><span class="badge badge-warning">RM {{ amount|floatformat:2 }}</span></div></div>
+                    {% empty %}
+                    <div class="empty-state"><i class="fa-regular fa-folder-open"></i><p>No expense categories yet.</p></div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card">
+                <div class="section-header"><span class="section-title">Expense By Branch</span></div>
+                <div class="space-y">
+                    {% for label, amount in expense_by_branch|slice:":8" %}
+                    <div class="card-inset"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;"><span style="font-weight:600;color:var(--text);">{{ label }}</span><span class="badge badge-danger">RM {{ amount|floatformat:2 }}</span></div></div>
+                    {% empty %}
+                    <div class="empty-state"><i class="fa-regular fa-building"></i><p>No branch-tagged expenses yet.</p></div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="section-header"><span class="section-title">Recent Expenses</span></div>
             <div class="table-wrap">
                 <table class="tbl native-stack">
-                    <thead>
-                        <tr>
-                            <th>Member</th>
-                            <th>Submitted By</th>
-                            <th>Status</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Date</th><th>Title</th><th>Category</th><th>Branch</th><th>Amount</th></tr></thead>
                     <tbody>
-                        {% for payment in recent_payments %}
+                        {% for expense in expense_rows %}
                         <tr>
-                            <td data-label="Member">
-                                <div class="tbl-name">{{ payment.invoice.member.full_name }}</div>
-                                <div class="tbl-sub">{{ payment.invoice.period|date:"F Y" }}</div>
-                            </td>
-                            <td data-label="Submitted By">{{ payment.paid_by|default:"Unknown" }}</td>
-                            <td data-label="Status"><span class="badge {{ payment.status|status_badge }}">{{ payment.get_status_display }}</span></td>
-                            <td data-label="Amount">RM {{ payment.invoice.amount }}</td>
+                            <td data-label="Date" class="muted">{{ expense.expense_date }}</td>
+                            <td data-label="Title"><div class="tbl-name">{{ expense.title }}</div><div class="tbl-sub">{{ expense.vendor_name|default:"No vendor" }}</div></td>
+                            <td data-label="Category">{{ expense.get_expense_type_display }} - {{ expense.get_category_tag_display }}</td>
+                            <td data-label="Branch">{{ expense.branch_label }}</td>
+                            <td data-label="Amount">RM {{ expense.amount|floatformat:2 }}</td>
                         </tr>
                         {% empty %}
-                        <tr>
-                            <td colspan="4">
-                                <div class="empty-state">
-                                    <i class="fa-regular fa-credit-card"></i>
-                                    <p>No payments recorded yet.</p>
-                                </div>
-                            </td>
-                        </tr>
+                        <tr><td colspan="5"><div class="empty-state"><i class="fa-regular fa-note-sticky"></i><p>No expenses added this month.</p></div></td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
+    </section>
 
+    <section id="payroll" class="space-y">
         <div class="card">
             <div class="section-header">
-                <span class="section-title">Current Invoice Snapshot</span>
-                <a href="{% url 'finance:invoice_list' %}" class="section-link">Open invoices</a>
-            </div>
-            <div class="space-y">
-                {% for invoice in invoice_rows %}
-                <div class="card-inset">
-                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-                        <div>
-                            <p style="font-weight:700;font-size:14px;color:var(--text);">{{ invoice.member.full_name }}</p>
-                            <p class="text-sm text-muted" style="margin-top:6px;">
-                                {{ invoice.period|date:"F Y" }} · Due {{ invoice.due_date }}<br>
-                                {{ invoice.get_invoice_type_display }}
-                            </p>
-                        </div>
-                        <div style="text-align:right;">
-                            <p style="font-weight:700;color:var(--text);">RM {{ invoice.amount }}</p>
-                            <span class="badge {{ invoice.status|status_badge }}">{{ invoice.get_status_display }}</span>
-                        </div>
-                    </div>
-                </div>
-                {% empty %}
-                <div class="empty-state">
-                    <i class="fa-regular fa-file-alt"></i>
-                    <p>No invoices generated for the current month.</p>
-                </div>
-                {% endfor %}
+                <span class="section-title">Payroll</span>
+                <a href="{% url 'finance:payroll' %}" class="section-link">Open payroll</a>
             </div>
         </div>
-    </div>
+        <div class="stat-cards">
+            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Payroll Paid This Month</p><p class="stat-value">RM {{ payroll_total|floatformat:2 }}</p></div><div class="stat-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div></div></div>
+            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Payroll Records</p><p class="stat-value">{{ all_payroll_rows|length }}</p></div><div class="stat-icon" style="background:rgba(79,110,247,.12);color:#93c5fd;"><i class="fa-solid fa-clipboard-list"></i></div></div></div>
+        </div>
+        <div class="grid-2">
+            <div class="card">
+                <div class="section-header"><span class="section-title">Payroll By Coach</span></div>
+                <div class="space-y">
+                    {% for label, amount in payroll_by_coach|slice:":8" %}
+                    <div class="card-inset"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;"><span style="font-weight:600;color:var(--text);">{{ label }}</span><span class="badge badge-info">RM {{ amount|floatformat:2 }}</span></div></div>
+                    {% empty %}
+                    <div class="empty-state"><i class="fa-regular fa-user"></i><p>No payroll records yet.</p></div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card">
+                <div class="section-header"><span class="section-title">Payroll By Branch</span></div>
+                <div class="space-y">
+                    {% for label, amount in payroll_by_branch|slice:":8" %}
+                    <div class="card-inset"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;"><span style="font-weight:600;color:var(--text);">{{ label }}</span><span class="badge badge-neutral">RM {{ amount|floatformat:2 }}</span></div></div>
+                    {% empty %}
+                    <div class="empty-state"><i class="fa-regular fa-building"></i><p>No branch payroll data yet.</p></div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="section-header"><span class="section-title">Latest Payroll Records</span></div>
+            <div class="table-wrap">
+                <table class="tbl native-stack">
+                    <thead><tr><th>Coach</th><th>Period</th><th>Sessions</th><th>Total Pay</th><th>Status</th></tr></thead>
+                    <tbody>
+                        {% for payroll in payroll_rows %}
+                        <tr>
+                            <td data-label="Coach"><div class="tbl-name">{{ payroll.coach.get_full_name|default:payroll.coach.username }}</div><div class="tbl-sub">{{ payroll.branch_label }}</div></td>
+                            <td data-label="Period" class="muted">{{ payroll.period|date:"F Y" }}</td>
+                            <td data-label="Sessions">{{ payroll.session_count }} entered / {{ payroll.sessions_delivered_actual }} actual</td>
+                            <td data-label="Total Pay">RM {{ payroll.total_pay|floatformat:2 }}</td>
+                            <td data-label="Status"><span class="badge {% if payroll.status == 'paid' %}badge-success{% elif payroll.status == 'approved' %}badge-info{% else %}badge-warning{% endif %}">{{ payroll.get_status_display }}</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5"><div class="empty-state"><i class="fa-regular fa-money-bill-1"></i><p>No payroll records yet.</p></div></td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section id="profit-loss" class="space-y">
+        <div class="card"><div class="section-header"><span class="section-title">Profit and Loss</span></div></div>
+        <div class="stat-cards">
+            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Gross Profit</p><p class="stat-value">RM {{ gross_profit|floatformat:2 }}</p></div><div class="stat-icon"><i class="fa-solid fa-chart-column"></i></div></div></div>
+            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Net Profit</p><p class="stat-value">RM {{ net_profit|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-chart-line"></i></div></div></div>
+            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Margin</p><p class="stat-value">{{ margin }}%</p></div><div class="stat-icon" style="background:rgba(79,110,247,.12);color:#93c5fd;"><i class="fa-solid fa-percent"></i></div></div></div>
+        </div>
+        <div class="grid-2">
+            <div class="card">
+                <div class="section-header"><span class="section-title">P&amp;L By Branch</span></div>
+                <div class="table-wrap">
+                    <table class="tbl native-stack">
+                        <thead><tr><th>Branch</th><th>Revenue</th><th>Expenses</th><th>Net Profit</th></tr></thead>
+                        <tbody>
+                            {% for row in branch_pnl_rows %}
+                            <tr><td data-label="Branch"><div class="tbl-name">{{ row.label }}</div><div class="tbl-sub">Margin {{ row.margin }}%</div></td><td data-label="Revenue">RM {{ row.revenue|floatformat:2 }}</td><td data-label="Expenses">RM {{ row.expenses|floatformat:2 }}</td><td data-label="Net Profit">RM {{ row.net_profit|floatformat:2 }}</td></tr>
+                            {% empty %}
+                            <tr><td colspan="4"><div class="empty-state"><i class="fa-regular fa-building"></i><p>No branch P&amp;L data yet.</p></div></td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card">
+                <div class="section-header"><span class="section-title">P&amp;L By Program</span></div>
+                <div class="table-wrap">
+                    <table class="tbl native-stack">
+                        <thead><tr><th>Program</th><th>Revenue</th><th>Expenses</th><th>Net Profit</th></tr></thead>
+                        <tbody>
+                            {% for row in program_pnl_rows %}
+                            <tr><td data-label="Program"><div class="tbl-name">{{ row.label }}</div><div class="tbl-sub">Margin {{ row.margin }}%</div></td><td data-label="Revenue">RM {{ row.revenue|floatformat:2 }}</td><td data-label="Expenses">RM {{ row.expenses|floatformat:2 }}</td><td data-label="Net Profit">RM {{ row.net_profit|floatformat:2 }}</td></tr>
+                            {% empty %}
+                            <tr><td colspan="4"><div class="empty-state"><i class="fa-regular fa-rectangle-list"></i><p>No program P&amp;L data yet.</p></div></td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="cashflow" class="space-y">
+        <div class="card"><div class="section-header"><span class="section-title">Cashflow</span></div></div>
+        <div class="grid-2">
+            <div class="card">
+                <div class="section-header"><span class="section-title">Cashflow Trend</span></div>
+                <div class="chart-wrap" style="height:320px;"><canvas id="cashflowChart"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="section-header"><span class="section-title">Cash Position</span></div>
+                <div class="space-y">
+                    <div class="card-inset"><p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Cash balance</p><p style="font-size:24px;font-weight:800;color:var(--text);margin-top:8px;">RM {{ cash_balance|floatformat:2 }}</p></div>
+                    <div class="card-inset"><p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Runway</p><p style="font-size:20px;font-weight:700;color:var(--text);margin-top:8px;">{% if forecast.runway_months %}{{ forecast.runway_months|floatformat:1 }} months{% else %}Cash-positive{% endif %}</p></div>
+                    <div class="card-inset"><p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Opening cash</p><p class="text-sm text-muted" style="margin-top:8px;">RM {{ billing_configuration.opening_cash_balance|floatformat:2 }}</p></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="forecasting" class="space-y">
+        <div class="card">
+            <div class="section-header">
+                <span class="section-title">Forecasting</span>
+                <a href="{% url 'finance:forecasting' %}" class="section-link">Manage scenarios</a>
+            </div>
+        </div>
+        <div class="stat-cards">
+            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Scenario</p><p class="stat-value" style="font-size:18px;">{{ scenario.title|default:"Default" }}</p></div><div class="stat-icon"><i class="fa-solid fa-flask"></i></div></div></div>
+            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Forecast Students</p><p class="stat-value">{{ forecast.student_count|floatformat:0 }}</p></div><div class="stat-icon" style="background:rgba(79,110,247,.12);color:#93c5fd;"><i class="fa-solid fa-users"></i></div></div></div>
+            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Forecast Revenue</p><p class="stat-value">RM {{ forecast.revenue|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-arrow-trend-up"></i></div></div></div>
+            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Forecast Expenses</p><p class="stat-value">RM {{ forecast.expenses|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(239,68,68,.12);color:#f87171;"><i class="fa-solid fa-arrow-trend-down"></i></div></div></div>
+            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Forecast Net Profit</p><p class="stat-value">RM {{ forecast.net_profit|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(168,85,247,.12);color:#d8b4fe;"><i class="fa-solid fa-scale-balanced"></i></div></div></div>
+            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">New Branch Net</p><p class="stat-value">RM {{ forecast.new_branch_net|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(6,182,212,.12);color:#67e8f9;"><i class="fa-solid fa-store"></i></div></div></div>
+        </div>
+        <div class="grid-2">
+            <div class="card">
+                <div class="section-header"><span class="section-title">Decision Signals</span></div>
+                <div class="space-y">
+                    <div class="card-inset"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;"><span style="font-weight:600;color:var(--text);">Can hire one more coach?</span><span class="badge {% if forecast.can_hire_more_coach %}badge-success{% else %}badge-warning{% endif %}">{% if forecast.can_hire_more_coach %}Yes{% else %}Not safely yet{% endif %}</span></div></div>
+                    <div class="card-inset"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;"><span style="font-weight:600;color:var(--text);">Can open another branch?</span><span class="badge {% if forecast.can_open_new_branch %}badge-success{% else %}badge-warning{% endif %}">{% if forecast.can_open_new_branch %}Yes{% else %}Not yet{% endif %}</span></div></div>
+                    <div class="card-inset"><p class="text-sm text-muted" style="line-height:1.7;">{% if scenario and scenario.notes %}{{ scenario.notes }}{% else %}Create multiple scenarios to stress test revenue drops, hiring, salary changes, and branch expansion before committing to a decision.{% endif %}</p></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="section-header"><span class="section-title">Scenario Inputs</span></div>
+                <div class="space-y">
+                    <div class="card-inset"><strong style="color:var(--text);">Student count change</strong><p class="text-sm text-muted" style="margin-top:6px;">{{ scenario.student_count_change_percent|default:0 }}%</p></div>
+                    <div class="card-inset"><strong style="color:var(--text);">Revenue drop</strong><p class="text-sm text-muted" style="margin-top:6px;">{{ scenario.revenue_drop_percent|default:0 }}%</p></div>
+                    <div class="card-inset"><strong style="color:var(--text);">Salary increase</strong><p class="text-sm text-muted" style="margin-top:6px;">{{ scenario.salary_increase_percent|default:0 }}%</p></div>
+                    <div class="card-inset"><strong style="color:var(--text);">Risk buffer</strong><p class="text-sm text-muted" style="margin-top:6px;">{{ scenario.risk_buffer_percent|default:0 }}%</p></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="compliance" class="space-y">
+        <div class="card">
+            <div class="section-header">
+                <span class="section-title">Report and Compliance</span>
+                <a href="{% url 'finance:compliance' %}" class="section-link">Open compliance workspace</a>
+            </div>
+        </div>
+        <div class="grid-3">
+            <div class="card">
+                <div class="section-header"><span class="section-title">Tax Summary</span></div>
+                <div class="space-y">
+                    <div class="card-inset"><p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">YTD Revenue</p><p style="font-size:20px;font-weight:700;color:var(--text);margin-top:8px;">RM {{ tax_summary.year_to_date_revenue|floatformat:2 }}</p></div>
+                    <div class="card-inset"><p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">YTD Deductible Expenses</p><p style="font-size:20px;font-weight:700;color:var(--text);margin-top:8px;">RM {{ tax_summary.year_to_date_deductible_expenses|floatformat:2 }}</p></div>
+                    <div class="card-inset"><p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">YTD Payroll</p><p style="font-size:20px;font-weight:700;color:var(--text);margin-top:8px;">RM {{ tax_summary.year_to_date_payroll|floatformat:2 }}</p></div>
+                </div>
+            </div>
+            <div class="card" style="grid-column:span 2;">
+                <div class="section-header"><span class="section-title">Monthly Reports and Locks</span></div>
+                <div class="table-wrap">
+                    <table class="tbl native-stack">
+                        <thead><tr><th>Month</th><th>Revenue</th><th>Expenses</th><th>Net Profit</th><th>Lock</th></tr></thead>
+                        <tbody>
+                            {% for row in monthly_report_rows %}
+                            <tr><td data-label="Month">{{ row.period|date:"F Y" }}</td><td data-label="Revenue">RM {{ row.revenue|floatformat:2 }}</td><td data-label="Expenses">RM {{ row.expenses|floatformat:2 }}</td><td data-label="Net Profit">RM {{ row.net_profit|floatformat:2 }}</td><td data-label="Lock"><span class="badge {% if row.locked %}badge-success{% else %}badge-neutral{% endif %}">{% if row.locked %}Locked{% else %}Open{% endif %}</span></td></tr>
+                            {% empty %}
+                            <tr><td colspan="5"><div class="empty-state"><i class="fa-regular fa-calendar"></i><p>No monthly report data yet.</p></div></td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="grid-2">
+            <div class="card">
+                <div class="section-header"><span class="section-title">Recent Audit Trail</span></div>
+                <div class="space-y">
+                    {% for audit in audit_rows|slice:":8" %}
+                    <div class="card-inset"><p style="font-weight:600;color:var(--text);">{{ audit.source_model }} - {{ audit.object_repr }}</p><p class="text-sm text-muted" style="margin-top:6px;">{{ audit.get_action_display }} by {{ audit.actor|default:"System" }} on {{ audit.happened_at|date:"d M Y H:i" }}</p></div>
+                    {% empty %}
+                    <div class="empty-state"><i class="fa-regular fa-clock"></i><p>No audit entries yet.</p></div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card">
+                <div class="section-header"><span class="section-title">Latest Locks</span></div>
+                <div class="space-y">
+                    {% for lock in lock_rows|slice:":8" %}
+                    <div class="card-inset"><p style="font-weight:600;color:var(--text);">{{ lock.period|date:"F Y" }}</p><p class="text-sm text-muted" style="margin-top:6px;">{{ lock.notes|default:"No note" }}</p><p class="text-sm text-muted" style="margin-top:6px;">Locked by {{ lock.locked_by|default:"System" }}{% if lock.locked_at %} on {{ lock.locked_at|date:"d M Y H:i" }}{% endif %}</p></div>
+                    {% empty %}
+                    <div class="empty-state"><i class="fa-regular fa-lock"></i><p>No historical locks yet.</p></div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </section>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const anchor = document.getElementById('cashflowChart') || document.getElementById('receivableChart');
-        if (!anchor) return;
+    document.addEventListener("DOMContentLoaded", function() {
+        const chartAnchor = document.getElementById("revenueChart");
+        if (!chartAnchor) return;
 
         let chartsBooted = false;
 
-        function chartDefaults() {
+        function sharedOptions() {
+            const muted = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "#8a8a9a";
             return {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
                         labels: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#8a8a9a'
+                            color: muted
                         }
+                    }
+                },
+                scales: {
+                    y: {
+                        ticks: { color: muted },
+                        grid: { color: "rgba(255,255,255,.08)" }
+                    },
+                    x: {
+                        ticks: { color: muted },
+                        grid: { display: false }
                     }
                 }
             };
@@ -338,50 +522,46 @@
             chartsBooted = true;
             await window.ensureChartJs();
 
-            const cashflowCtx = document.getElementById('cashflowChart');
-            if (cashflowCtx) {
-                new Chart(cashflowCtx, {
-                    type: 'line',
-                    data: JSON.parse('{{ cashflow_chart_data|escapejs }}'),
-                    options: {
-                        ...chartDefaults(),
-                        scales: {
-                            y: {
-                                ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#8a8a9a' },
-                                grid: { color: 'rgba(255,255,255,.08)' }
-                            },
-                            x: {
-                                ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#8a8a9a' },
-                                grid: { display: false }
+            new Chart(document.getElementById("revenueChart"), {
+                type: "line",
+                data: JSON.parse('{{ revenue_chart_data|escapejs }}'),
+                options: sharedOptions()
+            });
+
+            new Chart(document.getElementById("cashflowChart"), {
+                type: "line",
+                data: JSON.parse('{{ cashflow_chart_data|escapejs }}'),
+                options: sharedOptions()
+            });
+
+            new Chart(document.getElementById("paymentMethodChart"), {
+                type: "doughnut",
+                data: JSON.parse('{{ payment_method_chart_data|escapejs }}'),
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "#8a8a9a"
                             }
                         }
-                    }
-                });
-            }
-
-            const receivableCtx = document.getElementById('receivableChart');
-            if (receivableCtx) {
-                new Chart(receivableCtx, {
-                    type: 'doughnut',
-                    data: JSON.parse('{{ receivable_chart_data|escapejs }}'),
-                    options: {
-                        ...chartDefaults(),
-                        cutout: '62%'
-                    }
-                });
-            }
+                    },
+                    cutout: "62%"
+                }
+            });
         }
 
-        if (window.nyoIsMobileViewport && 'IntersectionObserver' in window) {
+        if (window.nyoIsMobileViewport && "IntersectionObserver" in window) {
             const observer = new IntersectionObserver(function(entries) {
                 if (entries.some(function(entry) { return entry.isIntersecting; })) {
                     bootCharts();
                     observer.disconnect();
                 }
-            }, { rootMargin: '120px 0px' });
-            observer.observe(anchor);
-        } else if ('requestIdleCallback' in window) {
-            requestIdleCallback(bootCharts, { timeout: 1400 });
+            }, { rootMargin: "120px 0px" });
+            observer.observe(chartAnchor);
+        } else if ("requestIdleCallback" in window) {
+            requestIdleCallback(bootCharts, { timeout: 1200 });
         } else {
             setTimeout(bootCharts, 0);
         }

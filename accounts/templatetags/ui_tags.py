@@ -5,9 +5,10 @@ register = template.Library()
 
 
 STATUS_BADGE_CLASSES = {
+    "trial":                "badge-warning",
     "active":               "badge-success",
     "inactive":             "badge-neutral",
-    "suspended":            "badge-danger",
+    "churned":              "badge-danger",
     "paid":                 "badge-success",
     "approved":             "badge-success",
     "pending":              "badge-warning",

@@ -1,37 +1,35 @@
 import csv
 import json
 from datetime import timedelta
-from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Count, DateField, DateTimeField, DecimalField, Q, Subquery, Sum, Value, OuterRef
-from django.db.models.functions import Coalesce
+from django.db.models import Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
+from django.views import View
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
 
 from accounts.notifications import notify_users
 from accounts.decorators import role_required
-from accounts.mixins import AdminOrCoachRequiredMixin, AdminRequiredMixin
-from accounts.utils import ROLE_ADMIN, ROLE_COACH, ROLE_PARENT, has_role
+from accounts.mixins import AdminOrCoachRequiredMixin, AdminRequiredMixin, SalesOrAdminRequiredMixin
+from accounts.utils import ROLE_ADMIN, ROLE_COACH, ROLE_HEADCOUNT, ROLE_PARENT, has_role
 from accounts.models import LandingPageContent, UserProfile
-from finance.services import create_initial_invoices_for_member, get_default_payment_plan
+from finance.services import create_initial_invoices_for_member, get_billing_configuration, get_default_payment_plan
 from finance.models import Invoice
-from payments.models import Payment
 from members.forms import (
     AdmissionApplicationPublicForm,
     AdmissionApplicationReviewForm,
+    CommunicationLogForm,
     MemberForm,
     MemberLevelForm,
     ProgressReportForm,
 )
-from members.models import AdmissionApplication, DEFAULT_SKILLS, Member, ProgressReport
+from members.models import AdmissionApplication, CommunicationLog, DEFAULT_SKILLS, Member, ProgressReport
 from members.services import (
     calculate_report_overall_score,
     pick_best_available_coach,
@@ -39,26 +37,41 @@ from members.services import (
     report_grade_label,
     report_score_delta,
 )
-from sessions.models import AttendanceRecord, SessionFeedback
+from sessions.models import AttendanceRecord, SessionFeedback, SyllabusRoot
 
 User = get_user_model()
 
 
 def visible_members_for_user(user):
-    queryset = Member.objects.select_related("assigned_coach", "parent_user", "created_by", "payment_plan")
+    queryset = Member.objects.select_related(
+        "assigned_coach",
+        "assigned_staff",
+        "parent_user",
+        "created_by",
+        "payment_plan",
+        "syllabus_root",
+    )
     if has_role(user, ROLE_COACH) and not has_role(user, ROLE_ADMIN):
         return queryset.filter(assigned_coach=user)
+    if has_role(user, ROLE_HEADCOUNT) and not has_role(user, ROLE_ADMIN):
+        return queryset.filter(status=Member.STATUS_TRIAL).filter(Q(assigned_staff=user) | Q(assigned_staff__isnull=True))
     if has_role(user, ROLE_PARENT):
         return queryset.filter(parent_user=user)
     return queryset
 
 
 def visible_applications_for_user(user):
-    return AdmissionApplication.objects.select_related(
+    queryset = AdmissionApplication.objects.select_related(
         "reviewed_by",
         "linked_member",
         "linked_parent_user",
+        "assigned_staff",
     )
+    if has_role(user, ROLE_HEADCOUNT) and not has_role(user, ROLE_ADMIN):
+        return queryset.filter(Q(assigned_staff=user) | Q(assigned_staff__isnull=True))
+    if has_role(user, ROLE_ADMIN):
+        return queryset
+    return queryset.none()
 
 
 def visible_reports_for_user(user):
@@ -72,258 +85,199 @@ def visible_reports_for_user(user):
     return queryset.none()
 
 
+def visible_communication_logs_for_user(user):
+    queryset = CommunicationLog.objects.select_related(
+        "staff",
+        "lead",
+        "member",
+        "member__assigned_coach",
+        "member__assigned_staff",
+    )
+    if has_role(user, ROLE_COACH) and not has_role(user, ROLE_ADMIN):
+        return queryset.filter(member__assigned_coach=user)
+    if has_role(user, ROLE_HEADCOUNT) and not has_role(user, ROLE_ADMIN):
+        return queryset.filter(Q(lead__assigned_staff=user) | Q(member__assigned_staff=user))
+    if has_role(user, ROLE_PARENT):
+        return queryset.filter(member__parent_user=user)
+    return queryset
+
+
+def attendance_rate_for_member(member):
+    attendance_queryset = member.attendance_records.exclude(status=AttendanceRecord.STATUS_SCHEDULED)
+    total = attendance_queryset.count()
+    if not total:
+        return 0
+    attended = attendance_queryset.filter(
+        status__in=[AttendanceRecord.STATUS_PRESENT, AttendanceRecord.STATUS_LATE]
+    ).count()
+    return round((attended / total) * 100, 1)
+
+
+def latest_invoice_for_member(member):
+    return member.invoices.select_related("payment_plan").order_by("-period", "-due_date", "-pk").first()
+
+
+def payment_status_for_member(member):
+    latest_invoice = latest_invoice_for_member(member)
+    if not latest_invoice:
+        return "Not billed"
+    return latest_invoice.get_status_display()
+
+
+def derived_retention_risk(member):
+    attendance_rate = attendance_rate_for_member(member)
+    risk = member.retention_risk_score or 0
+    latest_invoice = latest_invoice_for_member(member)
+    if latest_invoice and latest_invoice.status in {Invoice.STATUS_UNPAID, Invoice.STATUS_REJECTED}:
+        risk = max(risk, 55)
+    if latest_invoice and latest_invoice.status == Invoice.STATUS_PENDING:
+        risk = max(risk, 35)
+    if attendance_rate and attendance_rate < 60:
+        risk = max(risk, 70)
+    elif attendance_rate and attendance_rate < 80:
+        risk = max(risk, 40)
+    if member.status in {Member.STATUS_INACTIVE, Member.STATUS_CHURNED}:
+        risk = max(risk, 85)
+    return min(risk, 100)
+
+
 def crm_stage_for_member(member):
-    if member.status == Member.STATUS_SUSPENDED:
+    if member.status == Member.STATUS_TRIAL:
         return {
-            "label": "Suspended",
+            "label": "Trial",
+            "badge": "badge-warning",
+            "summary": "Trial student is waiting for conversion into a paid package.",
+        }
+    if member.status == Member.STATUS_CHURNED:
+        return {
+            "label": "Churned",
             "badge": "badge-danger",
-            "summary": "Account is suspended and needs owner attention.",
+            "summary": member.churn_reason or "Student has left and needs a win-back decision.",
         }
     if member.status == Member.STATUS_INACTIVE:
         return {
             "label": "Inactive",
             "badge": "badge-neutral",
-            "summary": "Customer is inactive and may need reactivation follow-up.",
+            "summary": member.next_action or "Student is paused and needs a reactivation plan.",
         }
-    if getattr(member, "pending_review_count", 0):
+    if payment_status_for_member(member) in {"Unpaid", "Rejected"}:
         return {
-            "label": "Pending Verification",
-            "badge": "badge-warning",
-            "summary": "Payment proof is waiting for admin verification.",
-        }
-    if getattr(member, "overdue_invoice_count", 0):
-        return {
-            "label": "Overdue",
+            "label": "At Risk",
             "badge": "badge-danger",
-            "summary": "Customer has overdue invoices that need collection follow-up.",
-        }
-    if getattr(member, "unpaid_invoice_count", 0):
-        return {
-            "label": "Follow Up",
-            "badge": "badge-warning",
-            "summary": "Customer has unpaid invoices that are not overdue yet.",
+            "summary": "Active student needs billing or retention follow-up.",
         }
     return {
-        "label": "Healthy",
+        "label": "Active",
         "badge": "badge-success",
-        "summary": "Customer is active and financially up to date.",
+        "summary": "Student is enrolled and currently active.",
     }
 
 
-class CRMWorkspaceView(AdminRequiredMixin, TemplateView):
+class CRMWorkspaceView(SalesOrAdminRequiredMixin, TemplateView):
     template_name = "members/crm_workspace.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        today = timezone.localdate()
-        week_ahead = today + timedelta(days=7)
-        month_start = today.replace(day=1)
-
-        zero_money = Value(Decimal("0.00"), output_field=DecimalField(max_digits=10, decimal_places=2))
-        next_session_queryset = AttendanceRecord.objects.filter(
-            member=OuterRef("pk"),
-            training_session__session_date__gte=today,
-        ).order_by("training_session__session_date", "training_session__start_time")
-        latest_invoice_queryset = Invoice.objects.filter(member=OuterRef("pk")).order_by("-period", "-due_date", "-pk")
-        outstanding_total_queryset = (
-            Invoice.objects.filter(member=OuterRef("pk"))
-            .exclude(status=Invoice.STATUS_PAID)
-            .values("member")
-            .annotate(total=Sum("amount"))
-            .values("total")
-        )
-        overdue_total_queryset = (
-            Invoice.objects.filter(member=OuterRef("pk"), due_date__lt=today)
-            .exclude(status=Invoice.STATUS_PAID)
-            .values("member")
-            .annotate(total=Sum("amount"))
-            .values("total")
-        )
-        latest_approved_payment_queryset = Payment.objects.filter(
-            invoice__member=OuterRef("pk"),
-            status=Payment.STATUS_APPROVED,
-            reviewed_at__isnull=False,
-        ).order_by("-reviewed_at")
-
-        base_queryset = (
-            Member.objects.select_related("assigned_coach", "parent_user", "payment_plan")
-            .annotate(
-                outstanding_total=Coalesce(
-                    Subquery(outstanding_total_queryset, output_field=DecimalField(max_digits=10, decimal_places=2)),
-                    zero_money,
-                ),
-                overdue_total=Coalesce(
-                    Subquery(overdue_total_queryset, output_field=DecimalField(max_digits=10, decimal_places=2)),
-                    zero_money,
-                ),
-                unpaid_invoice_count=Count(
-                    "invoices",
-                    filter=~Q(invoices__status=Invoice.STATUS_PAID),
-                    distinct=True,
-                ),
-                overdue_invoice_count=Count(
-                    "invoices",
-                    filter=Q(invoices__due_date__lt=today) & ~Q(invoices__status=Invoice.STATUS_PAID),
-                    distinct=True,
-                ),
-                pending_review_count=Count(
-                    "invoices__payments",
-                    filter=Q(invoices__payments__status=Payment.STATUS_PENDING),
-                    distinct=True,
-                ),
-                due_this_week_count=Count(
-                    "invoices",
-                    filter=Q(invoices__due_date__range=(today, week_ahead)) & ~Q(invoices__status=Invoice.STATUS_PAID),
-                    distinct=True,
-                ),
-                total_attendance_logged=Count(
-                    "attendance_records",
-                    filter=~Q(attendance_records__status=AttendanceRecord.STATUS_SCHEDULED),
-                    distinct=True,
-                ),
-                total_attendance_good=Count(
-                    "attendance_records",
-                    filter=Q(
-                        attendance_records__status__in=[
-                            AttendanceRecord.STATUS_PRESENT,
-                            AttendanceRecord.STATUS_LATE,
-                        ]
-                    ),
-                    distinct=True,
-                ),
-                next_session_date=Subquery(
-                    next_session_queryset.values("training_session__session_date")[:1],
-                    output_field=DateField(),
-                ),
-                next_session_title=Subquery(next_session_queryset.values("training_session__title")[:1]),
-                latest_invoice_period=Subquery(
-                    latest_invoice_queryset.values("period")[:1],
-                    output_field=DateField(),
-                ),
-                latest_invoice_due_date=Subquery(
-                    latest_invoice_queryset.values("due_date")[:1],
-                    output_field=DateField(),
-                ),
-                latest_invoice_amount=Subquery(
-                    latest_invoice_queryset.values("amount")[:1],
-                    output_field=DecimalField(max_digits=10, decimal_places=2),
-                ),
-                latest_invoice_status=Subquery(latest_invoice_queryset.values("status")[:1]),
-                last_payment_at=Subquery(
-                    latest_approved_payment_queryset.values("reviewed_at")[:1],
-                    output_field=DateTimeField(),
-                ),
-                last_payment_amount=Subquery(
-                    latest_approved_payment_queryset.values("invoice__amount")[:1],
-                    output_field=DecimalField(max_digits=10, decimal_places=2),
-                ),
-            )
-            .order_by("full_name")
-        )
-
         search = self.request.GET.get("q", "").strip()
-        status = self.request.GET.get("status", "").strip()
-        coach = self.request.GET.get("coach", "").strip()
-        segment = self.request.GET.get("segment", "").strip()
-
-        filtered_queryset = base_queryset
         if search:
-            filtered_queryset = filtered_queryset.filter(
-                Q(full_name__icontains=search)
-                | Q(contact_number__icontains=search)
-                | Q(email__icontains=search)
-                | Q(emergency_contact_name__icontains=search)
-            )
-        if status:
-            filtered_queryset = filtered_queryset.filter(status=status)
-        if coach:
-            filtered_queryset = filtered_queryset.filter(assigned_coach_id=coach)
-        if segment == "healthy":
-            filtered_queryset = filtered_queryset.filter(
-                status=Member.STATUS_ACTIVE,
-                unpaid_invoice_count=0,
-                pending_review_count=0,
-            )
-        elif segment == "follow_up":
-            filtered_queryset = filtered_queryset.filter(unpaid_invoice_count__gt=0, overdue_invoice_count=0)
-        elif segment == "overdue":
-            filtered_queryset = filtered_queryset.filter(overdue_invoice_count__gt=0)
-        elif segment == "pending":
-            filtered_queryset = filtered_queryset.filter(pending_review_count__gt=0)
-        elif segment == "inactive":
-            filtered_queryset = filtered_queryset.filter(status__in=[Member.STATUS_INACTIVE, Member.STATUS_SUSPENDED])
-        elif segment == "due_soon":
-            filtered_queryset = filtered_queryset.filter(due_this_week_count__gt=0)
-
-        paginator = Paginator(filtered_queryset, 12)
-        page_obj = paginator.get_page(self.request.GET.get("page"))
-        customer_rows = []
-        for member in page_obj.object_list:
-            attendance_rate = 0
-            if member.total_attendance_logged:
-                attendance_rate = round((member.total_attendance_good / member.total_attendance_logged) * 100, 1)
-            customer_rows.append(
-                {
-                    "member": member,
-                    "attendance_rate": attendance_rate,
-                    "stage": crm_stage_for_member(member),
-                }
-            )
-
-        lead_queryset = visible_applications_for_user(self.request.user).filter(
-            status=AdmissionApplication.STATUS_PENDING
-        )
-        if search:
-            lead_queryset = lead_queryset.filter(
+            lead_queryset = visible_applications_for_user(self.request.user).filter(
                 Q(student_name__icontains=search)
                 | Q(guardian_name__icontains=search)
                 | Q(contact_number__icontains=search)
             )
-        recent_leads = lead_queryset.order_by("-submitted_at")[:8]
+            member_queryset = visible_members_for_user(self.request.user).filter(
+                Q(full_name__icontains=search)
+                | Q(contact_number__icontains=search)
+                | Q(program_enrolled__icontains=search)
+            )
+            log_queryset = visible_communication_logs_for_user(self.request.user).filter(
+                Q(outcome__icontains=search)
+                | Q(notes__icontains=search)
+                | Q(member__full_name__icontains=search)
+                | Q(lead__student_name__icontains=search)
+            )
+        else:
+            lead_queryset = visible_applications_for_user(self.request.user)
+            member_queryset = visible_members_for_user(self.request.user)
+            log_queryset = visible_communication_logs_for_user(self.request.user)
 
-        outstanding_queryset = base_queryset.filter(outstanding_total__gt=0).order_by("-overdue_total", "-outstanding_total", "full_name")
-        owner_kpis = {
-            "total_customers": base_queryset.count(),
-            "active_customers": base_queryset.filter(status=Member.STATUS_ACTIVE).count(),
-            "open_leads": visible_applications_for_user(self.request.user).filter(
-                status=AdmissionApplication.STATUS_PENDING
-            ).count(),
-            "payment_follow_ups": base_queryset.filter(
-                Q(overdue_invoice_count__gt=0) | Q(pending_review_count__gt=0) | Q(unpaid_invoice_count__gt=0)
-            ).count(),
-            "projected_mrr": base_queryset.filter(status=Member.STATUS_ACTIVE).aggregate(
-                total=Sum("payment_plan__monthly_fee")
-            )["total"]
-            or Decimal("0.00"),
-            "outstanding_total": Invoice.objects.exclude(status=Invoice.STATUS_PAID).aggregate(total=Sum("amount"))["total"]
-            or Decimal("0.00"),
-        }
+        leads = lead_queryset.filter(status=AdmissionApplication.STATUS_PENDING).order_by("-submitted_at")[:8]
+        trials = member_queryset.filter(status=Member.STATUS_TRIAL).order_by("-trial_linked_date", "full_name")[:8]
+        active_students = []
+        inactive_students = []
+        if has_role(self.request.user, ROLE_ADMIN):
+            active_students = list(
+                Member.objects.select_related("assigned_coach", "assigned_staff", "payment_plan", "parent_user", "syllabus_root")
+                .filter(status=Member.STATUS_ACTIVE)
+                .order_by("full_name")[:8]
+            )
+            inactive_students = list(
+                Member.objects.select_related("assigned_coach", "assigned_staff", "payment_plan", "parent_user", "syllabus_root")
+                .filter(status__in=[Member.STATUS_INACTIVE, Member.STATUS_CHURNED])
+                .order_by("full_name")[:8]
+            )
+
+        trial_session_limit = get_billing_configuration().trial_session_limit
+        trial_rows = []
+        for member in trials:
+            attendance_count = member.attendance_records.count()
+            latest_feedback = member.session_feedback_entries.select_related("training_session", "coach").first()
+            trial_rows.append(
+                {
+                    "member": member,
+                    "linked_date": member.trial_linked_date or member.joined_at,
+                    "trial_date": member.trial_date,
+                    "class_type": member.syllabus_root.name if member.syllabus_root_id else member.program_enrolled,
+                    "attendance_count": attendance_count,
+                    "attendance_summary": f"{attendance_count}/{trial_session_limit}",
+                    "payment_status": payment_status_for_member(member),
+                    "latest_feedback": latest_feedback,
+                }
+            )
+
+        active_rows = [
+            {
+                "member": member,
+                "attendance_rate": attendance_rate_for_member(member),
+                "payment_status": payment_status_for_member(member),
+                "retention_risk": derived_retention_risk(member),
+            }
+            for member in active_students
+        ]
+        inactive_rows = [
+            {
+                "member": member,
+                "payment_status": payment_status_for_member(member),
+                "why_left": member.churn_reason or member.next_action,
+            }
+            for member in inactive_students
+        ]
+        lead_rows = [
+            {
+                "lead": lead,
+                "latest_touch": lead.communication_logs.select_related("staff").first(),
+            }
+            for lead in leads
+        ]
 
         context.update(
             {
-                "page_obj": page_obj,
-                "members": page_obj.object_list,
-                "customer_rows": customer_rows,
-                "crm_segments": [
-                    ("", "All Customers"),
-                    ("healthy", "Healthy"),
-                    ("follow_up", "Need Follow Up"),
-                    ("overdue", "Overdue"),
-                    ("pending", "Pending Verification"),
-                    ("due_soon", "Due This Week"),
-                    ("inactive", "Inactive / Suspended"),
-                ],
-                "selected_segment": segment,
-                "selected_status": status,
-                "selected_coach": coach,
                 "search_query": search,
-                "statuses": Member.STATUS_CHOICES,
-                "coaches": User.objects.filter(profile__role=UserProfile.ROLE_COACH).order_by("first_name", "username"),
-                "owner_kpis": owner_kpis,
-                "recent_leads": recent_leads,
-                "overdue_watchlist": outstanding_queryset[:8],
-                "new_this_month_count": base_queryset.filter(joined_at__year=today.year, joined_at__month=today.month).count(),
-                "month_start": month_start,
+                "lead_rows": lead_rows,
+                "trial_rows": trial_rows,
+                "active_rows": active_rows,
+                "inactive_rows": inactive_rows,
+                "communication_logs": log_queryset.order_by("-happened_at")[:12],
+                "crm_kpis": {
+                    "lead_count": visible_applications_for_user(self.request.user).filter(status=AdmissionApplication.STATUS_PENDING).count(),
+                    "trial_count": visible_members_for_user(self.request.user).filter(status=Member.STATUS_TRIAL).count(),
+                    "active_count": Member.objects.filter(status=Member.STATUS_ACTIVE).count() if has_role(self.request.user, ROLE_ADMIN) else 0,
+                    "inactive_count": Member.objects.filter(status__in=[Member.STATUS_INACTIVE, Member.STATUS_CHURNED]).count()
+                    if has_role(self.request.user, ROLE_ADMIN)
+                    else 0,
+                },
+                "trial_session_limit": trial_session_limit,
+                "show_active_sections": has_role(self.request.user, ROLE_ADMIN),
             }
         )
         return context
@@ -350,8 +304,9 @@ class MemberListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["can_manage"] = has_role(self.request.user, ROLE_ADMIN)
+        context["can_manage"] = has_role(self.request.user, ROLE_ADMIN, ROLE_HEADCOUNT)
         context["is_admin"] = has_role(self.request.user, ROLE_ADMIN)
+        context["is_sales"] = has_role(self.request.user, ROLE_HEADCOUNT) and not has_role(self.request.user, ROLE_ADMIN)
         context["statuses"] = Member.STATUS_CHOICES
         context["coaches"] = User.objects.filter(profile__role=UserProfile.ROLE_COACH).order_by("first_name", "username")
         return context
@@ -368,15 +323,15 @@ class MemberDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         member = self.object
-        attendance_history = AttendanceRecord.objects.filter(member=member).select_related(
-            "training_session"
-        )
+        attendance_history = AttendanceRecord.objects.filter(member=member).select_related("training_session")
         invoices = Invoice.objects.select_related("payment_plan").filter(member=member).order_by("-period", "-due_date")
         attendance_logged = attendance_history.exclude(status=AttendanceRecord.STATUS_SCHEDULED)
         attendance_total = attendance_logged.count()
         attendance_present = attendance_logged.filter(
             status__in=[AttendanceRecord.STATUS_PRESENT, AttendanceRecord.STATUS_LATE]
         ).count()
+        lead = member.latest_application
+        communication_logs = visible_communication_logs_for_user(self.request.user).filter(member=member)
         context["attendance_history"] = attendance_history[:10]
         context["invoices"] = invoices[:10]
         context["upcoming_sessions"] = member.training_sessions.filter(session_date__gte=timezone.localdate()).order_by(
@@ -394,7 +349,24 @@ class MemberDetailView(LoginRequiredMixin, DetailView):
             .select_related("training_session", "coach")
             .order_by("-training_session__session_date", "-created_at")[:5]
         )
-        context["can_manage"] = has_role(self.request.user, ROLE_ADMIN)
+        context["lead"] = lead
+        context["lead_source_label"] = lead.get_source_display() if lead else "Not captured"
+        context["interest_level_label"] = lead.get_interest_level_display() if lead else "Not captured"
+        context["communication_logs"] = communication_logs[:10] if has_role(self.request.user, ROLE_ADMIN, ROLE_HEADCOUNT) else []
+        context["communication_form"] = CommunicationLogForm(
+            initial={"happened_at": timezone.localtime().replace(second=0, microsecond=0)}
+        )
+        context["payment_status"] = payment_status_for_member(member)
+        context["retention_risk"] = derived_retention_risk(member)
+        context["trial_session_limit"] = get_billing_configuration().trial_session_limit
+        context["trial_sessions_used"] = member.attendance_records.count()
+        context["why_stayed"] = member.conversion_reason or member.parent_feedback or ""
+        context["why_left"] = member.churn_reason or ""
+        context["what_next"] = member.next_action or (lead.next_action if lead else "")
+        context["can_manage"] = has_role(self.request.user, ROLE_ADMIN) or (
+            has_role(self.request.user, ROLE_HEADCOUNT) and member.status == Member.STATUS_TRIAL
+        )
+        context["can_manage_crm"] = has_role(self.request.user, ROLE_ADMIN, ROLE_HEADCOUNT)
         context["can_update_level"] = has_role(self.request.user, ROLE_ADMIN) or (
             has_role(self.request.user, ROLE_COACH) and member.assigned_coach_id == self.request.user.id
         )
@@ -421,11 +393,14 @@ class MemberCreateView(AdminRequiredMixin, CreateView):
         return response
 
 
-class MemberUpdateView(AdminRequiredMixin, UpdateView):
+class MemberUpdateView(SalesOrAdminRequiredMixin, UpdateView):
     model = Member
     form_class = MemberForm
     template_name = "members/member_form.html"
     success_url = reverse_lazy("members:list")
+
+    def get_queryset(self):
+        return visible_members_for_user(self.request.user)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -480,7 +455,7 @@ class AdmissionApplicationCreateView(CreateView):
         return response
 
 
-class AdmissionApplicationListView(AdminOrCoachRequiredMixin, ListView):
+class AdmissionApplicationListView(SalesOrAdminRequiredMixin, ListView):
     model = AdmissionApplication
     template_name = "members/application_list.html"
     context_object_name = "applications"
@@ -507,10 +482,11 @@ class AdmissionApplicationListView(AdminOrCoachRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context["statuses"] = AdmissionApplication.STATUS_CHOICES
         context["locations"] = LandingPageContent.get_solo().available_locations
+        context["is_sales"] = has_role(self.request.user, ROLE_HEADCOUNT) and not has_role(self.request.user, ROLE_ADMIN)
         return context
 
 
-class AdmissionApplicationReviewView(AdminOrCoachRequiredMixin, UpdateView):
+class AdmissionApplicationReviewView(SalesOrAdminRequiredMixin, UpdateView):
     model = AdmissionApplication
     form_class = AdmissionApplicationReviewForm
     template_name = "members/application_review.html"
@@ -519,18 +495,19 @@ class AdmissionApplicationReviewView(AdminOrCoachRequiredMixin, UpdateView):
     def get_queryset(self):
         return visible_applications_for_user(self.request.user)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["current_user"] = self.request.user
+        return kwargs
+
     def ensure_linked_member(self, application):
         if application.status != AdmissionApplication.STATUS_APPROVED or application.linked_member_id:
             return application.linked_member
 
         parent_user = application.linked_parent_user
-        assigned_coach = (
-            self.request.user
-            if has_role(self.request.user, ROLE_COACH)
-            else pick_best_available_coach(preferred_level=application.recommended_level)
-        )
+        assigned_coach = pick_best_available_coach(preferred_level=application.recommended_level)
         notes = [
-            f"Approved from admission application for {application.preferred_program}.",
+            f"Promoted from lead into trial for {application.preferred_program}.",
             f"Preferred location: {application.preferred_location}.",
             f"Recommended level: {application.get_recommended_level_display()}.",
         ]
@@ -544,12 +521,18 @@ class AdmissionApplicationReviewView(AdminOrCoachRequiredMixin, UpdateView):
             email=application.guardian_email,
             emergency_contact_name=application.guardian_name,
             emergency_contact_phone=application.contact_number,
+            program_enrolled=application.preferred_program,
+            syllabus_root=SyllabusRoot.get_default(),
             payment_plan=get_default_payment_plan(),
             skill_level=application.recommended_level,
+            assigned_staff=application.assigned_staff or self.request.user,
             assigned_coach=assigned_coach,
             parent_user=parent_user,
-            status=Member.STATUS_ACTIVE,
+            status=Member.STATUS_TRIAL,
             joined_at=timezone.localdate(),
+            trial_linked_date=timezone.localdate(),
+            trial_date=timezone.localdate(),
+            next_action=application.next_action or "Schedule the first trial session and collect subscription payment.",
             notes=" ".join(notes),
             created_by=self.request.user,
         )
@@ -557,8 +540,18 @@ class AdmissionApplicationReviewView(AdminOrCoachRequiredMixin, UpdateView):
         application.linked_member = linked_member
         return linked_member
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["communication_logs"] = visible_communication_logs_for_user(self.request.user).filter(lead=self.object)[:10]
+        context["communication_form"] = CommunicationLogForm(
+            initial={"happened_at": timezone.localtime().replace(second=0, microsecond=0)}
+        )
+        return context
+
     def form_valid(self, form):
         with transaction.atomic():
+            if not form.instance.assigned_staff_id:
+                form.instance.assigned_staff = self.request.user
             form.instance.reviewed_by = self.request.user
             form.instance.reviewed_at = timezone.now()
             if form.instance.status != AdmissionApplication.STATUS_REJECTED:
@@ -567,27 +560,44 @@ class AdmissionApplicationReviewView(AdminOrCoachRequiredMixin, UpdateView):
             self.ensure_linked_member(form.instance)
             response = super().form_valid(form)
         if self.object.status == AdmissionApplication.STATUS_APPROVED and self.object.linked_member:
+            CommunicationLog.objects.create(
+                lead=self.object,
+                member=self.object.linked_member,
+                channel=CommunicationLog.CHANNEL_INTERNAL,
+                message_type=CommunicationLog.TYPE_TRIAL,
+                staff=self.request.user,
+                outcome="Lead approved and moved into trial stage.",
+                next_step=self.object.next_action or "Schedule the trial and follow up after coach feedback.",
+            )
             notify_users(
                 [self.object.linked_parent_user, self.object.linked_member.assigned_coach],
-                title="Student assigned to coach",
+                title="Trial student assigned to coach",
                 message=(
-                    f"{self.object.student_name} was approved as a {self.object.get_recommended_level_display()} player and "
-                    f"assigned to {self.object.linked_member.assigned_coach or 'the coaching team'}."
+                    f"{self.object.student_name} has been approved for trial and assigned to "
+                    f"{self.object.linked_member.assigned_coach or 'the coaching team'}."
                 ),
                 url=reverse_lazy("members:detail", kwargs={"pk": self.object.linked_member.pk}),
-                email_subject=f"{self.object.student_name} has been assigned to a coach",
+                email_subject=f"{self.object.student_name} has been assigned to a trial coach",
                 email_message=(
-                    f"{self.object.student_name} has been approved.\n"
+                    f"{self.object.student_name} has been approved for trial.\n"
                     f"Level: {self.object.get_recommended_level_display()}\n"
                     f"Assigned coach: {self.object.linked_member.assigned_coach or 'To be assigned'}\n"
-                    "Log in to the dashboard to view sessions and complete the onboarding payments."
+                    "Log in to the dashboard to view the trial schedule and complete the onboarding payments."
                 ),
             )
             messages.success(
                 self.request,
-                f"Application approved and linked to member profile {self.object.linked_member.full_name}.",
+                f"Lead approved and linked to trial profile {self.object.linked_member.full_name}.",
             )
         elif self.object.status == AdmissionApplication.STATUS_REJECTED:
+            CommunicationLog.objects.create(
+                lead=self.object,
+                channel=CommunicationLog.CHANNEL_INTERNAL,
+                message_type=CommunicationLog.TYPE_NOTE,
+                staff=self.request.user,
+                outcome=f"Lead closed as lost. {self.object.rejection_reason}",
+                next_step=self.object.next_action,
+            )
             messages.warning(self.request, "Application rejected and parent-facing notes were saved.")
         else:
             messages.success(self.request, "Application review updated successfully.")
@@ -809,5 +819,39 @@ class MemberLevelUpdateView(AdminOrCoachRequiredMixin, UpdateView):
 
     def get_success_url(self):
         return reverse_lazy("members:detail", kwargs={"pk": self.object.pk})
+
+
+class MemberCommunicationCreateView(SalesOrAdminRequiredMixin, View):
+    http_method_names = ["post"]
+
+    def post(self, request, *args, **kwargs):
+        member = get_object_or_404(visible_members_for_user(request.user), pk=kwargs["pk"])
+        form = CommunicationLogForm(request.POST)
+        if form.is_valid():
+            communication = form.save(commit=False)
+            communication.member = member
+            communication.staff = request.user
+            communication.save()
+            messages.success(request, "Communication log added to the student profile.")
+        else:
+            messages.error(request, "Could not save the communication log. Please check the required fields.")
+        return redirect("members:detail", pk=member.pk)
+
+
+class LeadCommunicationCreateView(SalesOrAdminRequiredMixin, View):
+    http_method_names = ["post"]
+
+    def post(self, request, *args, **kwargs):
+        lead = get_object_or_404(visible_applications_for_user(request.user), pk=kwargs["pk"])
+        form = CommunicationLogForm(request.POST)
+        if form.is_valid():
+            communication = form.save(commit=False)
+            communication.lead = lead
+            communication.staff = request.user
+            communication.save()
+            messages.success(request, "Communication log added to the lead.")
+        else:
+            messages.error(request, "Could not save the communication log. Please check the required fields.")
+        return redirect("members:application_review", pk=lead.pk)
 
 # Create your views here.

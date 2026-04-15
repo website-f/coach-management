@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}{% if form.instance.pk %}Edit Expense{% else %}Add Expense{% endif %} | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}{% if form.instance.pk %}Edit Expense{% else %}Add Expense{% endif %}{% endblock %}
+
+{% block content %}
+<div class="form-centered" style="max-width:860px;">
+    <div class="card">
+        <div class="section-header">
+            <span class="section-title">{% if form.instance.pk %}Expense Update{% else %}New Expense{% endif %}</span>
+            <a href="{% url 'finance:expense_list' %}" class="section-link">Back to expenses</a>
+        </div>
+        {% if form.non_field_errors %}
+        <div class="card-inset" style="margin-top:16px;border-color:rgba(239,68,68,.24);">
+            {% for error in form.non_field_errors %}
+            <p style="color:var(--danger);font-size:13px;">{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        <form method="post" enctype="multipart/form-data" class="form-grid" style="margin-top:18px;">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="form-group {% if field.name == 'notes' %}full{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<p class="text-sm text-muted" style="margin-top:6px;">{{ field.help_text }}</p>{% endif %}
+                {% if field.errors %}<p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ field.errors|join:", " }}</p>{% endif %}
+            </div>
+            {% endfor %}
+            <div class="full" style="display:flex;justify-content:flex-end;gap:10px;margin-top:8px;">
+                <a href="{% url 'finance:expense_list' %}" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Expense</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

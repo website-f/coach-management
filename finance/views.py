@@ -1,12 +1,10 @@
 import csv
 import json
-from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count, DecimalField, Q, Sum, Value
-from django.db.models.functions import Coalesce, TruncMonth
+from django.db.models import Q, Sum
 from django.http import HttpResponse
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -15,20 +13,36 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, T
 from accounts.decorators import role_required
 from accounts.mixins import AdminOrCoachRequiredMixin, AdminRequiredMixin
 from accounts.utils import ROLE_ADMIN, ROLE_COACH, has_role
-from finance.forms import BillingConfigurationForm, InvoiceForm, PaymentPlanForm, ProductForm
-from finance.models import BillingConfiguration, Invoice, PaymentPlan, Product
-from finance.services import billing_context_data
+from finance.forms import (
+    BillingConfigurationForm,
+    ExpenseEntryForm,
+    ForecastScenarioForm,
+    HistoricalLockForm,
+    InvoiceForm,
+    PaymentPlanForm,
+    PayrollRecordForm,
+    ProductForm,
+)
+from finance.models import (
+    BillingConfiguration,
+    ExpenseEntry,
+    ForecastScenario,
+    HistoricalLock,
+    Invoice,
+    PaymentPlan,
+    PayrollRecord,
+    Product,
+)
+from finance.services import billing_context_data, build_branch_choices, build_finance_snapshot, format_ringgit
 from members.models import Member
 from payments.models import Payment
 
 
 def visible_invoices_for_user(user):
-    queryset = Invoice.objects.select_related(
-        "member",
-        "member__assigned_coach",
-        "member__parent_user",
-        "member__payment_plan",
-        "payment_plan",
+    queryset = (
+        Invoice.objects.select_related("member", "member__assigned_coach", "member__parent_user", "member__payment_plan", "payment_plan")
+        .prefetch_related("payments", "member__admission_applications")
+        .order_by("-period", "member__full_name")
     )
     if has_role(user, ROLE_COACH) and not has_role(user, ROLE_ADMIN):
         return queryset.filter(member__assigned_coach=user)
@@ -42,22 +56,15 @@ def visible_products_for_user(user):
     return queryset.filter(is_active=True)
 
 
-def shift_month(source_date, delta):
-    month_index = source_date.month - 1 + delta
-    year = source_date.year + month_index // 12
-    month = month_index % 12 + 1
-    return date(year, month, 1)
+def visible_payroll_for_user(user):
+    queryset = PayrollRecord.objects.select_related("coach", "created_by", "updated_by").order_by("-period", "coach__username")
+    if has_role(user, ROLE_COACH) and not has_role(user, ROLE_ADMIN):
+        return queryset.filter(coach=user)
+    return queryset
 
 
-def build_cashflow_labels(month_count=6):
-    current = timezone.localdate().replace(day=1)
-    return [shift_month(current, offset) for offset in range(-(month_count - 1), 1)]
-
-
-def normalize_month_key(value):
-    if hasattr(value, "date"):
-        value = value.date()
-    return value.replace(day=1)
+def chart_payload(labels, datasets):
+    return json.dumps({"labels": labels, "datasets": datasets})
 
 
 class FinanceOverviewView(AdminRequiredMixin, TemplateView):
@@ -65,197 +72,76 @@ class FinanceOverviewView(AdminRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        today = timezone.localdate()
-        week_ahead = today + timedelta(days=7)
-        months = build_cashflow_labels()
-        month_labels = [month.strftime("%b %Y") for month in months]
-        zero_money = Value(Decimal("0.00"), output_field=DecimalField(max_digits=10, decimal_places=2))
-
-        invoices = Invoice.objects.select_related("member", "member__assigned_coach", "payment_plan")
-        payments = Payment.objects.select_related("invoice", "invoice__member", "paid_by", "reviewed_by")
-        approved_payments = payments.filter(status=Payment.STATUS_APPROVED)
-        current_month_invoices = invoices.filter(period__year=today.year, period__month=today.month)
-        outstanding_invoices = invoices.exclude(status=Invoice.STATUS_PAID)
-        overdue_invoices = outstanding_invoices.filter(due_date__lt=today)
-
-        total_billed = current_month_invoices.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
-        total_collected = (
-            approved_payments.filter(reviewed_at__year=today.year, reviewed_at__month=today.month).aggregate(
-                total=Sum("invoice__amount")
-            )["total"]
-            or Decimal("0.00")
-        )
-        pending_verification_total = (
-            invoices.filter(status=Invoice.STATUS_PENDING).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
-        )
-        outstanding_balances = outstanding_invoices.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
-        overdue_total = overdue_invoices.aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
-        collection_rate = round((total_collected / total_billed) * 100, 1) if total_billed else 0
-        projected_mrr = (
-            Member.objects.filter(status=Member.STATUS_ACTIVE).aggregate(total=Sum("payment_plan__monthly_fee"))["total"]
-            or Decimal("0.00")
-        )
-
-        billed_map = {
-            normalize_month_key(item["month"]): item["total"] or Decimal("0.00")
-            for item in invoices.annotate(month=TruncMonth("period")).values("month").annotate(total=Sum("amount"))
-            if item["month"]
-        }
-        collected_map = {
-            normalize_month_key(item["month"]): item["total"] or Decimal("0.00")
-            for item in approved_payments.annotate(month=TruncMonth("reviewed_at")).values("month").annotate(
-                total=Sum("invoice__amount")
-            )
-            if item["month"]
-        }
-        overdue_map = {
-            normalize_month_key(item["month"]): item["total"] or Decimal("0.00")
-            for item in overdue_invoices.annotate(month=TruncMonth("due_date")).values("month").annotate(total=Sum("amount"))
-            if item["month"]
-        }
-
-        billed_values = [float(billed_map.get(month, Decimal("0.00"))) for month in months]
-        collected_values = [float(collected_map.get(month, Decimal("0.00"))) for month in months]
-        overdue_values = [float(overdue_map.get(month, Decimal("0.00"))) for month in months]
-
-        aging_buckets = {
-            "current": Decimal("0.00"),
-            "days_1_30": Decimal("0.00"),
-            "days_31_60": Decimal("0.00"),
-            "days_61_plus": Decimal("0.00"),
-        }
-        for invoice in outstanding_invoices:
-            days_overdue = (today - invoice.due_date).days
-            if days_overdue <= 0:
-                aging_buckets["current"] += invoice.amount
-            elif days_overdue <= 30:
-                aging_buckets["days_1_30"] += invoice.amount
-            elif days_overdue <= 60:
-                aging_buckets["days_31_60"] += invoice.amount
-            else:
-                aging_buckets["days_61_plus"] += invoice.amount
-
-        plan_rows = list(
-            PaymentPlan.objects.annotate(
-                active_members=Count("members", filter=Q(members__status=Member.STATUS_ACTIVE), distinct=True)
-            ).order_by("sort_order", "sessions_per_month", "monthly_fee", "name")
-        )
-        for plan in plan_rows:
-            plan.projected_revenue = plan.monthly_fee * plan.active_members
-
-        coach_rows = []
-        coach_queryset = (
-            Member.objects.filter(assigned_coach__isnull=False)
-            .values("assigned_coach__first_name", "assigned_coach__last_name", "assigned_coach__username")
-            .annotate(
-                active_students=Count("id", filter=Q(status=Member.STATUS_ACTIVE), distinct=True),
-                outstanding_total=Coalesce(
-                    Sum("invoices__amount", filter=~Q(invoices__status=Invoice.STATUS_PAID)),
-                    zero_money,
-                ),
-                collected_this_month=Coalesce(
-                    Sum(
-                        "invoices__amount",
-                        filter=Q(
-                            invoices__payments__status=Payment.STATUS_APPROVED,
-                            invoices__payments__reviewed_at__year=today.year,
-                            invoices__payments__reviewed_at__month=today.month,
-                        ),
-                    ),
-                    zero_money,
-                ),
-            )
-            .order_by("-collected_this_month", "-active_students")
-        )
-        for item in coach_queryset:
-            coach_name = (
-                f"{item['assigned_coach__first_name']} {item['assigned_coach__last_name']}".strip()
-                or item["assigned_coach__username"]
-            )
-            coach_rows.append(
-                {
-                    "coach_name": coach_name,
-                    "active_students": item["active_students"],
-                    "outstanding_total": item["outstanding_total"],
-                    "collected_this_month": item["collected_this_month"],
-                }
-            )
-
-        due_soon_rows = outstanding_invoices.filter(due_date__range=(today, week_ahead)).order_by("due_date", "member__full_name")[:8]
-        recent_payments = payments.order_by("-submitted_at")[:10]
-        invoice_rows = current_month_invoices.order_by("member__full_name")[:10]
-
-        context.update(
-            {
-                "total_billed": total_billed,
-                "total_collected": total_collected,
-                "outstanding_balances": outstanding_balances,
-                "pending_verification_total": pending_verification_total,
-                "overdue_total": overdue_total,
-                "collection_rate": collection_rate,
-                "projected_mrr": projected_mrr,
-                "recent_payments": recent_payments,
-                "invoice_rows": invoice_rows,
-                "payment_plan_count": PaymentPlan.objects.count(),
-                "active_payment_plan_count": PaymentPlan.objects.filter(is_active=True).count(),
-                "due_soon_rows": due_soon_rows,
-                "aging_buckets": aging_buckets,
-                "plan_rows": plan_rows,
-                "coach_rows": coach_rows[:8],
-                "cashflow_chart_data": json.dumps(
-                    {
-                        "labels": month_labels,
-                        "datasets": [
-                            {
-                                "label": "Billed",
-                                "data": billed_values,
-                                "borderColor": "#4f6ef7",
-                                "backgroundColor": "rgba(79, 110, 247, 0.18)",
-                                "borderWidth": 3,
-                                "fill": False,
-                                "tension": 0.3,
-                            },
-                            {
-                                "label": "Collected",
-                                "data": collected_values,
-                                "borderColor": "#22c55e",
-                                "backgroundColor": "rgba(34, 197, 94, 0.14)",
-                                "borderWidth": 3,
-                                "fill": False,
-                                "tension": 0.3,
-                            },
-                            {
-                                "label": "Overdue",
-                                "data": overdue_values,
-                                "borderColor": "#ef4444",
-                                "backgroundColor": "rgba(239, 68, 68, 0.12)",
-                                "borderWidth": 2,
-                                "fill": False,
-                                "tension": 0.25,
-                            },
-                        ],
-                    }
-                ),
-                "receivable_chart_data": json.dumps(
-                    {
-                        "labels": ["Current", "1-30 Days", "31-60 Days", "61+ Days"],
-                        "datasets": [
-                            {
-                                "data": [
-                                    float(aging_buckets["current"]),
-                                    float(aging_buckets["days_1_30"]),
-                                    float(aging_buckets["days_31_60"]),
-                                    float(aging_buckets["days_61_plus"]),
-                                ],
-                                "backgroundColor": ["#4f6ef7", "#f59e0b", "#fb7185", "#ef4444"],
-                                "borderWidth": 0,
-                            }
-                        ],
-                    }
-                ),
-            }
-        )
+        snapshot = build_finance_snapshot()
+        chart = snapshot["chart"]
+        context.update(snapshot)
         context.update(billing_context_data())
+        context["quick_sections"] = [
+            ("revenue", "Revenue"),
+            ("collections", "Payment & Collection"),
+            ("expenses", "Expenses"),
+            ("payroll", "Payroll"),
+            ("profit-loss", "Profit & Loss"),
+            ("cashflow", "Cashflow"),
+            ("forecasting", "Forecasting"),
+            ("compliance", "Report & Compliance"),
+        ]
+        context["revenue_chart_data"] = chart_payload(
+            chart["labels"],
+            [
+                {
+                    "label": "Revenue Trend",
+                    "data": chart["revenue"],
+                    "borderColor": "#4f6ef7",
+                    "backgroundColor": "rgba(79,110,247,0.16)",
+                    "borderWidth": 3,
+                    "fill": True,
+                    "tension": 0.35,
+                }
+            ],
+        )
+        context["cashflow_chart_data"] = chart_payload(
+            chart["labels"],
+            [
+                {
+                    "label": "Cash In",
+                    "data": chart["cash_in"],
+                    "borderColor": "#22c55e",
+                    "backgroundColor": "rgba(34,197,94,0.12)",
+                    "borderWidth": 3,
+                    "fill": False,
+                    "tension": 0.35,
+                },
+                {
+                    "label": "Cash Out",
+                    "data": chart["cash_out"],
+                    "borderColor": "#ef4444",
+                    "backgroundColor": "rgba(239,68,68,0.12)",
+                    "borderWidth": 3,
+                    "fill": False,
+                    "tension": 0.35,
+                },
+                {
+                    "label": "Net Cashflow",
+                    "data": chart["net_cashflow"],
+                    "borderColor": "#f59e0b",
+                    "backgroundColor": "rgba(245,158,11,0.12)",
+                    "borderWidth": 3,
+                    "fill": False,
+                    "tension": 0.35,
+                },
+            ],
+        )
+        context["payment_method_chart_data"] = chart_payload(
+            [label for label, _ in snapshot["payment_method_totals"]],
+            [
+                {
+                    "data": [float(amount) for _, amount in snapshot["payment_method_totals"]],
+                    "backgroundColor": ["#4f6ef7", "#22c55e", "#f59e0b", "#06b6d4", "#a855f7"],
+                    "borderWidth": 0,
+                }
+            ],
+        )
         return context
 
 
@@ -311,24 +197,31 @@ class InvoiceListView(AdminOrCoachRequiredMixin, ListView):
     model = Invoice
     template_name = "finance/invoice_list.html"
     context_object_name = "invoices"
-    paginate_by = 10
+    paginate_by = 12
 
     def get_queryset(self):
         queryset = visible_invoices_for_user(self.request.user)
         status = self.request.GET.get("status", "").strip()
         member = self.request.GET.get("member", "").strip()
+        branch = self.request.GET.get("branch", "").strip()
         if status:
             queryset = queryset.filter(status=status)
         if member:
             queryset = queryset.filter(member_id=member)
+        if branch:
+            queryset = [invoice for invoice in queryset if invoice.branch_label == branch]
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        invoice_rows = list(context["invoices"])
         context["statuses"] = Invoice.STATUS_CHOICES
         context["is_admin"] = has_role(self.request.user, ROLE_ADMIN)
         context["can_manage"] = has_role(self.request.user, ROLE_ADMIN)
         context["members"] = visible_invoices_for_user(self.request.user).values_list("member_id", "member__full_name").distinct()
+        context["branches"] = build_branch_choices()
+        context["approved_total"] = sum(Decimal(invoice.approved_amount or 0) for invoice in invoice_rows)
+        context["outstanding_total"] = sum(Decimal(invoice.outstanding_amount or 0) for invoice in invoice_rows)
         return context
 
 
@@ -346,6 +239,7 @@ class InvoiceCreateView(AdminRequiredMixin, CreateView):
     def form_valid(self, form):
         form.instance.created_by = self.request.user
         response = super().form_valid(form)
+        self.object.refresh_status_from_payments()
         messages.success(self.request, "Invoice generated successfully.")
         return response
 
@@ -363,7 +257,218 @@ class InvoiceUpdateView(AdminRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
+        self.object.refresh_status_from_payments()
         messages.success(self.request, "Invoice updated successfully.")
+        return response
+
+
+class ExpenseListView(AdminRequiredMixin, ListView):
+    model = ExpenseEntry
+    template_name = "finance/expense_list.html"
+    context_object_name = "expenses"
+    paginate_by = 12
+
+    def get_queryset(self):
+        queryset = ExpenseEntry.objects.order_by("-expense_date", "-created_at")
+        expense_type = self.request.GET.get("expense_type", "").strip()
+        category = self.request.GET.get("category", "").strip()
+        branch = self.request.GET.get("branch", "").strip()
+        search = self.request.GET.get("q", "").strip()
+        if expense_type:
+            queryset = queryset.filter(expense_type=expense_type)
+        if category:
+            queryset = queryset.filter(category_tag=category)
+        if branch:
+            queryset = queryset.filter(branch_tag=branch)
+        if search:
+            queryset = queryset.filter(Q(title__icontains=search) | Q(vendor_name__icontains=search) | Q(notes__icontains=search))
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        expense_rows = list(context["expenses"])
+        context["expense_types"] = ExpenseEntry.TYPE_CHOICES
+        context["categories"] = ExpenseEntry.CATEGORY_CHOICES
+        context["branches"] = build_branch_choices()
+        context["total_expenses"] = sum(Decimal(expense.amount or 0) for expense in expense_rows)
+        context["fixed_total"] = sum(Decimal(expense.amount or 0) for expense in expense_rows if expense.expense_type == ExpenseEntry.TYPE_FIXED)
+        context["variable_total"] = sum(Decimal(expense.amount or 0) for expense in expense_rows if expense.expense_type == ExpenseEntry.TYPE_VARIABLE)
+        return context
+
+
+class ExpenseCreateView(AdminRequiredMixin, CreateView):
+    model = ExpenseEntry
+    form_class = ExpenseEntryForm
+    template_name = "finance/expense_form.html"
+    success_url = reverse_lazy("finance:expense_list")
+
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        form.instance.updated_by = self.request.user
+        response = super().form_valid(form)
+        messages.success(self.request, "Expense recorded successfully.")
+        return response
+
+
+class ExpenseUpdateView(AdminRequiredMixin, UpdateView):
+    model = ExpenseEntry
+    form_class = ExpenseEntryForm
+    template_name = "finance/expense_form.html"
+    success_url = reverse_lazy("finance:expense_list")
+
+    def form_valid(self, form):
+        form.instance.updated_by = self.request.user
+        response = super().form_valid(form)
+        messages.success(self.request, "Expense updated successfully.")
+        return response
+
+
+class PayrollListView(AdminOrCoachRequiredMixin, ListView):
+    model = PayrollRecord
+    template_name = "finance/payroll_list.html"
+    context_object_name = "payroll_records"
+    paginate_by = 12
+
+    def get_queryset(self):
+        queryset = visible_payroll_for_user(self.request.user)
+        coach = self.request.GET.get("coach", "").strip()
+        status = self.request.GET.get("status", "").strip()
+        if coach and has_role(self.request.user, ROLE_ADMIN):
+            queryset = queryset.filter(coach_id=coach)
+        if status:
+            queryset = queryset.filter(status=status)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        payroll_rows = list(context["payroll_records"])
+        context["statuses"] = PayrollRecord.STATUS_CHOICES
+        context["coaches"] = Member.objects.filter(assigned_coach__isnull=False).values_list(
+            "assigned_coach_id", "assigned_coach__username"
+        ).distinct()
+        context["can_manage"] = has_role(self.request.user, ROLE_ADMIN)
+        context["is_coach_view"] = has_role(self.request.user, ROLE_COACH) and not has_role(self.request.user, ROLE_ADMIN)
+        context["total_payroll"] = sum(Decimal(record.total_pay or 0) for record in payroll_rows)
+        context["paid_total"] = sum(
+            Decimal(record.total_pay or 0) for record in payroll_rows if record.status == PayrollRecord.STATUS_PAID
+        )
+        return context
+
+
+class PayrollCreateView(AdminRequiredMixin, CreateView):
+    model = PayrollRecord
+    form_class = PayrollRecordForm
+    template_name = "finance/payroll_form.html"
+    success_url = reverse_lazy("finance:payroll")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["current_user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        form.instance.updated_by = self.request.user
+        response = super().form_valid(form)
+        messages.success(self.request, "Payroll record created successfully.")
+        return response
+
+
+class PayrollUpdateView(AdminRequiredMixin, UpdateView):
+    model = PayrollRecord
+    form_class = PayrollRecordForm
+    template_name = "finance/payroll_form.html"
+    success_url = reverse_lazy("finance:payroll")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["current_user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        form.instance.updated_by = self.request.user
+        response = super().form_valid(form)
+        messages.success(self.request, "Payroll record updated successfully.")
+        return response
+
+
+class ForecastScenarioListView(AdminRequiredMixin, TemplateView):
+    template_name = "finance/forecast_list.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        today = timezone.localdate()
+        scenarios = list(ForecastScenario.objects.order_by("-is_primary", "title"))
+        scenario_rows = []
+        for scenario in scenarios:
+            forecast = build_finance_snapshot(today=today, scenario=scenario)["forecast"]
+            scenario_rows.append({"scenario": scenario, "forecast": forecast})
+        context["scenario_rows"] = scenario_rows
+        context["primary_snapshot"] = build_finance_snapshot(today=today)
+        return context
+
+
+class ForecastScenarioCreateView(AdminRequiredMixin, CreateView):
+    model = ForecastScenario
+    form_class = ForecastScenarioForm
+    template_name = "finance/forecast_form.html"
+    success_url = reverse_lazy("finance:forecasting")
+
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        form.instance.updated_by = self.request.user
+        response = super().form_valid(form)
+        messages.success(self.request, "Forecast scenario created successfully.")
+        return response
+
+
+class ForecastScenarioUpdateView(AdminRequiredMixin, UpdateView):
+    model = ForecastScenario
+    form_class = ForecastScenarioForm
+    template_name = "finance/forecast_form.html"
+    success_url = reverse_lazy("finance:forecasting")
+
+    def form_valid(self, form):
+        form.instance.updated_by = self.request.user
+        response = super().form_valid(form)
+        messages.success(self.request, "Forecast scenario updated successfully.")
+        return response
+
+
+class ComplianceView(AdminRequiredMixin, TemplateView):
+    template_name = "finance/compliance.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        snapshot = build_finance_snapshot()
+        context.update(snapshot)
+        context["historical_lock_form"] = HistoricalLockForm()
+        return context
+
+
+class HistoricalLockCreateView(AdminRequiredMixin, CreateView):
+    model = HistoricalLock
+    form_class = HistoricalLockForm
+    template_name = "finance/historical_lock_form.html"
+    success_url = reverse_lazy("finance:compliance")
+
+    def form_valid(self, form):
+        form.instance.locked_by = self.request.user
+        response = super().form_valid(form)
+        messages.success(self.request, "Historical lock updated successfully.")
+        return response
+
+
+class HistoricalLockUpdateView(AdminRequiredMixin, UpdateView):
+    model = HistoricalLock
+    form_class = HistoricalLockForm
+    template_name = "finance/historical_lock_form.html"
+    success_url = reverse_lazy("finance:compliance")
+
+    def form_valid(self, form):
+        form.instance.locked_by = self.request.user
+        response = super().form_valid(form)
+        messages.success(self.request, "Historical lock updated successfully.")
         return response
 
 
@@ -407,11 +512,7 @@ class ProductDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["can_manage"] = has_role(self.request.user, ROLE_ADMIN)
-        context["related_products"] = (
-            visible_products_for_user(self.request.user)
-            .exclude(pk=self.object.pk)
-            .order_by("name")[:4]
-        )
+        context["related_products"] = visible_products_for_user(self.request.user).exclude(pk=self.object.pk).order_by("name")[:4]
         return context
 
 
@@ -454,21 +555,66 @@ class ProductDeleteView(AdminRequiredMixin, DeleteView):
 
 @role_required(ROLE_ADMIN)
 def export_finance_csv(request):
+    snapshot = build_finance_snapshot()
     response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = 'attachment; filename="finance-report.csv"'
+    response["Content-Disposition"] = 'attachment; filename="finance-export.csv"'
     writer = csv.writer(response)
-    writer.writerow(["Member", "Type", "Period", "Amount", "Status", "Due Date"])
-    for invoice in Invoice.objects.select_related("member").order_by("-period"):
+
+    writer.writerow(["Finance Report Export", timezone.localdate()])
+    writer.writerow([])
+    writer.writerow(["Summary"])
+    writer.writerow(["Monthly recurring revenue", snapshot["monthly_recurring_revenue"]])
+    writer.writerow(["Revenue this month", snapshot["revenue_this_month"]])
+    writer.writerow(["Total expenses", snapshot["total_expenses"]])
+    writer.writerow(["Net profit", snapshot["net_profit"]])
+    writer.writerow(["Cash balance", snapshot["cash_balance"]])
+    writer.writerow([])
+
+    writer.writerow(["Invoices"])
+    writer.writerow(["Student", "Type", "Period", "Branch", "Amount", "Approved", "Outstanding", "Status", "Due date"])
+    for invoice in snapshot["invoice_rows"]:
         writer.writerow(
             [
-                invoice.member.full_name,
+                invoice.student_label,
                 invoice.get_invoice_type_display(),
                 invoice.period,
+                invoice.branch_label,
                 invoice.amount,
-                invoice.status,
+                invoice.approved_amount,
+                invoice.outstanding_amount,
+                invoice.get_status_display(),
                 invoice.due_date,
             ]
         )
-    return response
 
-# Create your views here.
+    writer.writerow([])
+    writer.writerow(["Expenses"])
+    writer.writerow(["Date", "Title", "Type", "Category", "Branch", "Amount", "Payment Method"])
+    for expense in snapshot["expenses"][:200]:
+        writer.writerow(
+            [
+                expense.expense_date,
+                expense.title,
+                expense.get_expense_type_display(),
+                expense.get_category_tag_display(),
+                expense.branch_label,
+                expense.amount,
+                expense.get_payment_method_display(),
+            ]
+        )
+
+    writer.writerow([])
+    writer.writerow(["Payroll"])
+    writer.writerow(["Coach", "Period", "Branch", "Status", "Sessions", "Total Pay"])
+    for payroll in snapshot["all_payroll_rows"][:200]:
+        writer.writerow(
+            [
+                payroll.coach.get_full_name() or payroll.coach.username,
+                payroll.period,
+                payroll.branch_label,
+                payroll.get_status_display(),
+                payroll.session_count,
+                payroll.total_pay,
+            ]
+        )
+    return response

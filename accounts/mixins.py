@@ -26,6 +26,10 @@ class AdminOrCoachRequiredMixin(RoleRequiredMixin):
     allowed_roles = (ROLE_ADMIN, ROLE_COACH)
 
 
+class SalesOrAdminRequiredMixin(RoleRequiredMixin):
+    allowed_roles = (ROLE_ADMIN, ROLE_HEADCOUNT)
+
+
 class HeadcountOrAboveRequiredMixin(RoleRequiredMixin):
     allowed_roles = (ROLE_ADMIN, ROLE_COACH, ROLE_HEADCOUNT)
 

@@ -202,7 +202,7 @@
             <section class="panel">
                 <div class="eyebrow"><i class="fa-solid fa-user-plus"></i> Admission Funnel</div>
                 <h1>Apply to join {{ landing_content.hero_title }}.</h1>
-                <p class="lead">This form brings the original admission flow into the live system. Submit the student details and answer the level assessment once, then our admin or coach team can review, auto-assign the right coach, and continue the child profile setup from inside the dashboard.</p>
+                <p class="lead">This form now feeds the live CRM pipeline. Submit the student details once, tell us where the lead came from, and our staff team will review, assign the right coach for trial, and move the student from lead to trial to active status inside the dashboard.</p>
 
                 {% if submitted %}
                 <div class="success">
@@ -225,12 +225,12 @@
                             {{ form.date_of_birth.errors }}
                         </div>
                         <div class="field">
-                            <label for="{{ form.guardian_name.id_for_label }}">Guardian name</label>
+                            <label for="{{ form.guardian_name.id_for_label }}">Parent name</label>
                             {{ form.guardian_name }}
                             {{ form.guardian_name.errors }}
                         </div>
                         <div class="field">
-                            <label for="{{ form.guardian_email.id_for_label }}">Guardian email</label>
+                            <label for="{{ form.guardian_email.id_for_label }}">Parent email</label>
                             {{ form.guardian_email }}
                             {{ form.guardian_email.errors }}
                         </div>
@@ -238,6 +238,11 @@
                             <label for="{{ form.contact_number.id_for_label }}">Contact number</label>
                             {{ form.contact_number }}
                             {{ form.contact_number.errors }}
+                        </div>
+                        <div class="field">
+                            <label for="{{ form.source.id_for_label }}">Lead source</label>
+                            {{ form.source }}
+                            {{ form.source.errors }}
                         </div>
                         <div class="field">
                             <label for="{{ form.desired_username.id_for_label }}">Preferred portal username</label>
@@ -315,7 +320,7 @@
                 </div>
                 <div class="side-block">
                     <h3>What happens next</h3>
-                    <p>1. Staff reviews the application. 2. The level assessment recommends the best starting group. 3. Approved submissions are auto-assigned to a suitable coach and onboarding invoices are generated. 4. Parent billing and session visibility then flow into the same portal.</p>
+                    <p>1. Staff reviews the lead and assigns follow-up ownership. 2. The level assessment recommends the best starting group. 3. Approved leads become trial students and can attend the configured trial sessions. 4. Once subscription payment is approved, the student moves into the active roster.</p>
                 </div>
                 <div class="side-block">
                     <h3>Need help?</h3>

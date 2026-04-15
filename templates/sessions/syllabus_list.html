@@ -1,29 +1,65 @@
 {% extends "base.html" %}
 
 {% block title %}Syllabus | NYO Admin Dashboard{% endblock %}
-{% block page_heading %}Coaching Syllabus{% endblock %}
+{% block page_heading %}Class Syllabuses{% endblock %}
 
 {% block content %}
 <div class="space-y">
     <div class="card">
         <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
             <div>
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Curriculum Control</p>
-                <h2 style="font-size:28px;font-weight:700;color:var(--text);">Dynamic Syllabus Framework</h2>
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Root-First Curriculum</p>
+                <h2 style="font-size:28px;font-weight:700;color:var(--text);">Manage multiple class syllabuses from one curriculum workspace.</h2>
                 <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;max-width:860px;">
-                    The PDF syllabus is now represented as an editable curriculum framework. Admin controls the annual goal, standards, assessment language, and weekly session units here, and the AI planner uses the same structure so every coach stays aligned.
+                    Start from a syllabus root, then drill into the track templates, standards, and weekly units underneath it. This lets the academy run different class types instead of one global syllabus only.
                 </p>
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                <a href="{% url 'sessions:syllabus_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Weekly Unit</a>
-                <a href="{% url 'sessions:syllabus_standard_create' %}" class="btn btn-ghost"><i class="fa-solid fa-layer-group"></i> Add Standard</a>
+                <a href="{% url 'sessions:syllabus_root_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Syllabus Root</a>
+                {% if selected_root %}
+                <a href="{% url 'sessions:syllabus_create' %}?root={{ selected_root.pk }}" class="btn btn-ghost"><i class="fa-solid fa-calendar-plus"></i> Add Weekly Unit</a>
+                <a href="{% url 'sessions:syllabus_standard_create' %}?root={{ selected_root.pk }}" class="btn btn-ghost"><i class="fa-solid fa-layer-group"></i> Add Standard</a>
+                {% endif %}
                 <a href="{% url 'sessions:list' %}" class="btn btn-ghost"><i class="fa-solid fa-calendar-days"></i> Back to Sessions</a>
             </div>
         </div>
     </div>
 
+    <div class="card">
+        <div class="section-header">
+            <span class="section-title">Syllabus Roots</span>
+        </div>
+        <div class="grid-2 mt-3">
+            {% for root in syllabus_roots %}
+            <a href="{% url 'sessions:syllabus' %}?root={{ root.pk }}" class="card-inset" style="{% if selected_root and selected_root.pk == root.pk %}border-color:rgba(79,110,247,.42);box-shadow:0 0 0 1px rgba(79,110,247,.18);{% endif %}text-decoration:none;">
+                <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+                    <div>
+                        <p style="font-weight:700;font-size:18px;color:var(--text);">{{ root.name }}</p>
+                        <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;">{{ root.description|default:"No description yet." }}</p>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        {% if root.is_default %}<span class="badge badge-info">Default</span>{% endif %}
+                        <span class="badge {% if root.is_active %}badge-success{% else %}badge-neutral{% endif %}">{% if root.is_active %}Active{% else %}Inactive{% endif %}</span>
+                    </div>
+                </div>
+                <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-top:14px;">
+                    <span class="text-sm text-muted">Open curriculum</span>
+                    <span class="text-sm" style="color:var(--accent);font-weight:600;">View root</span>
+                </div>
+            </a>
+            {% empty %}
+            <div class="empty-state">
+                <i class="fa-regular fa-clipboard"></i>
+                <p>No syllabus roots exist yet.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if selected_root %}
     <div class="filter-bar">
         <form method="get" class="filter-fields">
+            <input type="hidden" name="root" value="{{ selected_root.pk }}">
             <div class="filter-field">
                 <label>Track</label>
                 <select name="track">
@@ -35,9 +71,19 @@
             </div>
             <div class="filter-actions" style="margin-top:auto;">
                 <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filter</button>
-                <a href="{% url 'sessions:syllabus' %}" class="btn btn-ghost">Reset</a>
+                <a href="{% url 'sessions:syllabus' %}?root={{ selected_root.pk }}" class="btn btn-ghost">Reset</a>
             </div>
         </form>
+    </div>
+
+    <div class="card">
+        <div class="section-header">
+            <span class="section-title">{{ selected_root.name }}</span>
+            <a href="{% url 'sessions:syllabus_root_edit' selected_root.pk %}" class="section-link">Edit root</a>
+        </div>
+        <div class="card-inset mt-3">
+            <p class="text-sm text-muted" style="line-height:1.8;">{{ selected_root.description|default:"No description added yet." }}</p>
+        </div>
     </div>
 
     {% for group in grouped_rows %}
@@ -48,7 +94,7 @@
                 {% if group.template %}
                 <a href="{% url 'sessions:syllabus_template_edit' group.template.pk %}" class="btn btn-ghost btn-xs">Edit Template</a>
                 {% endif %}
-                <a href="{% url 'sessions:syllabus_standard_create' %}?track={{ group.track }}" class="btn btn-ghost btn-xs">Add Standard</a>
+                <a href="{% url 'sessions:syllabus_standard_create' %}?root={{ selected_root.pk }}&track={{ group.track }}" class="btn btn-ghost btn-xs">Add Standard</a>
             </div>
         </div>
 
@@ -62,45 +108,11 @@
                 </div>
                 <span class="badge {% if group.template.is_active %}badge-success{% else %}badge-neutral{% endif %}">{% if group.template.is_active %}Active{% else %}Inactive{% endif %}</span>
             </div>
-            <div class="grid-2 mt-3">
-                <div>
-                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Year-End Outcomes</p>
-                    <div class="space-y">
-                        {% for item in group.template.year_end_outcome_list %}
-                        <div class="card-inset">
-                            <p style="font-size:13.5px;color:var(--text);line-height:1.7;">{{ item }}</p>
-                        </div>
-                        {% empty %}
-                        <p class="text-sm text-muted">No outcomes added yet.</p>
-                        {% endfor %}
-                    </div>
-                </div>
-                <div>
-                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Assessment And AI Notes</p>
-                    <div class="card-inset">
-                        <p style="font-size:13.5px;color:var(--text);line-height:1.8;"><strong>Approach:</strong> {{ group.template.assessment_approach|default:"Not set" }}</p>
-                        {% if group.template.assessment_method_list %}
-                        <p class="text-sm text-muted" style="margin-top:10px;">Methods:</p>
-                        <ul style="display:grid;gap:6px;margin-top:6px;padding-left:18px;">
-                            {% for item in group.template.assessment_method_list %}
-                            <li style="color:var(--text);font-size:13.5px;line-height:1.7;">{{ item }}</li>
-                            {% endfor %}
-                        </ul>
-                        {% endif %}
-                        {% if group.template.annual_phase_notes %}
-                        <p style="font-size:13px;color:var(--muted);line-height:1.8;margin-top:12px;">{{ group.template.annual_phase_notes }}</p>
-                        {% endif %}
-                        {% if group.template.ai_planner_instructions %}
-                        <p style="font-size:13px;color:var(--muted);line-height:1.8;margin-top:12px;"><strong>AI planner note:</strong> {{ group.template.ai_planner_instructions }}</p>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
         </div>
         {% endif %}
 
         <div class="space-y mt-3">
-            <div class="section-header" style="margin-top:8px;">
+            <div class="section-header">
                 <span class="section-title">Curriculum Standards</span>
             </div>
             {% for standard in group.standards %}
@@ -116,38 +128,6 @@
                         <a href="{% url 'sessions:syllabus_standard_edit' standard.pk %}" class="btn btn-ghost btn-xs">Edit</a>
                     </div>
                 </div>
-                <div class="grid-2 mt-3">
-                    <div>
-                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Learning Standards</p>
-                        <div class="space-y">
-                            {% for item in standard.learning_standard_list %}
-                            <div class="card-inset">
-                                <p style="font-size:13.5px;color:var(--text);line-height:1.7;">{{ item }}</p>
-                            </div>
-                            {% empty %}
-                            <p class="text-sm text-muted">No learning standards added.</p>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <div>
-                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Performance Bands</p>
-                        <div class="space-y">
-                            {% for item in standard.performance_band_list %}
-                            <div class="card-inset">
-                                <p style="font-size:13.5px;color:var(--text);line-height:1.7;">{{ item }}</p>
-                            </div>
-                            {% empty %}
-                            <p class="text-sm text-muted">No performance bands added.</p>
-                            {% endfor %}
-                        </div>
-                        {% if standard.assessment_focus %}
-                        <p style="font-size:13px;color:var(--muted);line-height:1.8;margin-top:12px;"><strong>Assessment focus:</strong> {{ standard.assessment_focus }}</p>
-                        {% endif %}
-                        {% if standard.coach_hints %}
-                        <p style="font-size:13px;color:var(--muted);line-height:1.8;margin-top:8px;"><strong>Coach hint:</strong> {{ standard.coach_hints }}</p>
-                        {% endif %}
-                    </div>
-                </div>
             </div>
             {% empty %}
             <div class="empty-state">
@@ -158,7 +138,7 @@
         </div>
 
         <div class="space-y mt-3">
-            <div class="section-header" style="margin-top:8px;">
+            <div class="section-header">
                 <span class="section-title">Weekly Session Units</span>
             </div>
             {% for row in group.rows %}
@@ -170,9 +150,7 @@
                         <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;">{{ row.objective }}</p>
                     </div>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                        <span class="badge {% if row.is_active %}badge-success{% else %}badge-neutral{% endif %}">
-                            {% if row.is_active %}Active{% else %}Inactive{% endif %}
-                        </span>
+                        <span class="badge {% if row.is_active %}badge-success{% else %}badge-neutral{% endif %}">{% if row.is_active %}Active{% else %}Inactive{% endif %}</span>
                         <a href="{% url 'sessions:syllabus_edit' row.pk %}" class="btn btn-ghost btn-xs">Edit</a>
                     </div>
                 </div>
@@ -185,48 +163,12 @@
                         <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Technical Focus</p>
                         <p style="font-size:13.5px;color:var(--text);line-height:1.8;">{{ row.technical_focus }}</p>
                     </div>
-                    <div>
-                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Tactical Focus</p>
-                        <p style="font-size:13.5px;color:var(--text);line-height:1.8;">{{ row.tactical_focus }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Coach Cues</p>
-                        <p style="font-size:13.5px;color:var(--text);line-height:1.8;">{{ row.coaching_cues }}</p>
-                    </div>
-                    {% if row.assessment_focus %}
-                    <div>
-                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Assessment Focus</p>
-                        <p style="font-size:13.5px;color:var(--text);line-height:1.8;">{{ row.assessment_focus }}</p>
-                    </div>
-                    {% endif %}
-                    {% if row.success_criteria %}
-                    <div>
-                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Success Criteria</p>
-                        <p style="font-size:13.5px;color:var(--text);line-height:1.8;">{{ row.success_criteria }}</p>
-                    </div>
-                    {% endif %}
                 </div>
-                {% if row.coach_notes or row.homework %}
-                <div class="grid-2 mt-3">
-                    {% if row.coach_notes %}
-                    <div class="card-inset">
-                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Coach Notes</p>
-                        <p style="font-size:13.5px;color:var(--text);line-height:1.8;">{{ row.coach_notes }}</p>
-                    </div>
-                    {% endif %}
-                    {% if row.homework %}
-                    <div class="card-inset">
-                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Homework</p>
-                        <p style="font-size:13.5px;color:var(--text);line-height:1.8;">{{ row.homework }}</p>
-                    </div>
-                    {% endif %}
-                </div>
-                {% endif %}
             </div>
             {% empty %}
             <div class="empty-state">
                 <i class="fa-regular fa-clipboard"></i>
-                <p>No weekly session units match the current filter.</p>
+                <p>No weekly session units exist for this track yet.</p>
             </div>
             {% endfor %}
         </div>
@@ -235,9 +177,10 @@
     <div class="card">
         <div class="empty-state">
             <i class="fa-regular fa-clipboard"></i>
-            <p>No syllabus rows match the current filter.</p>
+            <p>No templates, standards, or weekly units were found for this syllabus root yet.</p>
         </div>
     </div>
     {% endfor %}
+    {% endif %}
 </div>
 {% endblock %}

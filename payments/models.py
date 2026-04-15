@@ -1,6 +1,10 @@
+from decimal import Decimal
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+
+from finance.models import PAYMENT_METHOD_BANK_TRANSFER, PAYMENT_METHOD_CHOICES
 
 
 class QRCode(models.Model):
@@ -61,7 +65,11 @@ class Payment(models.Model):
         null=True,
         related_name="submitted_payments",
     )
+    payment_method = models.CharField(max_length=30, choices=PAYMENT_METHOD_CHOICES, default=PAYMENT_METHOD_BANK_TRANSFER)
+    amount_received = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    receipt_reference = models.CharField(max_length=120, blank=True)
     proof_image = models.ImageField(upload_to="payment_proofs/")
+    notes = models.TextField(blank=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
     reviewed_by = models.ForeignKey(
@@ -80,4 +88,8 @@ class Payment(models.Model):
     def __str__(self):
         return f"{self.invoice.member.full_name} - {self.get_status_display()}"
 
-# Create your models here.
+    def save(self, *args, **kwargs):
+        if self.invoice_id and (self.amount_received is None or self.amount_received <= Decimal("0.00")):
+            outstanding_amount = getattr(self.invoice, "outstanding_amount", Decimal("0.00"))
+            self.amount_received = outstanding_amount or self.invoice.amount
+        super().save(*args, **kwargs)

@@ -277,14 +277,14 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 "meta": f"{pending_count} payment review(s) waiting",
             }
             dashboard_actions = [
-                {"label": "CRM Workspace", "url": reverse("members:crm"), "icon": "fa-address-book"},
-                {"label": "Manage Members", "url": reverse("members:list"), "icon": "fa-users"},
+                {"label": "CRM", "url": reverse("members:crm"), "icon": "fa-address-book"},
+                {"label": "Students", "url": reverse("members:list"), "icon": "fa-users"},
                 {"label": "Coach Accounts", "url": reverse("accounts:coaches"), "icon": "fa-user-tie"},
                 {"label": "Plan Sessions", "url": reverse("sessions:list"), "icon": "fa-calendar-days"},
                 {"label": "Syllabus", "url": reverse("sessions:syllabus"), "icon": "fa-book-open"},
                 {"label": "Progress Reports", "url": reverse("members:report_list"), "icon": "fa-file-lines"},
                 {
-                    "label": "Applications",
+                    "label": "Leads",
                     "url": reverse("members:application_list"),
                     "icon": "fa-user-plus",
                     "badge": application_count or None,
@@ -299,7 +299,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 {"label": "Store", "url": reverse("finance:product_list"), "icon": "fa-bag-shopping"},
                 {"label": "Website", "url": reverse("accounts:website"), "icon": "fa-globe"},
                 {"label": "Billing Setup", "url": reverse("finance:billing_settings"), "icon": "fa-tags"},
-                {"label": "Cash Flow", "url": reverse("finance:cash_flow"), "icon": "fa-sack-dollar"},
+                {"label": "Finance", "url": reverse("finance:overview"), "icon": "fa-chart-pie"},
             ]
             workspace_highlights = [
                 {"label": "Sessions This Week", "value": sessions.filter(session_date__range=(today, week_window_end)).count(), "tone": "info"},
@@ -335,6 +335,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 {"label": "Progress Reports", "url": reverse("members:report_list"), "icon": "fa-file-lines"},
                 {"label": "Student Payments", "url": reverse("payments:payment_history"), "icon": "fa-money-check-dollar"},
                 {"label": "Invoices", "url": reverse("finance:invoice_list"), "icon": "fa-file-invoice-dollar"},
+                {"label": "Payroll", "url": reverse("finance:payroll"), "icon": "fa-hand-holding-dollar"},
                 {"label": "Store", "url": reverse("finance:product_list"), "icon": "fa-bag-shopping"},
             ]
             if next_planning_session:
@@ -361,36 +362,40 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 "reports": coach_reports.order_by("-period_end")[:5],
             }
         elif role == ROLE_HEADCOUNT:
-            today_sessions = sessions.filter(session_date=today).order_by("start_time")
-            scheduled_today = attendance.filter(
-                training_session__session_date=today,
-                status=AttendanceRecord.STATUS_SCHEDULED,
-            ).count()
-            logged_today = attendance.filter(training_session__session_date=today).exclude(
-                status=AttendanceRecord.STATUS_SCHEDULED
+            sales_leads = AdmissionApplication.objects.filter(status=AdmissionApplication.STATUS_PENDING).filter(
+                Q(assigned_staff=user) | Q(assigned_staff__isnull=True)
+            )
+            sales_trials = members.filter(status=Member.STATUS_TRIAL).filter(
+                Q(assigned_staff=user) | Q(assigned_staff__isnull=True)
+            )
+            converted_this_month = Member.objects.filter(
+                assigned_staff=user,
+                subscription_started_at__year=today.year,
+                subscription_started_at__month=today.month,
             ).count()
             dashboard_intro = {
-                "eyebrow": "Headcount Workspace",
-                "title": "Attendance command center",
-                "body": "Move through today's session list, find open attendance rows fast, and keep the live floor count accurate for coaches and parents.",
-                "meta": f"{scheduled_today} attendance row(s) still open today",
+                "eyebrow": "Sales/Admin Workspace",
+                "title": "Lead and trial pipeline",
+                "body": "Track intake quality, move the right leads into trial, and keep the next commercial action visible on every trial account.",
+                "meta": f"{sales_trials.count()} trial account(s) in progress",
             }
             dashboard_actions = [
-                {"label": "Open Sessions", "url": reverse("sessions:list"), "icon": "fa-calendar-days"},
-                {"label": "Mark Attendance", "url": reverse("sessions:list"), "icon": "fa-clipboard-check"},
-                {"label": "Store", "url": reverse("finance:product_list"), "icon": "fa-bag-shopping"},
+                {"label": "CRM", "url": reverse("members:crm"), "icon": "fa-address-book"},
+                {"label": "Leads", "url": reverse("members:application_list"), "icon": "fa-filter-circle-dollar", "badge": sales_leads.count() or None},
+                {"label": "Trials", "url": reverse("members:list"), "icon": "fa-hourglass-half"},
             ]
             workspace_highlights = [
-                {"label": "Sessions Today", "value": today_sessions.count(), "tone": "info"},
-                {"label": "Rows Logged", "value": logged_today, "tone": "success"},
-                {"label": "Rows Pending", "value": scheduled_today, "tone": "warning"},
-                {"label": "Attendance Rate", "value": f"{attendance_rate}%", "tone": "neutral"},
+                {"label": "Open Leads", "value": sales_leads.count(), "tone": "info"},
+                {"label": "Live Trials", "value": sales_trials.count(), "tone": "warning"},
+                {"label": "Converted This Month", "value": converted_this_month, "tone": "success"},
+                {"label": "Need Follow Up", "value": sales_trials.exclude(next_action="").count(), "tone": "neutral"},
             ]
             workspace_lists = {
-                "upcoming_sessions": today_sessions[:5],
-                "queue": sessions.filter(attendance_records__status=AttendanceRecord.STATUS_SCHEDULED)
-                .distinct()
-                .order_by("session_date", "start_time")[:5],
+                "upcoming_sessions": sessions.filter(
+                    attendance_records__member__in=sales_trials,
+                    session_date__gte=today,
+                ).distinct().order_by("session_date", "start_time")[:5],
+                "queue": sales_leads.order_by("-submitted_at")[:5],
             }
         elif role == ROLE_PARENT:
             dashboard_intro = {
@@ -575,8 +580,8 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             ]
         elif role == ROLE_HEADCOUNT:
             cards = [
-                {"label": "Attendance Rate", "value": f"{attendance_rate}%", "icon": "fa-clipboard-check"},
-                {"label": "Sessions This Month", "value": sessions.filter(session_date__month=today.month).count(), "icon": "fa-calendar-days"},
+                {"label": "Open Leads", "value": AdmissionApplication.objects.filter(status=AdmissionApplication.STATUS_PENDING).filter(Q(assigned_staff=user) | Q(assigned_staff__isnull=True)).count(), "icon": "fa-filter-circle-dollar"},
+                {"label": "Live Trials", "value": members.filter(status=Member.STATUS_TRIAL).filter(Q(assigned_staff=user) | Q(assigned_staff__isnull=True)).count(), "icon": "fa-hourglass-half"},
             ]
         elif role == ROLE_PARENT:
             outstanding = invoices.exclude(status=Invoice.STATUS_PAID).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")

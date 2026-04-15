@@ -6,8 +6,16 @@ from django.contrib.auth import get_user_model
 
 from accounts.models import UserProfile
 from accounts.utils import ROLE_ADMIN, ROLE_COACH, has_role
+from finance.models import BillingConfiguration
 from members.models import Member
-from sessions.models import SessionFeedback, SyllabusStandard, SyllabusTemplate, TrainingSession, WeeklySyllabus
+from sessions.models import (
+    SessionFeedback,
+    SyllabusRoot,
+    SyllabusStandard,
+    SyllabusTemplate,
+    TrainingSession,
+    WeeklySyllabus,
+)
 
 User = get_user_model()
 
@@ -26,7 +34,7 @@ class TrainingSessionForm(forms.ModelForm):
     ]
 
     members = forms.ModelMultipleChoiceField(
-        queryset=Member.objects.filter(status=Member.STATUS_ACTIVE).order_by("full_name"),
+        queryset=Member.objects.filter(status__in=[Member.STATUS_ACTIVE, Member.STATUS_TRIAL]).order_by("full_name"),
         required=False,
         widget=forms.SelectMultiple(attrs={"size": 8}),
     )
@@ -52,6 +60,7 @@ class TrainingSessionForm(forms.ModelForm):
             "start_time",
             "end_time",
             "court",
+            "syllabus_root",
             "coach",
             "notes",
         ]
@@ -67,6 +76,7 @@ class TrainingSessionForm(forms.ModelForm):
         self.current_user = current_user
         self.created_sessions = []
         self.generated_schedule_dates = []
+        self.fields["syllabus_root"].queryset = SyllabusRoot.objects.filter(is_active=True).order_by("name")
         self.fields["coach"].queryset = User.objects.filter(profile__role=UserProfile.ROLE_COACH).order_by(
             "first_name", "username"
         )
@@ -93,6 +103,27 @@ class TrainingSessionForm(forms.ModelForm):
             and not recurring_weekdays
         ):
             self.add_error("recurring_weekdays", "Choose at least one weekday for the recurring schedule.")
+        selected_members = cleaned_data.get("members")
+        session_date = cleaned_data.get("session_date")
+        if selected_members and session_date:
+            prospective_count = 1
+            if not self.instance.pk and schedule_mode == self.SCHEDULE_MODE_RECURRING and recurring_weekdays:
+                prospective_count = len(self.build_recurring_dates(session_date, recurring_weekdays))
+            trial_limit = BillingConfiguration.get_solo().trial_session_limit or 1
+            over_limit_names = []
+            for member in selected_members:
+                if member.status != Member.STATUS_TRIAL:
+                    continue
+                existing_records = member.attendance_records.all()
+                if self.instance.pk:
+                    existing_records = existing_records.exclude(training_session=self.instance)
+                if existing_records.count() + prospective_count > trial_limit:
+                    over_limit_names.append(member.full_name)
+            if over_limit_names:
+                self.add_error(
+                    "members",
+                    f"Trial limit exceeded for: {', '.join(over_limit_names)}. Increase the trial limit or move them to an active package first.",
+                )
         return cleaned_data
 
     def save(self, commit=True):
@@ -130,11 +161,13 @@ class TrainingSessionForm(forms.ModelForm):
                     start_time=training_session.start_time,
                     end_time=training_session.end_time,
                     court=training_session.court,
+                    syllabus_root=training_session.syllabus_root,
                     coach=training_session.coach,
                     notes=training_session.notes,
                     created_by=training_session.created_by,
                 )
             else:
+                session.syllabus_root = training_session.syllabus_root
                 session.notes = training_session.notes
             session.save()
             self.save_members(session)
@@ -178,6 +211,7 @@ class WeeklySyllabusForm(forms.ModelForm):
     class Meta:
         model = WeeklySyllabus
         fields = [
+            "root",
             "track",
             "template",
             "standard",
@@ -211,8 +245,10 @@ class WeeklySyllabusForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["template"].queryset = SyllabusTemplate.objects.order_by("track", "name")
+        self.fields["root"].queryset = SyllabusRoot.objects.filter(is_active=True).order_by("name")
+        self.fields["template"].queryset = SyllabusTemplate.objects.order_by("root__name", "track", "name")
         self.fields["standard"].queryset = SyllabusStandard.objects.select_related("template").order_by(
+            "template__root__name",
             "template__track",
             "sort_order",
             "code",
@@ -225,6 +261,7 @@ class SyllabusTemplateForm(forms.ModelForm):
     class Meta:
         model = SyllabusTemplate
         fields = [
+            "root",
             "track",
             "name",
             "source_document_name",
@@ -246,6 +283,15 @@ class SyllabusTemplateForm(forms.ModelForm):
             "curriculum_values": forms.Textarea(attrs={"rows": 3}),
             "annual_phase_notes": forms.Textarea(attrs={"rows": 4}),
             "ai_planner_instructions": forms.Textarea(attrs={"rows": 4}),
+        }
+
+
+class SyllabusRootForm(forms.ModelForm):
+    class Meta:
+        model = SyllabusRoot
+        fields = ["name", "code", "description", "is_active", "is_default"]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 4}),
         }
 
 

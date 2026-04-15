@@ -6,103 +6,51 @@
 
 {% block content %}
 <div class="space-y">
-
-    <!-- Header Card -->
-    <div class="card" style="display:flex;align-items:center;gap:14px;">
-        <div style="width:44px;height:44px;border-radius:10px;background:rgba(245,158,11,.12);color:#fbbf24;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">
-            <i class="fa-solid fa-receipt"></i>
-        </div>
-        <div>
-            <h2 style="font-size:16px;font-weight:700;color:var(--text);">Admin Verification Queue</h2>
-            <p class="text-sm text-muted mt-1">Only admin can review uploaded proofs and approve or reject them with a reason.</p>
+    <div class="card">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap;">
+            <div>
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Admin verification queue</p>
+                <h2 style="font-size:28px;font-weight:700;color:var(--text);">Review every submitted receipt with amount, method, and proof image before it affects the invoice status.</h2>
+            </div>
+            <a href="{% url 'payments:payment_history' %}" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Payment History</a>
         </div>
     </div>
 
-    <!-- Desktop Table -->
-    <div class="table-wrap" id="desktopTable" style="display:none;">
-        <div class="overflow-x">
-            <table class="tbl">
-                <thead>
-                    <tr>
-                        <th>Member</th>
-                        <th>Submitted By</th>
-                        <th>Submitted At</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for payment in payments %}
-                    <tr>
-                        <td class="tbl-name">{{ payment.invoice.member.full_name }}</td>
-                        <td class="muted">{{ payment.paid_by|default:"Unknown" }}</td>
-                        <td class="muted">{{ payment.submitted_at }}</td>
-                        <td>
-                            <a href="{% url 'payments:review' payment.pk %}" class="btn btn-xs" style="background:rgba(79,110,247,.1);color:var(--accent);border:1px solid rgba(79,110,247,.25);">
-                                <i class="fa-solid fa-eye"></i> Review
-                            </a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="4">
-                            <div class="empty-state">
-                                <i class="fa-regular fa-circle-check"></i>
-                                <p>No payment proofs waiting for review.</p>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Mobile Cards -->
-    <div id="mobileCards">
-        {% for payment in payments %}
-        <div class="card card-sm" style="margin-bottom:10px;">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
-                <div>
-                    <p style="font-weight:700;font-size:14px;color:var(--text);">{{ payment.invoice.member.full_name }}</p>
-                    <p class="text-sm text-muted mt-1">By: {{ payment.paid_by|default:"Unknown" }}</p>
-                    <p class="text-sm text-muted">{{ payment.submitted_at }}</p>
-                </div>
-                <span class="badge badge-warning">Pending</span>
-            </div>
-            <div style="margin-top:12px;">
-                <a href="{% url 'payments:review' payment.pk %}" class="btn btn-primary btn-sm w-full" style="justify-content:center;">
-                    <i class="fa-solid fa-eye"></i> Review
-                </a>
-            </div>
-        </div>
-        {% empty %}
-        <div class="card">
-            <div class="empty-state">
-                <i class="fa-regular fa-circle-check"></i>
-                <p>No payment proofs waiting for review.</p>
-            </div>
-        </div>
-        {% endfor %}
+    <div class="table-wrap">
+        <table class="tbl native-stack">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Invoice</th>
+                    <th>Method</th>
+                    <th>Amount</th>
+                    <th>Submitted</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                <tr>
+                    <td data-label="Student">
+                        <div class="tbl-name">{{ payment.invoice.member.full_name }}</div>
+                        <div class="tbl-sub">{{ payment.paid_by|default:"Unknown" }}</div>
+                    </td>
+                    <td data-label="Invoice">
+                        <div class="tbl-name">{{ payment.invoice.get_invoice_type_display }}</div>
+                        <div class="tbl-sub">{{ payment.invoice.period|date:"F Y" }}</div>
+                    </td>
+                    <td data-label="Method">{{ payment.get_payment_method_display }}</td>
+                    <td data-label="Amount">RM {{ payment.amount_received|floatformat:2 }}</td>
+                    <td data-label="Submitted" class="muted">{{ payment.submitted_at|date:"d M Y H:i" }}</td>
+                    <td data-label="Action"><a href="{% url 'payments:review' payment.pk %}" class="btn btn-primary btn-xs"><i class="fa-solid fa-eye"></i> Review</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6"><div class="empty-state"><i class="fa-regular fa-circle-check"></i><p>No payment proofs waiting for review.</p></div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 
     {% include "partials/pagination.html" %}
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    function applyLayout() {
-        const desktop = document.getElementById('desktopTable');
-        const mobile = document.getElementById('mobileCards');
-        if (window.innerWidth >= 700) {
-            desktop.style.display = 'block';
-            mobile.style.display = 'none';
-        } else {
-            desktop.style.display = 'none';
-            mobile.style.display = 'block';
-        }
-    }
-    applyLayout();
-    window.addEventListener('resize', applyLayout);
-</script>
 {% endblock %}

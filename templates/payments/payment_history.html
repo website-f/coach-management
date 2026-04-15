@@ -9,56 +9,21 @@
     <div class="card">
         <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
             <div>
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Finance tracking</p>
-                <h2 style="font-size:28px;font-weight:700;color:var(--text);">
-                    {% if can_review %}All Payment Activity{% else %}Student Payment Activity{% endif %}
-                </h2>
-                <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;max-width:760px;">
-                    {% if can_review %}
-                    Review the full payment trail here. Admin can open the pending queue to approve or reject uploaded proofs.
-                    {% else %}
-                    Coaches can monitor the payment status of their assigned students here. Verification still stays with admin only.
-                    {% endif %}
-                </p>
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Collection history</p>
+                <h2 style="font-size:28px;font-weight:700;color:var(--text);">{% if can_review %}Every submitted receipt, amount, method, and approval decision.{% else %}Payment visibility for your assigned students.{% endif %}</h2>
             </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;">
                 {% if can_review %}
-                <a href="{% url 'payments:pending_reviews' %}" class="btn btn-primary">
-                    <i class="fa-solid fa-receipt"></i> Open Verification Queue
-                </a>
-                <a href="{% url 'members:crm' %}" class="btn btn-ghost">
-                    <i class="fa-brands fa-whatsapp"></i> Open CRM
-                </a>
-                <a href="{% url 'finance:cash_flow' %}" class="btn btn-ghost">
-                    <i class="fa-solid fa-chart-line"></i> Cash Flow
-                </a>
+                <a href="{% url 'payments:pending_reviews' %}" class="btn btn-primary"><i class="fa-solid fa-receipt"></i> Review Queue</a>
                 {% endif %}
-                <a href="{% url 'finance:invoice_list' %}" class="btn btn-ghost">
-                    <i class="fa-solid fa-file-invoice-dollar"></i> View Invoices
-                </a>
+                <a href="{% url 'finance:overview' %}#collections" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Back to Finance</a>
             </div>
         </div>
     </div>
 
     <div class="stat-cards">
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div>
-                    <p class="stat-label">Pending Proofs</p>
-                    <p class="stat-value">{{ pending_count }}</p>
-                </div>
-                <div class="stat-icon" style="background:rgba(245,158,11,.12);color:#fbbf24;"><i class="fa-solid fa-hourglass-half"></i></div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div>
-                    <p class="stat-label">Approved Total</p>
-                    <p class="stat-value">RM {{ approved_total }}</p>
-                </div>
-                <div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-wallet"></i></div>
-            </div>
-        </div>
+        <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Pending Proofs</p><p class="stat-value">{{ pending_count }}</p></div><div class="stat-icon" style="background:rgba(245,158,11,.12);color:#fbbf24;"><i class="fa-solid fa-hourglass-half"></i></div></div></div>
+        <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Approved Total</p><p class="stat-value">RM {{ approved_total|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-wallet"></i></div></div></div>
     </div>
 
     <div class="filter-bar">
@@ -83,7 +48,9 @@
             </div>
             <div class="filter-actions" style="margin-top:auto;">
                 <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filter</button>
+                {% if request.GET.status or request.GET.member %}
                 <a href="{% url 'payments:payment_history' %}" class="btn btn-ghost">Clear</a>
+                {% endif %}
             </div>
         </form>
     </div>
@@ -92,35 +59,40 @@
         <table class="tbl native-stack">
             <thead>
                 <tr>
-                    <th>Member</th>
-                    <th>Period</th>
-                    <th>Submitted By</th>
+                    <th>Student</th>
+                    <th>Invoice</th>
+                    <th>Method</th>
+                    <th>Amount</th>
                     <th>Status</th>
-                    <th>Submitted At</th>
+                    <th>Submitted</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody>
                 {% for payment in payments %}
                 <tr>
-                    <td data-label="Member">
+                    <td data-label="Student">
                         <div class="tbl-name">{{ payment.invoice.member.full_name }}</div>
-                        <div class="tbl-sub">{{ payment.invoice.get_invoice_type_display }} · RM {{ payment.invoice.amount }}</div>
+                        <div class="tbl-sub">{% if payment.invoice.member.assigned_coach %}Coach {{ payment.invoice.member.assigned_coach }}{% else %}No coach assigned{% endif %}</div>
                     </td>
-                    <td class="muted" data-label="Period">{{ payment.invoice.period|date:"F Y" }}</td>
-                    <td class="muted" data-label="Submitted By">{{ payment.paid_by|default:"Unknown" }}</td>
+                    <td data-label="Invoice">
+                        <div class="tbl-name">{{ payment.invoice.get_invoice_type_display }}</div>
+                        <div class="tbl-sub">{{ payment.invoice.period|date:"F Y" }} - Due {{ payment.invoice.due_date }}</div>
+                    </td>
+                    <td data-label="Method">
+                        <div class="tbl-name">{{ payment.get_payment_method_display }}</div>
+                        <div class="tbl-sub">{{ payment.receipt_reference|default:"No reference" }}</div>
+                    </td>
+                    <td data-label="Amount">RM {{ payment.amount_received|floatformat:2 }}</td>
                     <td data-label="Status"><span class="badge {{ payment.status|status_badge }}">{{ payment.get_status_display }}</span></td>
-                    <td class="muted" data-label="Submitted At">{{ payment.submitted_at|date:"d M Y H:i" }}</td>
+                    <td data-label="Submitted" class="muted">{{ payment.submitted_at|date:"d M Y H:i" }}</td>
                     <td data-label="Action">
                         <div style="display:flex;gap:8px;flex-wrap:wrap;">
                             {% if payment.proof_image %}
                             <a href="{{ payment.proof_image.url }}" target="_blank" class="btn btn-ghost btn-xs">Proof</a>
                             {% endif %}
-                            {% if can_review and payment.invoice.member.contact_number|whatsapp_url %}
-                            <a href="{{ payment.invoice.member.contact_number|whatsapp_url }}?text={{ 'Hi '|add:payment.invoice.member.full_name|add:', this is NYO Badminton Club regarding your payment submission.'|whatsapp_text }}" target="_blank" rel="noopener" class="btn btn-success btn-xs">WhatsApp</a>
-                            {% endif %}
                             {% if can_review and payment.status == 'pending' %}
-                            <a href="{% url 'payments:review' payment.pk %}" class="btn btn-xs" style="background:rgba(79,110,247,.1);color:var(--accent);border:1px solid rgba(79,110,247,.25);border-radius:99px;padding:4px 12px;">Review</a>
+                            <a href="{% url 'payments:review' payment.pk %}" class="btn btn-primary btn-xs">Review</a>
                             {% else %}
                             <span class="text-sm text-muted">Read only</span>
                             {% endif %}
@@ -128,17 +100,12 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr>
-                    <td colspan="6">
-                        <div class="empty-state">
-                            <i class="fa-regular fa-credit-card"></i>
-                            <p>No payment records match the current filters.</p>
-                        </div>
-                    </td>
-                </tr>
+                <tr><td colspan="7"><div class="empty-state"><i class="fa-regular fa-credit-card"></i><p>No payment records match the current filters.</p></div></td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+
+    {% include "partials/pagination.html" %}
 </div>
 {% endblock %}

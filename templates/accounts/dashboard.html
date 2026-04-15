@@ -62,7 +62,7 @@
         <div class="card">
             <div class="section-header">
                 <span class="section-title">
-                    {% if current_role == 'admin' %}Operations Pulse{% elif current_role == 'coach' %}Coach Focus{% else %}Attendance Priority{% endif %}
+                    {% if current_role == 'admin' %}Operations Pulse{% elif current_role == 'coach' %}Coach Focus{% else %}Pipeline Pulse{% endif %}
                 </span>
             </div>
             <div class="grid-2 mt-3">
@@ -78,12 +78,14 @@
         <div class="card">
             <div class="section-header">
                 <span class="section-title">
-                    {% if current_role == 'headcount' %}Needs Attention{% else %}Action Queue{% endif %}
+                    {% if current_role == 'headcount' %}Lead Queue{% else %}Action Queue{% endif %}
                 </span>
                 {% if current_role == 'admin' %}
                 <a href="{% url 'payments:pending_reviews' %}" class="section-link">Open review queue</a>
                 {% elif current_role == 'coach' %}
                 <a href="{% url 'members:report_list' %}" class="section-link">Open reports</a>
+                {% else %}
+                <a href="{% url 'members:application_list' %}" class="section-link">Open leads</a>
                 {% endif %}
             </div>
             <div class="space-y">
@@ -118,18 +120,18 @@
                     </div>
                     {% endfor %}
                 {% else %}
-                    {% for session in workspace_lists.queue %}
-                    <a href="{% url 'sessions:attendance' session.pk %}" class="list-item">
+                    {% for lead in workspace_lists.queue %}
+                    <a href="{% url 'members:application_review' lead.pk %}" class="list-item">
                         <div>
-                            <p class="list-item-title">{{ session.title }}</p>
-                            <p class="list-item-sub">{{ session.session_date }} · {{ session.start_time|time:"H:i" }} · Court {{ session.court }}</p>
+                            <p class="list-item-title">{{ lead.student_name }}</p>
+                            <p class="list-item-sub">{{ lead.get_source_display }} &middot; {{ lead.preferred_program }} &middot; {{ lead.submitted_at|date:"d M Y" }}</p>
                         </div>
-                        <span class="badge badge-info">Mark</span>
+                        <span class="badge badge-info">{{ lead.get_status_display }}</span>
                     </a>
                     {% empty %}
                     <div class="empty-state">
                         <i class="fa-regular fa-circle-check"></i>
-                        <p>All attendance rows are already up to date.</p>
+                        <p>No open leads are waiting right now.</p>
                     </div>
                     {% endfor %}
                 {% endif %}
@@ -141,7 +143,7 @@
         <div class="card">
             <div class="section-header">
                 <span class="section-title">
-                    {% if current_role == 'headcount' %}Today’s Sessions{% else %}Upcoming Sessions{% endif %}
+                    {% if current_role == 'headcount' %}Upcoming Trial Sessions{% else %}Upcoming Sessions{% endif %}
                 </span>
                 <a href="{% url 'sessions:list' %}" class="section-link">Open schedule</a>
             </div>
@@ -150,14 +152,13 @@
                 <a href="{% url 'sessions:detail' session.pk %}" class="list-item">
                     <div>
                         <p class="list-item-title">{{ session.title }}</p>
-                        <p class="list-item-sub">{{ session.session_date }} · {{ session.start_time|time:"H:i" }} · Court {{ session.court }}</p>
                     </div>
                     <i class="fa-solid fa-chevron-right text-muted" style="font-size:11px;flex-shrink:0;"></i>
                 </a>
                 {% empty %}
                 <div class="empty-state">
                     <i class="fa-regular fa-calendar-xmark"></i>
-                    <p>No sessions lined up yet.</p>
+                    <p>{% if current_role == 'headcount' %}No trial sessions lined up yet.{% else %}No sessions lined up yet.{% endif %}</p>
                 </div>
                 {% endfor %}
             </div>
@@ -205,7 +206,6 @@
                     <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Next plan target</p>
                     <h3 style="font-size:24px;font-weight:700;color:var(--text);margin-top:6px;">{{ workspace_lists.plan_session.title }}</h3>
                     <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;">
-                        {{ workspace_lists.plan_session.session_date }} &middot; {{ workspace_lists.plan_session.start_time|time:"H:i" }} &middot; Court {{ workspace_lists.plan_session.court }}<br>
                         Generate a smart plan from the admin syllabus, roster level mix, attendance rhythm, and fee status visibility.
                     </p>
                 </div>
@@ -325,7 +325,6 @@
                 <a href="{% url 'sessions:detail' session.pk %}" class="list-item">
                     <div>
                         <p class="list-item-title">{{ session.title }}</p>
-                        <p class="list-item-sub">{{ session.session_date }} · {{ session.start_time|time:"H:i" }} · Court {{ session.court }}</p>
                     </div>
                     <i class="fa-solid fa-chevron-right text-muted" style="font-size:11px;flex-shrink:0;"></i>
                 </a>
@@ -368,7 +367,7 @@
         {% if current_role == 'admin' %}
         <div class="card">
             <div class="section-header">
-                <span class="section-title">Pending Applications</span>
+                <span class="section-title">Pending Leads</span>
                 <a href="{% url 'members:application_list' %}" class="section-link">Open queue</a>
             </div>
             <div class="space-y">
@@ -383,7 +382,7 @@
                 {% empty %}
                 <div class="empty-state">
                     <i class="fa-regular fa-circle-check"></i>
-                    <p>No admission applications are waiting right now.</p>
+                    <p>No pending leads are waiting right now.</p>
                 </div>
                 {% endfor %}
             </div>
@@ -438,7 +437,6 @@
                 <a href="{% url 'sessions:detail' session.pk %}" class="list-item">
                     <div>
                         <p class="list-item-title">{{ session.title }}</p>
-                        <p class="list-item-sub"><i class="fa-regular fa-calendar" style="margin-right:4px;"></i>{{ session.session_date }} · <i class="fa-regular fa-clock" style="margin-right:4px;"></i>{{ session.start_time|time:"H:i" }} · Court {{ session.court }}</p>
                     </div>
                     <i class="fa-solid fa-chevron-right text-muted" style="font-size:11px;flex-shrink:0;"></i>
                 </a>

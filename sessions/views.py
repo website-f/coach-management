@@ -23,6 +23,7 @@ from members.models import Member
 from sessions.ai_planner import PlannerAssistantError, generate_ai_planner_reply
 from sessions.forms import (
     SessionFeedbackForm,
+    SyllabusRootForm,
     SyllabusStandardForm,
     SyllabusTemplateForm,
     TrainingSessionForm,
@@ -32,6 +33,7 @@ from sessions.models import (
     AttendanceRecord,
     SessionFeedback,
     SessionPlannerEntry,
+    SyllabusRoot,
     SyllabusStandard,
     SyllabusTemplate,
     TrainingSession,
@@ -51,18 +53,27 @@ AttendanceFormSet = modelformset_factory(
 
 
 def visible_sessions_for_user(user):
-    queryset = TrainingSession.objects.select_related("coach", "created_by")
+    queryset = TrainingSession.objects.select_related("coach", "created_by", "syllabus_root")
     if has_role(user, ROLE_COACH) and not has_role(user, ROLE_ADMIN):
         return queryset.filter(coach=user)
+    if has_role(user, ROLE_HEADCOUNT) and not has_role(user, ROLE_ADMIN):
+        return queryset.filter(
+            attendance_records__member__status=Member.STATUS_TRIAL,
+            attendance_records__member__assigned_staff=user,
+        ).distinct()
     if has_role(user, ROLE_PARENT):
         return queryset.filter(attendance_records__member__parent_user=user).distinct()
     return queryset
 
 
 def visible_members_for_session_filters(user):
-    queryset = Member.objects.select_related("assigned_coach", "parent_user", "payment_plan").order_by("full_name")
+    queryset = Member.objects.select_related("assigned_coach", "parent_user", "payment_plan", "syllabus_root").filter(
+        status__in=[Member.STATUS_ACTIVE, Member.STATUS_TRIAL]
+    ).order_by("full_name")
     if has_role(user, ROLE_COACH) and not has_role(user, ROLE_ADMIN):
         return queryset.filter(assigned_coach=user)
+    if has_role(user, ROLE_HEADCOUNT) and not has_role(user, ROLE_ADMIN):
+        return queryset.filter(status=Member.STATUS_TRIAL, assigned_staff=user)
     if has_role(user, ROLE_PARENT):
         return queryset.filter(parent_user=user)
     return queryset
@@ -172,30 +183,115 @@ def can_manage_session_plan(user, training_session):
     )
 
 
+def clone_default_syllabus_root_structure(target_root):
+    ensure_default_syllabus()
+    source_root = SyllabusRoot.get_default()
+    if not source_root or source_root.pk == target_root.pk:
+        return
+
+    template_map = {}
+    for template in SyllabusTemplate.objects.filter(root=source_root).order_by("track"):
+        cloned_template, _ = SyllabusTemplate.objects.get_or_create(
+            root=target_root,
+            track=template.track,
+            defaults={
+                "name": template.name,
+                "source_document_name": template.source_document_name,
+                "curriculum_year_label": template.curriculum_year_label,
+                "annual_goal": template.annual_goal,
+                "year_end_outcomes": template.year_end_outcomes,
+                "assessment_approach": template.assessment_approach,
+                "assessment_methods": template.assessment_methods,
+                "curriculum_values": template.curriculum_values,
+                "annual_phase_notes": template.annual_phase_notes,
+                "ai_planner_instructions": template.ai_planner_instructions,
+                "is_active": template.is_active,
+            },
+        )
+        template_map[template.pk] = cloned_template
+
+    standard_map = {}
+    for standard in SyllabusStandard.objects.select_related("template").filter(template__root=source_root):
+        cloned_standard, _ = SyllabusStandard.objects.get_or_create(
+            template=template_map[standard.template_id],
+            code=standard.code,
+            defaults={
+                "sort_order": standard.sort_order,
+                "title": standard.title,
+                "focus": standard.focus,
+                "learning_standard_items": standard.learning_standard_items,
+                "performance_band_items": standard.performance_band_items,
+                "coach_hints": standard.coach_hints,
+                "assessment_focus": standard.assessment_focus,
+                "is_active": standard.is_active,
+            },
+        )
+        standard_map[standard.pk] = cloned_standard
+
+    for week in WeeklySyllabus.objects.filter(root=source_root).select_related("template", "standard"):
+        WeeklySyllabus.objects.get_or_create(
+            root=target_root,
+            track=week.track,
+            week_number=week.week_number,
+            defaults={
+                "template": template_map.get(week.template_id),
+                "standard": standard_map.get(week.standard_id),
+                "month_number": week.month_number,
+                "phase_name": week.phase_name,
+                "title": week.title,
+                "objective": week.objective,
+                "warm_up_plan": week.warm_up_plan,
+                "technical_focus": week.technical_focus,
+                "tactical_focus": week.tactical_focus,
+                "coaching_cues": week.coaching_cues,
+                "assessment_focus": week.assessment_focus,
+                "success_criteria": week.success_criteria,
+                "coach_notes": week.coach_notes,
+                "homework": week.homework,
+                "is_active": week.is_active,
+            },
+        )
+
+
 class SyllabusListView(AdminRequiredMixin, ListView):
-    model = WeeklySyllabus
+    model = SyllabusRoot
     template_name = "sessions/syllabus_list.html"
-    context_object_name = "syllabus_rows"
+    context_object_name = "syllabus_roots"
 
     def get_queryset(self):
         ensure_default_syllabus()
-        queryset = WeeklySyllabus.objects.select_related("template", "standard").order_by("track", "month_number", "week_number")
-        track = self.request.GET.get("track", "").strip()
-        if track:
-            queryset = queryset.filter(track=track)
-        return queryset
+        return SyllabusRoot.objects.order_by("name")
+
+    def get_selected_root(self):
+        selected_root = self.request.GET.get("root", "").strip()
+        queryset = self.get_queryset()
+        if selected_root:
+            return queryset.filter(pk=selected_root).first()
+        return queryset.first()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        rows = list(context["syllabus_rows"])
         selected_track = self.request.GET.get("track", "").strip()
-        templates = {
-            item.track: item
-            for item in SyllabusTemplate.objects.order_by("track")
-        }
+        selected_root = self.get_selected_root()
+        rows = []
+        templates = {}
         standards_by_track = {}
-        for item in SyllabusStandard.objects.select_related("template").order_by("template__track", "sort_order", "code"):
-            standards_by_track.setdefault(item.template.track, []).append(item)
+        if selected_root:
+            rows = list(
+                WeeklySyllabus.objects.filter(root=selected_root)
+                .select_related("template", "standard")
+                .order_by("track", "month_number", "week_number")
+            )
+            templates = {
+                item.track: item
+                for item in SyllabusTemplate.objects.filter(root=selected_root).order_by("track")
+            }
+            for item in SyllabusStandard.objects.select_related("template").filter(template__root=selected_root).order_by(
+                "template__track",
+                "sort_order",
+                "code",
+            ):
+                standards_by_track.setdefault(item.template.track, []).append(item)
         grouped_rows = []
         for track_value, track_label in WeeklySyllabus.TRACK_CHOICES:
             if selected_track and track_value != selected_track:
@@ -213,17 +309,60 @@ class SyllabusListView(AdminRequiredMixin, ListView):
                         "standards": standards,
                     }
                 )
+        track = self.request.GET.get("track", "").strip()
         context["grouped_rows"] = grouped_rows
         context["track_choices"] = WeeklySyllabus.TRACK_CHOICES
         context["selected_track"] = selected_track
+        context["selected_root"] = selected_root
         return context
+
+
+class SyllabusRootCreateView(AdminRequiredMixin, CreateView):
+    model = SyllabusRoot
+    form_class = SyllabusRootForm
+    template_name = "sessions/syllabus_root_form.html"
+    success_url = reverse_lazy("sessions:syllabus")
+
+    def form_valid(self, form):
+        form.instance.updated_by = self.request.user
+        response = super().form_valid(form)
+        clone_default_syllabus_root_structure(self.object)
+        messages.success(self.request, "Syllabus root created and seeded from the default academy framework.")
+        return response
+
+
+class SyllabusRootUpdateView(AdminRequiredMixin, UpdateView):
+    model = SyllabusRoot
+    form_class = SyllabusRootForm
+    template_name = "sessions/syllabus_root_form.html"
+
+    def get_success_url(self):
+        return f"{reverse('sessions:syllabus')}?root={self.object.pk}"
+
+    def form_valid(self, form):
+        form.instance.updated_by = self.request.user
+        response = super().form_valid(form)
+        messages.success(self.request, "Syllabus root updated successfully.")
+        return response
 
 
 class SyllabusCreateView(AdminRequiredMixin, CreateView):
     model = WeeklySyllabus
     form_class = WeeklySyllabusForm
     template_name = "sessions/syllabus_form.html"
-    success_url = reverse_lazy("sessions:syllabus")
+
+    def get_initial(self):
+        initial = super().get_initial()
+        root = self.request.GET.get("root", "").strip()
+        if root:
+            initial["root"] = root
+        return initial
+
+    def get_success_url(self):
+        root_id = self.object.root_id or self.request.GET.get("root")
+        if root_id:
+            return f"{reverse('sessions:syllabus')}?root={root_id}"
+        return reverse("sessions:syllabus")
 
     def form_valid(self, form):
         form.instance.updated_by = self.request.user
@@ -236,7 +375,11 @@ class SyllabusUpdateView(AdminRequiredMixin, UpdateView):
     model = WeeklySyllabus
     form_class = WeeklySyllabusForm
     template_name = "sessions/syllabus_form.html"
-    success_url = reverse_lazy("sessions:syllabus")
+
+    def get_success_url(self):
+        if self.object.root_id:
+            return f"{reverse('sessions:syllabus')}?root={self.object.root_id}"
+        return reverse("sessions:syllabus")
 
     def form_valid(self, form):
         form.instance.updated_by = self.request.user
@@ -249,11 +392,15 @@ class SyllabusTemplateUpdateView(AdminRequiredMixin, UpdateView):
     model = SyllabusTemplate
     form_class = SyllabusTemplateForm
     template_name = "sessions/syllabus_template_form.html"
-    success_url = reverse_lazy("sessions:syllabus")
 
     def get_queryset(self):
         ensure_default_syllabus()
-        return SyllabusTemplate.objects.order_by("track")
+        return SyllabusTemplate.objects.order_by("root__name", "track")
+
+    def get_success_url(self):
+        if self.object.root_id:
+            return f"{reverse('sessions:syllabus')}?root={self.object.root_id}"
+        return reverse("sessions:syllabus")
 
     def form_valid(self, form):
         form.instance.updated_by = self.request.user
@@ -266,17 +413,35 @@ class SyllabusStandardCreateView(AdminRequiredMixin, CreateView):
     model = SyllabusStandard
     form_class = SyllabusStandardForm
     template_name = "sessions/syllabus_standard_form.html"
-    success_url = reverse_lazy("sessions:syllabus")
 
     def get_initial(self):
         ensure_default_syllabus()
         initial = super().get_initial()
         track = self.request.GET.get("track", "").strip()
+        root = self.request.GET.get("root", "").strip()
         if track:
-            template = SyllabusTemplate.objects.filter(track=track).first()
+            template_queryset = SyllabusTemplate.objects.filter(track=track)
+            if root:
+                template_queryset = template_queryset.filter(root_id=root)
+            template = template_queryset.first()
             if template:
                 initial["template"] = template
         return initial
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        root = self.request.GET.get("root", "").strip()
+        if root:
+            form.fields["template"].queryset = form.fields["template"].queryset.filter(root_id=root)
+        return form
+
+    def get_success_url(self):
+        root_id = self.request.GET.get("root") or (
+            self.object.template.root_id if self.object.template_id and self.object.template.root_id else None
+        )
+        if root_id:
+            return f"{reverse('sessions:syllabus')}?root={root_id}"
+        return reverse("sessions:syllabus")
 
     def form_valid(self, form):
         form.instance.updated_by = self.request.user
@@ -289,7 +454,11 @@ class SyllabusStandardUpdateView(AdminRequiredMixin, UpdateView):
     model = SyllabusStandard
     form_class = SyllabusStandardForm
     template_name = "sessions/syllabus_standard_form.html"
-    success_url = reverse_lazy("sessions:syllabus")
+
+    def get_success_url(self):
+        if self.object.template_id and self.object.template.root_id:
+            return f"{reverse('sessions:syllabus')}?root={self.object.template.root_id}"
+        return reverse("sessions:syllabus")
 
     def form_valid(self, form):
         form.instance.updated_by = self.request.user

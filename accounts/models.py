@@ -11,7 +11,7 @@ class UserProfile(models.Model):
     ROLE_CHOICES = [
         (ROLE_ADMIN, "Admin"),
         (ROLE_COACH, "Coach"),
-        (ROLE_HEADCOUNT, "Headcount"),
+        (ROLE_HEADCOUNT, "Sales/Admin"),
         (ROLE_PARENT, "Parent"),
     ]
 

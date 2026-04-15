@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils.text import slugify
 
 
 SYLLABUS_TRACK_BEGINNER = "beginner"
@@ -13,6 +14,39 @@ SYLLABUS_TRACK_CHOICES = [
     (SYLLABUS_TRACK_PRO, "Pro"),
 ]
 
+class SyllabusRoot(models.Model):
+    name = models.CharField(max_length=255)
+    code = models.SlugField(max_length=80, unique=True)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    is_default = models.BooleanField(default=False)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="updated_syllabus_roots",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = slugify(self.name).replace("-", "_")[:80]
+        super().save(*args, **kwargs)
+        if self.is_default:
+            self.__class__.objects.exclude(pk=self.pk).filter(is_default=True).update(is_default=False)
+
+    @classmethod
+    def get_default(cls):
+        return cls.objects.filter(is_default=True).first() or cls.objects.order_by("name").first()
+
 
 class SyllabusTemplate(models.Model):
     TRACK_BEGINNER = SYLLABUS_TRACK_BEGINNER
@@ -21,7 +55,14 @@ class SyllabusTemplate(models.Model):
     TRACK_PRO = SYLLABUS_TRACK_PRO
     TRACK_CHOICES = SYLLABUS_TRACK_CHOICES
 
-    track = models.CharField(max_length=20, choices=TRACK_CHOICES, default=TRACK_BEGINNER, unique=True)
+    root = models.ForeignKey(
+        SyllabusRoot,
+        on_delete=models.CASCADE,
+        related_name="templates",
+        null=True,
+        blank=True,
+    )
+    track = models.CharField(max_length=20, choices=TRACK_CHOICES, default=TRACK_BEGINNER)
     name = models.CharField(max_length=255)
     source_document_name = models.CharField(max_length=255, blank=True)
     curriculum_year_label = models.CharField(max_length=100, default="Year 1")
@@ -44,10 +85,14 @@ class SyllabusTemplate(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["track"]
+        ordering = ["root__name", "track", "name"]
+        constraints = [
+            models.UniqueConstraint(fields=["root", "track"], name="unique_syllabus_root_track")
+        ]
 
     def __str__(self):
-        return f"{self.get_track_display()} Template"
+        root_name = self.root.name if self.root_id else "General"
+        return f"{root_name} - {self.get_track_display()} Template"
 
     @property
     def year_end_outcome_list(self):
@@ -108,6 +153,13 @@ class WeeklySyllabus(models.Model):
     TRACK_PRO = SYLLABUS_TRACK_PRO
     TRACK_CHOICES = SYLLABUS_TRACK_CHOICES
 
+    root = models.ForeignKey(
+        SyllabusRoot,
+        on_delete=models.CASCADE,
+        related_name="weekly_units",
+        null=True,
+        blank=True,
+    )
     track = models.CharField(max_length=20, choices=TRACK_CHOICES, default=TRACK_BEGINNER)
     template = models.ForeignKey(
         SyllabusTemplate,
@@ -148,13 +200,14 @@ class WeeklySyllabus(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["track", "week_number"]
+        ordering = ["root__name", "track", "week_number"]
         constraints = [
-            models.UniqueConstraint(fields=["track", "week_number"], name="unique_syllabus_track_week")
+            models.UniqueConstraint(fields=["root", "track", "week_number"], name="unique_syllabus_root_track_week")
         ]
 
     def __str__(self):
-        return f"{self.get_track_display()} Week {self.week_number}: {self.title}"
+        root_name = self.root.name if self.root_id else "General"
+        return f"{root_name} - {self.get_track_display()} Week {self.week_number}: {self.title}"
 
     @property
     def phase_label(self):
@@ -171,6 +224,13 @@ class TrainingSession(models.Model):
     start_time = models.TimeField()
     end_time = models.TimeField()
     court = models.CharField(max_length=100)
+    syllabus_root = models.ForeignKey(
+        SyllabusRoot,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="training_sessions",
+    )
     coach = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

@@ -1,17 +1,19 @@
 {% extends "base.html" %}
 {% load ui_tags %}
 
-{% block title %}Applications | NYO Admin Dashboard{% endblock %}
-{% block page_heading %}Applications{% endblock %}
+{% block title %}Leads | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}Leads{% endblock %}
 
 {% block content %}
 <div class="space-y">
     <div class="card">
         <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
-            <div style="max-width:720px;">
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;">Admission Queue</p>
-                <h2 style="font-size:28px;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1.1;">Review the newest intake requests before they disappear into email.</h2>
-                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">This page carries over the original application review flow into the real dashboard. Pending entries stay visible, and approved requests can immediately link into a live member profile.</p>
+            <div style="max-width:760px;">
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;">Lead Queue</p>
+                <h2 style="font-size:28px;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1.1;">Capture origin, interest, and next step before the lead turns cold.</h2>
+                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">
+                    Pending leads stay here until they are moved into trial or closed out. Sales/Admin can log follow-ups, assign ownership, and keep the next action visible.
+                </p>
             </div>
             <a href="{% url 'members:apply' %}" class="btn btn-ghost"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open public form</a>
         </div>
@@ -21,7 +23,7 @@
         <form method="get" class="filter-fields">
             <div class="filter-field">
                 <label>Search</label>
-                <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Student, guardian, or program">
+                <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Student, parent, or program">
             </div>
             <div class="filter-field">
                 <label>Status</label>
@@ -50,65 +52,52 @@
         </form>
     </div>
 
-    <div class="space-y">
-        {% for application in applications %}
-        <div class="card">
-            <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;">
-                <div style="display:flex;gap:14px;align-items:flex-start;">
-                    <div style="width:52px;height:52px;border-radius:16px;background:rgba(245,166,35,.14);color:#f5a623;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;flex-shrink:0;">
-                        {{ application.student_name|first|upper }}
-                    </div>
-                    <div>
-                        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-                            <h3 style="font-size:20px;font-weight:700;letter-spacing:-.03em;color:var(--text);">{{ application.student_name }}</h3>
-                            <span class="badge {{ application.status|status_badge }}">{{ application.get_status_display }}</span>
+    <div class="table-wrap">
+        <table class="tbl native-stack">
+            <thead>
+                <tr>
+                    <th>Lead</th>
+                    <th>Parent</th>
+                    <th>Source</th>
+                    <th>Interest Level</th>
+                    <th>Assigned Staff</th>
+                    <th>Status</th>
+                    <th>Last Follow-Up</th>
+                    <th>Next Action</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for application in applications %}
+                <tr>
+                    <td data-label="Lead">
+                        <div class="tbl-name">{{ application.student_name }}</div>
+                        <div class="tbl-sub">{{ application.preferred_program }} · {{ application.preferred_location }}</div>
+                    </td>
+                    <td data-label="Parent">
+                        <div class="tbl-name">{{ application.guardian_name }}</div>
+                        <div class="tbl-sub">{{ application.contact_number }}</div>
+                    </td>
+                    <td data-label="Source">{{ application.get_source_display }}</td>
+                    <td data-label="Interest Level"><span class="badge badge-info">{{ application.get_interest_level_display }}</span></td>
+                    <td data-label="Assigned Staff">{{ application.assigned_staff|default:"Unassigned" }}</td>
+                    <td data-label="Status"><span class="badge {{ application.status|status_badge }}">{{ application.get_status_display }}</span></td>
+                    <td data-label="Last Follow-Up">{{ application.last_followed_up_at|default:"Not yet" }}</td>
+                    <td data-label="Next Action">{{ application.next_action|default:"Review and decide the trial plan"|truncatechars:90 }}</td>
+                    <td data-label="Action"><a href="{% url 'members:application_review' application.pk %}" class="btn btn-ghost btn-xs">Open</a></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9">
+                        <div class="empty-state">
+                            <i class="fa-regular fa-folder-open"></i>
+                            <p>No leads match the current filters.</p>
                         </div>
-                        <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;">
-                            Guardian: {{ application.guardian_name }}<br>
-                            Program: {{ application.preferred_program }}<br>
-                            Location: {{ application.preferred_location }} · Submitted {{ application.submitted_at|date:"d M Y H:i" }}
-                        </p>
-                    </div>
-                </div>
-                <a href="{% url 'members:application_review' application.pk %}" class="btn {% if application.status == 'pending' %}btn-primary{% else %}btn-ghost{% endif %}">
-                    <i class="fa-solid fa-arrow-right"></i> Review
-                </a>
-            </div>
-
-            <div class="grid-2 mt-3">
-                <div class="card-inset">
-                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Contact</p>
-                    <p style="font-weight:600;color:var(--text);">{{ application.contact_number }}</p>
-                    <p class="text-sm text-muted" style="margin-top:4px;">{{ application.guardian_email|default:"No email provided" }}</p>
-                </div>
-                <div class="card-inset">
-                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Portal linkage</p>
-                    {% if application.linked_member %}
-                    <p style="font-weight:600;color:var(--text);">Linked member: {{ application.linked_member.full_name }}</p>
-                    {% else %}
-                    <p style="font-weight:600;color:var(--text);">No member profile linked yet</p>
-                    {% endif %}
-                    {% if application.desired_username %}
-                    <p class="text-sm text-muted" style="margin-top:4px;">Preferred username: {{ application.desired_username }}</p>
-                    {% endif %}
-                </div>
-            </div>
-
-            {% if application.notes %}
-            <div class="card-inset mt-3">
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Notes</p>
-                <p style="font-size:13.5px;color:var(--text);line-height:1.8;">{{ application.notes }}</p>
-            </div>
-            {% endif %}
-        </div>
-        {% empty %}
-        <div class="card">
-            <div class="empty-state">
-                <i class="fa-regular fa-folder-open"></i>
-                <p>No applications match the current filters.</p>
-            </div>
-        </div>
-        {% endfor %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}
