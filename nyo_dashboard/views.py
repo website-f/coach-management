@@ -55,9 +55,13 @@ class LandingPageView(TemplateView):
         context = super().get_context_data(**kwargs)
         today = timezone.localdate()
         landing_content = LandingPageContent.get_solo()
+        parent_signup_cta_text = landing_content.primary_cta_text
+        if parent_signup_cta_text in {"", "Enter Parent Portal", "Apply For Admission"}:
+            parent_signup_cta_text = "Create Parent Account"
         context.update(
             {
                 "landing_content": landing_content,
+                "parent_signup_cta_text": parent_signup_cta_text,
                 "active_members": Member.objects.filter(status=Member.STATUS_ACTIVE).count(),
                 "coach_count": UserProfile.objects.filter(role=UserProfile.ROLE_COACH).count(),
                 "pending_reviews": Payment.objects.filter(status=Payment.STATUS_PENDING).count(),

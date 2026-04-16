@@ -251,8 +251,8 @@
   <!-- Page header -->
   <div class="page-header">
     <p class="page-eyebrow">{% if is_parent_portal %}Add Child{% else %}Membership Application{% endif %}</p>
-    <h1>{% if is_parent_portal %}Add another child to your parent account{% else %}Apply to join {{ landing_content.hero_title }}{% endif %}</h1>
-    <p>{% if is_parent_portal %}Use the same intake questions as the original application flow so staff can review the child properly, recommend the right starting level, and link the new child to your account after approval.{% else %}Fill in the details below. Our staff will review your application and follow up within one to two working days.{% endif %}</p>
+    <h1>{% if is_parent_portal %}Add a child to your parent account{% else %}Apply to join {{ landing_content.hero_title }}{% endif %}</h1>
+    <p>{% if is_parent_portal %}Each child gets their own profile, reports, attendance, and invoices, but everything stays under your single parent login. Fill in this child intake and staff will review it before the profile appears in your portal.{% else %}Fill in the details below. Our staff will review your application and follow up within one to two working days.{% endif %}</p>
   </div>
 
   <div class="page-grid">
@@ -309,12 +309,14 @@
               {{ form.contact_number }}
               {% if form.contact_number.errors %}<ul class="errorlist">{% for e in form.contact_number.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
             </div>
+            {% if not is_parent_portal %}
             <div class="form-group">
               <label for="{{ form.desired_username.id_for_label }}">Preferred portal username</label>
               {{ form.desired_username }}
-              <p class="field-help">{% if is_parent_portal %}This keeps the new child connected to the same parent login once the request is approved.{% else %}This will be used for the parent login account once approved.{% endif %}</p>
+              <p class="field-help">This will be used for the parent login account once approved.</p>
               {% if form.desired_username.errors %}<ul class="errorlist">{% for e in form.desired_username.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
             </div>
+            {% endif %}
           </div>
         </div>
 

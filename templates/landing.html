@@ -466,7 +466,7 @@
       <button class="theme-btn" id="themeBtn" aria-label="Toggle theme">
         <i class="fa-solid fa-sun" id="themeIco"></i>
       </button>
-      <a href="{% url 'members:apply' %}" class="btn btn-g btn-s">Apply Now</a>
+      <a href="{% url 'members:apply' %}" class="btn btn-g btn-s">Create Parent Account</a>
       <a href="/accounts/login/" class="btn btn-p btn-s"><i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In</a>
     </div>
 
@@ -483,7 +483,7 @@
   <a href="#faq"          class="mob-lnk" onclick="closeMob()">FAQ</a>
   <a href="/store/"       class="mob-lnk" onclick="closeMob()"><i class="fa-solid fa-bag-shopping" style="margin-right:6px;"></i>Club Store</a>
   <div class="mob-btns">
-    <a href="{% url 'members:apply' %}" class="btn btn-g btn-s" onclick="closeMob()"><i class="fa-solid fa-user-plus"></i> Apply Now</a>
+    <a href="{% url 'members:apply' %}" class="btn btn-g btn-s" onclick="closeMob()"><i class="fa-solid fa-user-plus"></i> Create Parent Account</a>
     <a href="/accounts/login/" class="btn btn-p btn-s" onclick="closeMob()"><i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In</a>
   </div>
 </div>
@@ -500,7 +500,7 @@
     </h1>
     <p class="lead fu d2">{{ landing_content.hero_subtitle }}</p>
     <div class="hero-btns fu d3">
-      <a href="{% url 'members:apply' %}" class="btn btn-p"><i class="fa-solid fa-user-plus"></i> {{ landing_content.primary_cta_text }}</a>
+      <a href="{% url 'members:apply' %}" class="btn btn-p"><i class="fa-solid fa-user-plus"></i> {{ parent_signup_cta_text }}</a>
       <a href="/accounts/login/?role=parent" class="btn btn-g"><i class="fa-solid fa-child-reaching"></i> Parent Login</a>
       <a href="/accounts/login/?role=admin" class="btn btn-g"><i class="fa-solid fa-shield-halved"></i> Staff Login</a>
     </div>
@@ -912,7 +912,7 @@
       <h2>Join the club today.</h2>
       <p>Register your child in minutes. The coaching team is ready to welcome your family, assign the right monthly package, and get your child into their first session.</p>
       <div class="cta-btns">
-        <a href="{% url 'members:apply' %}" class="btn btn-p"><i class="fa-solid fa-user-plus"></i> Apply For Admission</a>
+        <a href="{% url 'members:apply' %}" class="btn btn-p"><i class="fa-solid fa-user-plus"></i> Create Parent Account</a>
         <a href="/accounts/login/?role=parent" class="btn btn-g"><i class="fa-solid fa-arrow-right-to-bracket"></i> Already a Member? Sign In</a>
       </div>
     </div>
@@ -989,6 +989,37 @@ document.querySelectorAll(".faq-q").forEach(btn => {
 /* ── Close mob menu on anchor links ────────────────────────────── */
 document.querySelectorAll(".mob-nav a[href^='#']").forEach(a => {
   a.addEventListener("click", closeMob);
+});
+
+/* Parent-first intake copy */
+document.querySelectorAll(".faq-item").forEach((item) => {
+  const question = (item.querySelector(".faq-q")?.textContent || "").trim();
+  const answer = item.querySelector(".faq-a");
+  if (!answer) return;
+
+  if (question.startsWith("How do I register my child for the badminton club?")) {
+    answer.innerHTML = 'Click the <strong>Create Parent Account</strong> button at the top of this page. First create your parent login with your own name, email address, contact number, username, and password. Once you enter the parent portal, use <strong>Add Child</strong> to submit each child\'s details for staff review.';
+  }
+
+  if (question.startsWith("What information do I need to register?")) {
+    answer.textContent = "For the first step, you only need the parent account details: your name, email address, contact number, username, and password. After you sign in, you can add each child separately with their training and profile details.";
+  }
+
+  if (question.startsWith("How is my child's skill level decided?")) {
+    answer.innerHTML = 'The child intake form inside the parent portal still includes a short set of questions about badminton experience and training goals. Based on those answers, the system recommends a starting level: <strong>Beginner</strong>, <strong>Intermediate</strong>, or <strong>Advanced</strong>. Staff can still adjust this after an in-person assessment.';
+  }
+
+  if (question.startsWith("Can I register more than one child under my account?")) {
+    answer.innerHTML = 'Yes. One parent account can be linked to multiple children. After creating your parent login, you can keep using <strong>Add Child</strong> inside the portal to register every child under the same family account.';
+  }
+
+  if (question.startsWith("What happens after I submit the application?")) {
+    answer.textContent = "After creating your parent account, you enter the portal immediately. Child requests submitted from inside the portal enter the CRM review queue, where staff can approve the right trial or class setup. Once a child is approved, their profile, reports, attendance, and invoices appear under your account.";
+  }
+
+  if (question.startsWith("How do I log in to my parent account?")) {
+    answer.innerHTML = 'Click <strong>Parent Login</strong> or <strong>Sign In</strong> and enter the username and password you created during parent account signup. If you have not created your parent account yet, use <strong>Create Parent Account</strong> first.';
+  }
 });
 
 /* Dynamic billing copy */

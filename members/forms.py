@@ -97,6 +97,71 @@ class MemberForm(forms.ModelForm):
         return instance
 
 
+class ParentRegistrationForm(forms.Form):
+    first_name = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={"placeholder": "Parent first name", "autocomplete": "given-name"}),
+    )
+    last_name = forms.CharField(
+        max_length=150,
+        required=False,
+        widget=forms.TextInput(attrs={"placeholder": "Parent last name", "autocomplete": "family-name"}),
+    )
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={"placeholder": "you@example.com", "autocomplete": "email"}),
+    )
+    phone_number = forms.CharField(
+        max_length=30,
+        widget=forms.TextInput(attrs={"placeholder": "Parent contact number", "autocomplete": "tel"}),
+    )
+    username = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={"placeholder": "Choose a username", "autocomplete": "username"}),
+    )
+    password1 = forms.CharField(
+        widget=forms.PasswordInput(attrs={"placeholder": "Create a password", "autocomplete": "new-password"}),
+        label="Password",
+    )
+    password2 = forms.CharField(
+        widget=forms.PasswordInput(attrs={"placeholder": "Confirm your password", "autocomplete": "new-password"}),
+        label="Confirm password",
+    )
+
+    def clean_username(self):
+        username = self.cleaned_data["username"].strip()
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError("This username is already in use.")
+        return username
+
+    def clean_email(self):
+        email = self.cleaned_data["email"].strip().lower()
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError("This email address is already linked to an account.")
+        return email
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get("password1")
+        password2 = cleaned_data.get("password2")
+        if password1 and password2 and password1 != password2:
+            self.add_error("password2", "Passwords do not match.")
+        return cleaned_data
+
+    def save(self):
+        user = User.objects.create_user(
+            username=self.cleaned_data["username"],
+            email=self.cleaned_data["email"],
+            password=self.cleaned_data["password1"],
+            first_name=self.cleaned_data["first_name"],
+            last_name=self.cleaned_data.get("last_name", ""),
+        )
+        profile = user.profile
+        profile.role = UserProfile.ROLE_PARENT
+        profile.phone_number = self.cleaned_data["phone_number"]
+        profile.save()
+        return user
+
+
 class AdmissionApplicationPublicForm(forms.ModelForm):
     preferred_program = forms.ChoiceField(choices=(), required=True)
     preferred_location = forms.ChoiceField(choices=(), required=True)

@@ -193,3 +193,37 @@ class ParentPortalTests(TestCase):
         self.assertRedirects(response, reverse("members:list") + "?application_submitted=1")
         application = AdmissionApplication.objects.get(student_name="New Child Request")
         self.assertEqual(application.linked_parent_user, self.parent)
+
+
+class ParentRegistrationTests(TestCase):
+    def test_public_apply_page_is_parent_registration_first(self):
+        response = self.client.get(reverse("members:apply"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "accounts/parent_register.html")
+        self.assertContains(response, "Create your parent account first")
+        self.assertContains(response, "Create Parent Account")
+
+    def test_public_parent_registration_creates_parent_user_and_logs_in(self):
+        response = self.client.post(
+            reverse("members:apply"),
+            data={
+                "first_name": "Maya",
+                "last_name": "Lee",
+                "email": "maya@example.com",
+                "phone_number": "0123000099",
+                "username": "maya.parent",
+                "password1": "StrongParent123!",
+                "password2": "StrongParent123!",
+            },
+        )
+
+        self.assertRedirects(response, reverse("members:list"))
+        parent = User.objects.get(username="maya.parent")
+        self.assertEqual(parent.profile.role, UserProfile.ROLE_PARENT)
+        self.assertEqual(parent.profile.phone_number, "0123000099")
+
+        member_list_response = self.client.get(reverse("members:list"))
+        self.assertEqual(member_list_response.status_code, 200)
+        self.assertTrue(member_list_response.context["is_parent_view"])
+        self.assertContains(member_list_response, "Add Child")

@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Parent Account | NYO Dashboard</title>
+  <script>(function(){var t=localStorage.getItem('nyo-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root, [data-theme="dark"] {
+      --bg: #111114;
+      --surface: #1c1c20;
+      --surface2: #242428;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.11);
+      --text: #f0f0f4;
+      --text-2: #c4c4d0;
+      --muted: #8a8a9a;
+      --accent: #4f6ef7;
+      --accent-h: #3b5bdb;
+      --success-bg: rgba(34,197,94,0.08);
+      --success-br: rgba(34,197,94,0.18);
+      --success-c: #86efac;
+      --danger-bg: rgba(239,68,68,0.08);
+      --danger-br: rgba(239,68,68,0.18);
+      --danger-c: #fca5a5;
+    }
+
+    [data-theme="light"] {
+      --bg: #f5f5f7;
+      --surface: #ffffff;
+      --surface2: #f0f0f3;
+      --border: rgba(0,0,0,0.07);
+      --border2: rgba(0,0,0,0.11);
+      --text: #111114;
+      --text-2: #3a3a4a;
+      --muted: #6b6b82;
+      --accent: #4f6ef7;
+      --accent-h: #3b5bdb;
+      --success-bg: rgba(34,197,94,0.07);
+      --success-br: rgba(34,197,94,0.18);
+      --success-c: #15803d;
+      --danger-bg: rgba(239,68,68,0.07);
+      --danger-br: rgba(239,68,68,0.18);
+      --danger-c: #b91c1c;
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 24px;
+      height: 56px;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
+
+    .nav-name { font-size: 14px; font-weight: 700; letter-spacing: -.02em; }
+
+    .nav-right { display: flex; align-items: center; gap: 8px; }
+
+    .nav-link {
+      font-size: 13px;
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: 7px;
+      transition: color .18s;
+    }
+
+    .nav-link:hover { color: var(--text); }
+
+    .theme-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 7px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .18s;
+    }
+
+    .theme-btn:hover { color: var(--text); background: var(--border); }
+
+    .btn-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all .18s;
+    }
+
+    .btn-nav-ghost {
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      color: var(--text);
+    }
+
+    .btn-nav-ghost:hover { background: var(--border); }
+
+    .wrap { width: min(1100px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0 56px; }
+
+    .page-header { margin-bottom: 24px; }
+
+    .page-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .page-header h1 {
+      font-size: clamp(24px, 3vw, 34px);
+      font-weight: 700;
+      letter-spacing: -.03em;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .page-header p {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.8;
+      max-width: 700px;
+    }
+
+    .page-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .card,
+    .info-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .card { padding: 24px; }
+
+    .card + .card { margin-top: 16px; }
+
+    .card-title,
+    .info-block-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+
+    .form-group.full { grid-column: 1 / -1; }
+
+    .form-group label {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+    }
+
+    .form-group input {
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      color: var(--text);
+      font: inherit;
+      font-size: 13.5px;
+      padding: 10px 12px;
+      outline: none;
+      width: 100%;
+      transition: border-color .18s, box-shadow .18s;
+    }
+
+    .form-group input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(79,110,247,.12);
+    }
+
+    .field-help {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .errorlist { list-style: none; }
+
+    .errorlist li {
+      font-size: 12px;
+      color: var(--danger-c);
+      margin-top: 3px;
+    }
+
+    .alert {
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      border: 1px solid;
+    }
+
+    .alert-error { background: var(--danger-bg); border-color: var(--danger-br); color: var(--danger-c); }
+    .alert-success { background: var(--success-bg); border-color: var(--success-br); color: var(--success-c); }
+
+    .btn-submit {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 11px 24px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .18s;
+    }
+
+    .btn-submit:hover { background: var(--accent-h); }
+
+    .submit-row { display: flex; justify-content: flex-end; margin-top: 20px; }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: sticky;
+      top: 72px;
+    }
+
+    .info-block { padding: 18px 20px; }
+
+    .info-block p {
+      font-size: 13.5px;
+      color: var(--text-2);
+      line-height: 1.75;
+    }
+
+    .step-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .step-text {
+      font-size: 13px;
+      color: var(--text-2);
+      line-height: 1.6;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .pill {
+      padding: 5px 11px;
+      border-radius: 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      font-size: 12.5px;
+      color: var(--text-2);
+    }
+
+    .contact-link { color: var(--accent); }
+
+    .contact-link:hover { text-decoration: underline; }
+
+    @media (max-width: 900px) {
+      .page-grid { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+    }
+
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full { grid-column: 1; }
+      .nav { padding: 0 16px; }
+      .wrap { padding: 20px 0 40px; }
+    }
+  </style>
+</head>
+<body>
+<header class="nav">
+  <a href="/" class="nav-brand">
+    <div class="nav-logo"><i class="fa-solid fa-shuttlecock"></i></div>
+    <span class="nav-name">NYO Dashboard</span>
+  </a>
+  <div class="nav-right">
+    <a href="/" class="nav-link"><i class="fa-solid fa-arrow-left" style="font-size:11px;margin-right:3px;"></i>Back</a>
+    <button class="theme-btn" id="themeBtn" aria-label="Toggle theme"><i class="fa-solid fa-sun" id="themeIco"></i></button>
+    <a href="{% url 'accounts:login' %}" class="btn-nav btn-nav-ghost">Sign In</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="page-header">
+    <p class="page-eyebrow">Parent Registration</p>
+    <h1>Create your parent account first, then add your children inside the portal.</h1>
+    <p>Public signup is now parent-only. Once your account is ready, you will enter the parent portal immediately and submit each child's intake from there so every child stays under one family login.</p>
+  </div>
+
+  <div class="page-grid">
+    <div>
+      {% if form.non_field_errors %}
+      <div class="alert alert-error">
+        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+      </div>
+      {% endif %}
+
+      <form method="post" autocomplete="on">
+        {% csrf_token %}
+
+        <div class="card">
+          <div class="card-title">Parent Account Details</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="{{ form.first_name.id_for_label }}">First name <span style="color:var(--danger-c)">*</span></label>
+              {{ form.first_name }}
+              {% if form.first_name.errors %}<ul class="errorlist">{% for e in form.first_name.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.last_name.id_for_label }}">Last name</label>
+              {{ form.last_name }}
+              {% if form.last_name.errors %}<ul class="errorlist">{% for e in form.last_name.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.email.id_for_label }}">Email address <span style="color:var(--danger-c)">*</span></label>
+              {{ form.email }}
+              {% if form.email.errors %}<ul class="errorlist">{% for e in form.email.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.phone_number.id_for_label }}">Contact number <span style="color:var(--danger-c)">*</span></label>
+              {{ form.phone_number }}
+              {% if form.phone_number.errors %}<ul class="errorlist">{% for e in form.phone_number.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Portal Login</div>
+          <div class="form-grid">
+            <div class="form-group full">
+              <label for="{{ form.username.id_for_label }}">Username <span style="color:var(--danger-c)">*</span></label>
+              {{ form.username }}
+              <p class="field-help">This is the single family login you will use to view reports, schedules, and monthly payments for all linked children.</p>
+              {% if form.username.errors %}<ul class="errorlist">{% for e in form.username.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.password1.id_for_label }}">Password <span style="color:var(--danger-c)">*</span></label>
+              {{ form.password1 }}
+              {% if form.password1.errors %}<ul class="errorlist">{% for e in form.password1.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            <div class="form-group">
+              <label for="{{ form.password2.id_for_label }}">Confirm password <span style="color:var(--danger-c)">*</span></label>
+              {{ form.password2 }}
+              {% if form.password2.errors %}<ul class="errorlist">{% for e in form.password2.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+          </div>
+
+          <div class="submit-row">
+            <button type="submit" class="btn-submit">
+              <i class="fa-solid fa-user-plus"></i> Create Parent Account
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <aside class="sidebar">
+      <div class="info-block">
+        <div class="info-block-title">What Happens Next</div>
+        <ul class="step-list">
+          <li class="step-item">
+            <div class="step-num">1</div>
+            <div class="step-text">Create your parent login once. We will sign you into the portal right away.</div>
+          </li>
+          <li class="step-item">
+            <div class="step-num">2</div>
+            <div class="step-text">Inside the portal, use <strong>Add Child</strong> to submit each child's intake separately.</div>
+          </li>
+          <li class="step-item">
+            <div class="step-num">3</div>
+            <div class="step-text">Staff reviews each child request and approves the correct trial or class setup.</div>
+          </li>
+          <li class="step-item">
+            <div class="step-num">4</div>
+            <div class="step-text">Once approved, all linked children, reports, attendance, and payments stay under this same parent account.</div>
+          </li>
+        </ul>
+      </div>
+
+      {% if landing_content.available_programs %}
+      <div class="info-block">
+        <div class="info-block-title">Programs You Can Request Later</div>
+        <div class="pill-row">
+          {% for program in landing_content.available_programs %}
+          <span class="pill">{{ program }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if landing_content.available_locations %}
+      <div class="info-block">
+        <div class="info-block-title">Training Locations</div>
+        <div class="pill-row">
+          {% for location in landing_content.available_locations %}
+          <span class="pill">{{ location }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="info-block">
+        <div class="info-block-title">Already Have An Account?</div>
+        <p>Use your existing parent login to add another child or review monthly billing from the same family portal.</p>
+        <p style="margin-top:12px;"><a href="{% url 'accounts:login' %}" class="contact-link">Sign in here</a></p>
+      </div>
+
+      <div class="info-block">
+        <div class="info-block-title">Need Help?</div>
+        {% if landing_content.contact_email %}
+        <p>Contact us at <a href="mailto:{{ landing_content.contact_email }}" class="contact-link">{{ landing_content.contact_email }}</a> if you need help with account setup.</p>
+        {% else %}
+        <p>Reach the club administrator for help with parent account setup.</p>
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+  var html = document.documentElement;
+  var btn = document.getElementById('themeBtn');
+  var ico = document.getElementById('themeIco');
+
+  function syncIco(theme) {
+    ico.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+  }
+
+  syncIco(html.getAttribute('data-theme') || 'dark');
+  btn.addEventListener('click', function () {
+    var next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('nyo-theme', next);
+    syncIco(next);
+  });
+</script>
+</body>
+</html>

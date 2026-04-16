@@ -3,7 +3,7 @@ import json
 from datetime import timedelta
 
 from django.contrib import messages
-from django.contrib.auth import get_user_model
+from django.contrib.auth import authenticate, get_user_model, login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
 from django.db.models import Q, Sum
@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views import View
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
+from django.views.generic import CreateView, DeleteView, DetailView, FormView, ListView, TemplateView, UpdateView
 
 from accounts.notifications import notify_users
 from accounts.decorators import role_required
@@ -27,6 +27,7 @@ from members.forms import (
     CommunicationLogForm,
     MemberForm,
     MemberLevelForm,
+    ParentRegistrationForm,
     ProgressReportForm,
 )
 from members.models import AdmissionApplication, CommunicationLog, DEFAULT_SKILLS, Member, ProgressReport
@@ -449,26 +450,39 @@ class MemberDeleteView(AdminRequiredMixin, DeleteView):
         return super().form_valid(form)
 
 
-class AdmissionApplicationCreateView(CreateView):
-    model = AdmissionApplication
-    form_class = AdmissionApplicationPublicForm
+class AdmissionApplicationCreateView(FormView):
     template_name = "members/application_apply.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and not has_role(request.user, ROLE_PARENT):
+            messages.warning(request, "Only parents can use this intake page. Staff can manage leads from the workspace.")
+            return redirect("accounts:dashboard")
+        return super().dispatch(request, *args, **kwargs)
+
+    def is_parent_portal(self):
+        return self.request.user.is_authenticated and has_role(self.request.user, ROLE_PARENT)
+
+    def get_template_names(self):
+        if self.is_parent_portal():
+            return ["members/application_apply.html"]
+        return ["accounts/parent_register.html"]
+
+    def get_form_class(self):
+        if self.is_parent_portal():
+            return AdmissionApplicationPublicForm
+        return ParentRegistrationForm
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        content = LandingPageContent.get_solo()
-        kwargs["program_options"] = content.available_programs
-        kwargs["location_options"] = content.available_locations
+        if self.is_parent_portal():
+            content = LandingPageContent.get_solo()
+            kwargs["program_options"] = content.available_programs
+            kwargs["location_options"] = content.available_locations
         return kwargs
-
-    def get_success_url(self):
-        if self.request.user.is_authenticated and has_role(self.request.user, ROLE_PARENT):
-            return reverse_lazy("members:list") + "?application_submitted=1"
-        return reverse_lazy("members:apply") + "?submitted=1"
 
     def get_initial(self):
         initial = super().get_initial()
-        if self.request.user.is_authenticated and has_role(self.request.user, ROLE_PARENT):
+        if self.is_parent_portal():
             parent_user = self.request.user
             initial["guardian_name"] = parent_user.get_full_name() or parent_user.username
             initial["guardian_email"] = parent_user.email
@@ -493,22 +507,38 @@ class AdmissionApplicationCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        is_parent_portal = self.request.user.is_authenticated and has_role(self.request.user, ROLE_PARENT)
+        is_parent_portal = self.is_parent_portal()
         context["landing_content"] = LandingPageContent.get_solo()
         context["is_parent_portal"] = is_parent_portal
+        context["is_parent_signup"] = not is_parent_portal
         context["submitted"] = self.request.GET.get("submitted") == "1"
         context["back_url"] = reverse_lazy("members:list") if is_parent_portal else "/"
         return context
 
     def form_valid(self, form):
-        if self.request.user.is_authenticated and has_role(self.request.user, ROLE_PARENT):
+        if self.is_parent_portal():
             form.instance.linked_parent_user = self.request.user
-        response = super().form_valid(form)
+            form.instance.desired_username = self.request.user.username
+            self.object = form.save()
+            messages.success(
+                self.request,
+                f"Child application submitted successfully. Recommended starting level: {self.object.get_recommended_level_display()}.",
+            )
+            return redirect(reverse_lazy("members:list") + "?application_submitted=1")
+
+        user = form.save()
+        authenticated_user = authenticate(
+            self.request,
+            username=user.username,
+            password=form.cleaned_data["password1"],
+        )
+        if authenticated_user is not None:
+            login(self.request, authenticated_user)
         messages.success(
             self.request,
-            f"Application submitted successfully. Recommended starting level: {self.object.get_recommended_level_display()}.",
+            "Parent account created successfully. You can now add your first child from the parent portal.",
         )
-        return response
+        return redirect("members:list")
 
 
 class AdmissionApplicationListView(SalesOrAdminRequiredMixin, ListView):
