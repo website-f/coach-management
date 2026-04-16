@@ -111,3 +111,85 @@ class CRMFlowTests(TestCase):
         self.assertEqual(response.context["why_left"], "Paused because of school exams.")
         self.assertEqual(response.context["what_next"], "Check back in after the exam period.")
         self.assertEqual(response.context["communication_logs"][0].staff, self.admin)
+
+
+class ParentPortalTests(TestCase):
+    def create_user(self, username, role, email=""):
+        user = User.objects.create_user(username=username, password="testpass123", email=email)
+        user.profile.role = role
+        user.profile.save()
+        return user
+
+    def setUp(self):
+        self.parent = self.create_user("parent_user", UserProfile.ROLE_PARENT, "parent@example.com")
+        self.other_parent = self.create_user("other_parent", UserProfile.ROLE_PARENT, "other@example.com")
+        self.coach = self.create_user("coach_user", UserProfile.ROLE_COACH, "coach@example.com")
+        self.child = Member.objects.create(
+            full_name="Aina Parent",
+            date_of_birth="2014-05-10",
+            contact_number="0123000001",
+            email="aina@example.com",
+            emergency_contact_name="Parent User",
+            emergency_contact_phone="0123000001",
+            parent_user=self.parent,
+            assigned_coach=self.coach,
+            status=Member.STATUS_ACTIVE,
+            program_enrolled="Junior Development",
+        )
+        self.other_child = Member.objects.create(
+            full_name="Other Family Child",
+            date_of_birth="2013-03-03",
+            contact_number="0123000002",
+            email="otherchild@example.com",
+            emergency_contact_name="Other Parent",
+            emergency_contact_phone="0123000002",
+            parent_user=self.other_parent,
+            assigned_coach=self.coach,
+            status=Member.STATUS_ACTIVE,
+            program_enrolled="Performance Squad",
+        )
+
+    def test_parent_member_list_only_shows_their_children(self):
+        self.client.force_login(self.parent)
+
+        response = self.client.get(reverse("members:list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["is_parent_view"])
+        self.assertEqual(list(response.context["members"]), [self.child])
+        self.assertContains(response, "My Children")
+        self.assertContains(response, "Add Child")
+        self.assertNotContains(response, self.other_child.full_name)
+
+    def test_parent_cannot_open_other_parent_child_detail(self):
+        self.client.force_login(self.parent)
+
+        response = self.client.get(reverse("members:detail", args=[self.other_child.pk]))
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_parent_add_child_application_links_to_parent_account(self):
+        self.client.force_login(self.parent)
+
+        response = self.client.post(
+            reverse("members:apply"),
+            data={
+                "student_name": "New Child Request",
+                "date_of_birth": "2015-09-09",
+                "guardian_name": "Parent User",
+                "guardian_email": "parent@example.com",
+                "contact_number": "0123000001",
+                "source": AdmissionApplication.SOURCE_WEBSITE,
+                "preferred_program": "Junior Development",
+                "preferred_location": "Court 1",
+                "playing_experience": AdmissionApplication.EXPERIENCE_NONE,
+                "training_frequency": AdmissionApplication.TRAINING_OCCASIONAL,
+                "primary_goal": AdmissionApplication.GOAL_FUNDAMENTALS,
+                "desired_username": "parent_user",
+                "notes": "Prefers weekend classes.",
+            },
+        )
+
+        self.assertRedirects(response, reverse("members:list") + "?application_submitted=1")
+        application = AdmissionApplication.objects.get(student_name="New Child Request")
+        self.assertEqual(application.linked_parent_user, self.parent)

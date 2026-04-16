@@ -304,11 +304,33 @@ class MemberListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        is_parent_view = has_role(self.request.user, ROLE_PARENT)
+        parent_applications = AdmissionApplication.objects.none()
+        if is_parent_view:
+            parent_applications = (
+                AdmissionApplication.objects.select_related("linked_member")
+                .filter(linked_parent_user=self.request.user)
+                .order_by("-submitted_at")
+            )
         context["can_manage"] = has_role(self.request.user, ROLE_ADMIN, ROLE_HEADCOUNT)
         context["is_admin"] = has_role(self.request.user, ROLE_ADMIN)
         context["is_sales"] = has_role(self.request.user, ROLE_HEADCOUNT) and not has_role(self.request.user, ROLE_ADMIN)
+        context["is_parent_view"] = is_parent_view
         context["statuses"] = Member.STATUS_CHOICES
         context["coaches"] = User.objects.filter(profile__role=UserProfile.ROLE_COACH).order_by("first_name", "username")
+        context["show_coach_filter"] = not is_parent_view
+        context["application_submitted"] = self.request.GET.get("application_submitted") == "1"
+        context["linked_children_count"] = visible_members_for_user(self.request.user).count() if is_parent_view else None
+        context["trial_children_count"] = (
+            visible_members_for_user(self.request.user).filter(status=Member.STATUS_TRIAL).count() if is_parent_view else None
+        )
+        context["active_children_count"] = (
+            visible_members_for_user(self.request.user).filter(status=Member.STATUS_ACTIVE).count() if is_parent_view else None
+        )
+        context["parent_applications"] = parent_applications[:6] if is_parent_view else []
+        context["pending_child_application_count"] = (
+            parent_applications.filter(status=AdmissionApplication.STATUS_PENDING).count() if is_parent_view else 0
+        )
         return context
 
 
@@ -323,8 +345,10 @@ class MemberDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         member = self.object
+        is_parent_view = has_role(self.request.user, ROLE_PARENT)
         attendance_history = AttendanceRecord.objects.filter(member=member).select_related("training_session")
         invoices = Invoice.objects.select_related("payment_plan").filter(member=member).order_by("-period", "-due_date")
+        report_history = visible_reports_for_user(self.request.user).filter(member=member)
         attendance_logged = attendance_history.exclude(status=AttendanceRecord.STATUS_SCHEDULED)
         attendance_total = attendance_logged.count()
         attendance_present = attendance_logged.filter(
@@ -343,7 +367,8 @@ class MemberDetailView(LoginRequiredMixin, DetailView):
             "total"
         ] or 0
         context["latest_invoice"] = invoices.first()
-        context["latest_report"] = visible_reports_for_user(self.request.user).filter(member=member).first()
+        context["report_history"] = report_history[:6]
+        context["latest_report"] = report_history.first()
         context["recent_feedback"] = (
             SessionFeedback.objects.filter(member=member)
             .select_related("training_session", "coach")
@@ -363,6 +388,7 @@ class MemberDetailView(LoginRequiredMixin, DetailView):
         context["why_stayed"] = member.conversion_reason or member.parent_feedback or ""
         context["why_left"] = member.churn_reason or ""
         context["what_next"] = member.next_action or (lead.next_action if lead else "")
+        context["is_parent_view"] = is_parent_view
         context["can_manage"] = has_role(self.request.user, ROLE_ADMIN) or (
             has_role(self.request.user, ROLE_HEADCOUNT) and member.status == Member.STATUS_TRIAL
         )
@@ -436,12 +462,42 @@ class AdmissionApplicationCreateView(CreateView):
         return kwargs
 
     def get_success_url(self):
+        if self.request.user.is_authenticated and has_role(self.request.user, ROLE_PARENT):
+            return reverse_lazy("members:list") + "?application_submitted=1"
         return reverse_lazy("members:apply") + "?submitted=1"
+
+    def get_initial(self):
+        initial = super().get_initial()
+        if self.request.user.is_authenticated and has_role(self.request.user, ROLE_PARENT):
+            parent_user = self.request.user
+            initial["guardian_name"] = parent_user.get_full_name() or parent_user.username
+            initial["guardian_email"] = parent_user.email
+            initial["desired_username"] = parent_user.username
+
+            linked_child = visible_members_for_user(parent_user).order_by("full_name").first()
+            latest_application = (
+                AdmissionApplication.objects.filter(linked_parent_user=parent_user).order_by("-submitted_at").first()
+            )
+            if linked_child:
+                initial["contact_number"] = linked_child.emergency_contact_phone or linked_child.contact_number
+                if linked_child.program_enrolled:
+                    initial["preferred_program"] = linked_child.program_enrolled
+                elif linked_child.syllabus_root_id:
+                    initial["preferred_program"] = linked_child.syllabus_root.name
+            if latest_application:
+                initial.setdefault("source", latest_application.source)
+                initial.setdefault("preferred_location", latest_application.preferred_location)
+                initial.setdefault("training_frequency", latest_application.training_frequency)
+                initial.setdefault("primary_goal", latest_application.primary_goal)
+        return initial
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        is_parent_portal = self.request.user.is_authenticated and has_role(self.request.user, ROLE_PARENT)
         context["landing_content"] = LandingPageContent.get_solo()
+        context["is_parent_portal"] = is_parent_portal
         context["submitted"] = self.request.GET.get("submitted") == "1"
+        context["back_url"] = reverse_lazy("members:list") if is_parent_portal else "/"
         return context
 
     def form_valid(self, form):

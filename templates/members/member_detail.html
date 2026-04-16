@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% load ui_tags %}
 
-{% block title %}{{ member.full_name }} | NYO Admin Dashboard{% endblock %}
-{% block page_heading %}Student Profile{% endblock %}
+{% block title %}{{ member.full_name }} | NYO Dashboard{% endblock %}
+{% block page_heading %}{% if is_parent_view %}Child Profile{% else %}Student Profile{% endif %}{% endblock %}
 
 {% block content %}
 <div class="space-y">
@@ -13,10 +13,14 @@
                     {{ member.full_name|first|upper }}
                 </div>
                 <div>
-                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Student profile</p>
+                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">{% if is_parent_view %}Child profile{% else %}Student profile{% endif %}</p>
                     <h2 style="font-size:28px;font-weight:700;color:var(--text);letter-spacing:-.03em;">{{ member.full_name }}</h2>
                     <p class="text-sm text-muted" style="margin-top:6px;">
-                        Program: {{ member.program_enrolled|default:"Not set" }} · Coach: {{ member.assigned_coach|default:"Unassigned" }} · Lead source: {{ lead_source_label }}
+                        {% if is_parent_view %}
+                        Program: {{ member.program_enrolled|default:"Not set" }} - Coach: {{ member.assigned_coach|default:"Unassigned" }} - Payment: {{ payment_status }}
+                        {% else %}
+                        Program: {{ member.program_enrolled|default:"Not set" }} - Coach: {{ member.assigned_coach|default:"Unassigned" }} - Lead source: {{ lead_source_label }}
+                        {% endif %}
                     </p>
                 </div>
             </div>
@@ -89,10 +93,12 @@
                         <p class="text-xs text-muted" style="margin-bottom:4px;">Parent Account</p>
                         <p style="font-weight:600;color:var(--text);font-size:13.5px;">{{ member.parent_user|default:"Not linked" }}</p>
                     </div>
+                    {% if not is_parent_view %}
                     <div class="card-inset">
                         <p class="text-xs text-muted" style="margin-bottom:4px;">Assigned Staff</p>
                         <p style="font-weight:600;color:var(--text);font-size:13.5px;">{{ member.assigned_staff|default:"Unassigned" }}</p>
                     </div>
+                    {% endif %}
                     <div class="card-inset">
                         <p class="text-xs text-muted" style="margin-bottom:4px;">Program Enrolled</p>
                         <p style="font-weight:600;color:var(--text);font-size:13.5px;">{{ member.program_enrolled|default:"Not set" }}</p>
@@ -114,10 +120,12 @@
                         <p style="font-weight:600;color:var(--text);font-size:13.5px;">{{ member.package_label }}</p>
                         <p class="text-sm text-muted">{{ member.package_summary }}</p>
                     </div>
+                    {% if not is_parent_view %}
                     <div class="card-inset">
                         <p class="text-xs text-muted" style="margin-bottom:4px;">Interest Level</p>
                         <p style="font-weight:600;color:var(--text);font-size:13.5px;">{{ interest_level_label }}</p>
                     </div>
+                    {% endif %}
                 </div>
 
                 {% if can_update_level %}
@@ -141,6 +149,27 @@
                 {% endif %}
             </div>
 
+            {% if is_parent_view %}
+            <div class="card">
+                <div class="section-header">
+                    <span class="section-title">Child Journey</span>
+                </div>
+                <div class="space-y">
+                    <div class="card-inset">
+                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Latest published report</p>
+                        <p style="font-size:13.5px;color:var(--text);line-height:1.8;">{% if latest_report %}{{ latest_report.period_label }} - {{ latest_report.get_overall_status_display }} with {{ latest_report.attendance_rate }}% attendance.{% else %}No published report yet for this child.{% endif %}</p>
+                    </div>
+                    <div class="card-inset">
+                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Latest coach feedback</p>
+                        <p style="font-size:13.5px;color:var(--text);line-height:1.8;">{% if recent_feedback %}{{ recent_feedback.0.feedback_text|truncatechars:220 }}{% else %}No coach feedback has been added yet.{% endif %}</p>
+                    </div>
+                    <div class="card-inset">
+                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">What happens next?</p>
+                        <p style="font-size:13.5px;color:var(--text);line-height:1.8;">{{ what_next|default:"The child is following the normal class schedule right now." }}</p>
+                    </div>
+                </div>
+            </div>
+            {% else %}
             <div class="card">
                 <div class="section-header">
                     <span class="section-title">CRM Answers</span>
@@ -148,7 +177,7 @@
                 <div class="space-y">
                     <div class="card-inset">
                         <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Where did this student come from?</p>
-                        <p style="font-size:13.5px;color:var(--text);line-height:1.8;">{{ lead_source_label }}{% if lead %} · {{ lead.guardian_name }}{% endif %}</p>
+                        <p style="font-size:13.5px;color:var(--text);line-height:1.8;">{{ lead_source_label }}{% if lead %} - {{ lead.guardian_name }}{% endif %}</p>
                     </div>
                     <div class="card-inset">
                         <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Why did they stay?</p>
@@ -164,6 +193,7 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
 
             {% if can_manage_crm %}
             <div class="card">
@@ -188,8 +218,8 @@
                         <div class="card-inset">
                             <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
                                 <div>
-                                    <p style="font-weight:700;font-size:14px;color:var(--text);">{{ log.get_channel_display }} · {{ log.get_message_type_display }}</p>
-                                    <p class="text-sm text-muted" style="margin-top:6px;">{{ log.happened_at|date:"d M Y H:i" }} · {{ log.staff|default:"System" }}</p>
+                                    <p style="font-weight:700;font-size:14px;color:var(--text);">{{ log.get_channel_display }} - {{ log.get_message_type_display }}</p>
+                                    <p class="text-sm text-muted" style="margin-top:6px;">{{ log.happened_at|date:"d M Y H:i" }} - {{ log.staff|default:"System" }}</p>
                                 </div>
                                 <span class="badge badge-info">{{ log.get_channel_display }}</span>
                             </div>
@@ -250,7 +280,7 @@
                     <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
                         <div>
                             <p style="font-weight:600;font-size:14px;color:var(--text);">{{ latest_report.period_label }}</p>
-                            <p class="text-sm text-muted mt-1">Attendance {{ latest_report.attendance_rate }}% · {{ latest_report.get_overall_status_display }}</p>
+                            <p class="text-sm text-muted mt-1">Attendance {{ latest_report.attendance_rate }}% - {{ latest_report.get_overall_status_display }}</p>
                         </div>
                         <span class="badge {% if latest_report.is_published %}badge-success{% else %}badge-neutral{% endif %}">{% if latest_report.is_published %}Published{% else %}Draft{% endif %}</span>
                     </div>
@@ -263,6 +293,29 @@
 
             <div class="card">
                 <div class="section-header">
+                    <span class="section-title">Report History</span>
+                    <a href="{% url 'members:report_list' %}" class="section-link">Open all</a>
+                </div>
+                <div class="space-y">
+                    {% for report in report_history %}
+                    <a href="{% url 'members:report_detail' report.pk %}" class="list-item">
+                        <div>
+                            <p class="list-item-title">{{ report.period_label }}</p>
+                            <p class="list-item-sub">Attendance {{ report.attendance_rate }}% - {{ report.get_overall_status_display }}</p>
+                        </div>
+                        <span class="badge {% if report.is_published %}badge-success{% else %}badge-neutral{% endif %}">{% if report.is_published %}Published{% else %}Draft{% endif %}</span>
+                    </a>
+                    {% empty %}
+                    <div class="empty-state" style="padding:24px 0;">
+                        <i class="fa-regular fa-file-lines"></i>
+                        <p>No progress reports are available yet.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-header">
                     <span class="section-title">Upcoming Sessions</span>
                     <a href="{% url 'sessions:list' %}" class="section-link">Open schedule</a>
                 </div>
@@ -271,7 +324,7 @@
                     <a href="{% url 'sessions:detail' session.pk %}" class="list-item">
                         <div>
                             <p class="list-item-title">{{ session.title }}</p>
-                            <p class="list-item-sub">{{ session.session_date }} · {{ session.start_time|time:"H:i" }} · Court {{ session.court }}</p>
+                            <p class="list-item-sub">{{ session.session_date }} - {{ session.start_time|time:"H:i" }} - Court {{ session.court }}</p>
                         </div>
                         <i class="fa-solid fa-chevron-right text-muted" style="font-size:11px;flex-shrink:0;"></i>
                     </a>
@@ -286,7 +339,7 @@
 
             <div class="card">
                 <div class="section-header">
-                    <span class="section-title">Recent Session Feedback</span>
+                    <span class="section-title">{% if is_parent_view %}Coach Feedback & Behaviour{% else %}Recent Session Feedback{% endif %}</span>
                 </div>
                 <div class="space-y">
                     {% for feedback in recent_feedback %}
@@ -294,7 +347,7 @@
                         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
                             <div>
                                 <p style="font-weight:700;font-size:13.5px;color:var(--text);">{{ feedback.training_session.title }}</p>
-                                <p class="text-sm text-muted mt-1">{{ feedback.training_session.session_date }} · {{ feedback.coach|default:"Coach" }}</p>
+                                <p class="text-sm text-muted mt-1">{{ feedback.training_session.session_date }} - {{ feedback.coach|default:"Coach" }}</p>
                             </div>
                             <span class="badge badge-info">{{ member.get_skill_level_display }}</span>
                         </div>
@@ -311,6 +364,30 @@
 
             <div class="card">
                 <div class="section-header">
+                    <span class="section-title">Attendance History</span>
+                </div>
+                <div class="space-y">
+                    {% for attendance in attendance_history %}
+                    <div class="card-inset">
+                        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                            <div>
+                                <p style="font-weight:700;font-size:13.5px;color:var(--text);">{{ attendance.training_session.title }}</p>
+                                <p class="text-sm text-muted mt-1">{{ attendance.training_session.session_date }} - {{ attendance.training_session.start_time|time:"H:i" }} - Coach {{ attendance.training_session.coach|default:member.assigned_coach|default:"Unassigned" }}</p>
+                            </div>
+                            <span class="badge {{ attendance.status|status_badge }}">{{ attendance.get_status_display }}</span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state" style="padding:24px 0;">
+                        <i class="fa-regular fa-calendar-check"></i>
+                        <p>No attendance records have been logged yet.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-header">
                     <span class="section-title">Recent Invoices</span>
                 </div>
                 <div class="space-y">
@@ -319,7 +396,7 @@
                         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
                             <div>
                                 <p style="font-weight:600;font-size:13.5px;color:var(--text);">{{ invoice.period|date:"F Y" }}</p>
-                                <p class="text-sm text-muted mt-1">Due {{ invoice.due_date }} · RM {{ invoice.amount }}</p>
+                                <p class="text-sm text-muted mt-1">Due {{ invoice.due_date }} - RM {{ invoice.amount }}</p>
                             </div>
                             <span class="badge {{ invoice.status|status_badge }}">{{ invoice.get_status_display }}</span>
                         </div>

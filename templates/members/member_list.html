@@ -1,16 +1,81 @@
 {% extends "base.html" %}
 {% load ui_tags %}
 
-{% block title %}Students | NYO Admin Dashboard{% endblock %}
-{% block page_heading %}Students{% endblock %}
+{% block title %}{% if is_parent_view %}My Children{% else %}Students{% endif %} | NYO Dashboard{% endblock %}
+{% block page_heading %}{% if is_parent_view %}My Children{% else %}Students{% endif %}{% endblock %}
 
 {% block content %}
 <div class="space-y">
+    {% if is_parent_view %}
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
+            <div>
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Parent portal</p>
+                <h2 style="font-size:28px;font-weight:700;color:var(--text);letter-spacing:-.03em;">See only your linked children, add another child, and open each profile for reports, feedback, attendance, and payments.</h2>
+                <p class="text-sm text-muted" style="margin-top:10px;max-width:760px;line-height:1.8;">Every child below belongs to your account only. New child registration uses the same intake questions as the original application form, so the staff team gets the full background before approving the profile.</p>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <a href="{% url 'members:apply' %}" class="btn btn-primary"><i class="fa-solid fa-child-reaching"></i> Add Child</a>
+                <a href="{% url 'members:report_list' %}" class="btn btn-ghost"><i class="fa-solid fa-file-lines"></i> View Reports</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-cards">
+        <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Linked Children</p><p class="stat-value">{{ linked_children_count }}</p></div><div class="stat-icon"><i class="fa-solid fa-children"></i></div></div></div>
+        <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Active Children</p><p class="stat-value">{{ active_children_count }}</p></div><div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-circle-check"></i></div></div></div>
+        <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Trial Children</p><p class="stat-value">{{ trial_children_count }}</p></div><div class="stat-icon" style="background:rgba(245,158,11,.12);color:#fbbf24;"><i class="fa-solid fa-hourglass-half"></i></div></div></div>
+        <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Pending Child Requests</p><p class="stat-value">{{ pending_child_application_count }}</p></div><div class="stat-icon" style="background:rgba(79,110,247,.12);color:#93c5fd;"><i class="fa-solid fa-user-plus"></i></div></div></div>
+    </div>
+
+    {% if application_submitted %}
+    <div class="card-inset" style="border:1px solid rgba(34,197,94,.22);background:rgba(34,197,94,.08);">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+            <i class="fa-solid fa-circle-check" style="color:#4ade80;margin-top:2px;"></i>
+            <div>
+                <p style="font-weight:700;color:var(--text);">Child application submitted</p>
+                <p class="text-sm text-muted" style="margin-top:6px;line-height:1.8;">The new child request is now in the review queue. Once staff approves it, the child profile will appear here automatically with real reports, attendance, and payment records.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if parent_applications %}
+    <div class="card">
+        <div class="section-header">
+            <span class="section-title">Child Application History</span>
+            <a href="{% url 'members:apply' %}" class="section-link">Add another child</a>
+        </div>
+        <div class="space-y">
+            {% for application in parent_applications %}
+            <div class="card-inset">
+                <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+                    <div>
+                        <p style="font-weight:700;color:var(--text);font-size:14px;">{{ application.student_name }}</p>
+                        <p class="text-sm text-muted" style="margin-top:6px;line-height:1.7;">{{ application.preferred_program }} - {{ application.preferred_location }} - Submitted {{ application.submitted_at|date:"d M Y" }}</p>
+                    </div>
+                    <span class="badge {{ application.status|status_badge }}">{{ application.get_status_display }}</span>
+                </div>
+                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">Recommended level: {{ application.get_recommended_level_display }}{% if application.linked_member %} - Linked to a live child profile{% endif %}</p>
+                {% if application.linked_member %}
+                <div style="margin-top:12px;">
+                    <a href="{% url 'members:detail' application.linked_member.pk %}" class="btn btn-ghost btn-xs">Open Child Profile</a>
+                </div>
+                {% elif application.rejection_reason %}
+                <p class="text-sm" style="margin-top:10px;color:var(--danger);line-height:1.7;">{{ application.rejection_reason }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
     <div class="filter-bar">
         <form method="get" class="filter-fields" id="filterForm">
             <div class="filter-field">
-                <label>Search Student</label>
-                <input type="text" name="q" id="q" value="{{ request.GET.q }}" placeholder="Search student...">
+                <label>{% if is_parent_view %}Search Child{% else %}Search Student{% endif %}</label>
+                <input type="text" name="q" id="q" value="{{ request.GET.q }}" placeholder="{% if is_parent_view %}Search child...{% else %}Search student...{% endif %}">
             </div>
             <div class="filter-field">
                 <label>Status</label>
@@ -21,6 +86,7 @@
                     {% endfor %}
                 </select>
             </div>
+            {% if show_coach_filter %}
             <div class="filter-field">
                 <label>Coach</label>
                 <select name="coach" id="coach">
@@ -30,6 +96,7 @@
                     {% endfor %}
                 </select>
             </div>
+            {% endif %}
             <div class="filter-actions" style="margin-top:auto;">
                 <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filter</button>
                 {% if request.GET.q or request.GET.status or request.GET.coach %}
@@ -56,7 +123,7 @@
         <table class="tbl">
             <thead>
                 <tr>
-                    <th>Student</th>
+                    <th>{% if is_parent_view %}Child{% else %}Student{% endif %}</th>
                     <th>Program</th>
                     <th>Package</th>
                     <th>Coach</th>
@@ -67,9 +134,9 @@
             <tbody>
                 {% for member in members %}
                 <tr>
-                    <td data-label="Student Profile">
+                    <td data-label="{% if is_parent_view %}Child Profile{% else %}Student Profile{% endif %}">
                         <div class="tbl-name">{{ member.full_name }}</div>
-                        <div class="tbl-sub">{{ member.contact_number }}{% if member.email %} · {{ member.email }}{% endif %}</div>
+                        <div class="tbl-sub">{{ member.contact_number }}{% if member.email %} - {{ member.email }}{% endif %}</div>
                     </td>
                     <td data-label="Program">{{ member.program_enrolled|default:member.syllabus_root|default:"Not set" }}</td>
                     <td data-label="Package">{{ member.package_label }}</td>
@@ -77,7 +144,7 @@
                     <td data-label="Status"><span class="badge {{ member.status|status_badge }}">{{ member.get_status_display }}</span></td>
                     <td data-label="Action">
                         <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                            <a href="{% url 'members:detail' member.pk %}" class="btn btn-ghost btn-xs">View</a>
+                            <a href="{% url 'members:detail' member.pk %}" class="btn btn-ghost btn-xs">{% if is_parent_view %}Open Child Profile{% else %}View{% endif %}</a>
                             {% if can_manage %}
                             <a href="{% url 'members:edit' member.pk %}" class="btn btn-xs" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:99px;padding:4px 12px;">Edit</a>
                             {% endif %}
@@ -92,7 +159,7 @@
                     <td colspan="6">
                         <div class="empty-state">
                             <i class="fa-regular fa-user"></i>
-                            <p>No students match the current filter.</p>
+                            <p>{% if is_parent_view %}No linked child profiles match the current filter yet.{% else %}No students match the current filter.{% endif %}</p>
                         </div>
                     </td>
                 </tr>

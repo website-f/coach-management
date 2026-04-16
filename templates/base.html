@@ -1365,8 +1365,11 @@
             </a>
 
             <div class="nav-section-label" style="margin-top:8px;">My Children</div>
-            <a href="{% url 'members:list' %}" class="nav-link {% nav_active_section '/members/' %}">
+            <a href="{% url 'members:list' %}" class="nav-link {% nav_active_section '/members/' '/members/reports/' '/members/apply/' %}">
                 <span class="icon"><i class="fa-solid fa-children"></i></span> Children Profiles
+            </a>
+            <a href="{% url 'members:apply' %}" class="nav-link {% nav_active '/members/apply/' %}">
+                <span class="icon"><i class="fa-solid fa-child-reaching"></i></span> Add Child
             </a>
             <a href="{% url 'members:report_list' %}" class="nav-link {% nav_active '/members/reports/' %}">
                 <span class="icon"><i class="fa-solid fa-file-lines"></i></span> Progress Reports
@@ -1481,7 +1484,7 @@
         <i class="fa-solid fa-chart-pie"></i><span>Dashboard</span>
     </a>
     <a href="{% url 'members:list' %}" class="mob-nav-item {% nav_active_section '/members/' '/members/reports/' '/members/applications/' '/members/apply/' '/members/crm/' %}">
-        <i class="fa-solid fa-users"></i><span>Students</span>
+        <i class="fa-solid fa-users"></i><span>{% if current_role == 'parent' %}Children{% else %}Students{% endif %}</span>
     </a>
     {% if current_role == 'parent' %}
     <a href="{% url 'payments:my_payments' %}" class="mob-nav-item {% nav_active '/payments/my-payments/' %}">
@@ -1510,6 +1513,9 @@
         {% if current_role == 'parent' %}
         <a href="{% url 'sessions:list' %}" class="mob-more-item {% nav_active_path '/sessions/' '/plan/' '/sessions/syllabus/' %}">
             <i class="fa-solid fa-calendar-days"></i><span>Sessions</span>
+        </a>
+        <a href="{% url 'members:apply' %}" class="mob-more-item {% nav_active '/members/apply/' %}">
+            <i class="fa-solid fa-child-reaching"></i><span>Add Child</span>
         </a>
         {% endif %}
         {% if request.user.is_authenticated %}
@@ -2194,6 +2200,93 @@
         });
     }
 
+    function getTableColumnCount(tbl) {
+        var headerRow = tbl.find('thead tr').first();
+        if (!headerRow.length) {
+            return 0;
+        }
+
+        var count = 0;
+        headerRow.children('th, td').each(function() {
+            var span = parseInt($(this).attr('colspan'), 10);
+            count += Number.isNaN(span) ? 1 : span;
+        });
+        return count;
+    }
+
+    function getDataTableLayoutState(tbl) {
+        var columnCount = getTableColumnCount(tbl);
+        var bodyRows = tbl.find('tbody tr');
+        var placeholderRow = null;
+        var placeholderMessage = '';
+
+        if (!columnCount) {
+            return { compatible: false };
+        }
+
+        if (!bodyRows.length) {
+            return {
+                compatible: true,
+                columnCount: columnCount,
+                emptyMessage: 'No records available.'
+            };
+        }
+
+        if (bodyRows.length === 1) {
+            var onlyRow = bodyRows.first();
+            var onlyCells = onlyRow.children('th, td');
+            if (onlyCells.length === 1) {
+                var onlyCell = onlyCells.first();
+                var span = parseInt(onlyCell.attr('colspan'), 10);
+                var looksLikeEmptyState = onlyCell.find('.empty-state').length > 0 || /^(no|nothing)\b/i.test($.trim(onlyCell.text()));
+                if (!Number.isNaN(span) && span >= columnCount && looksLikeEmptyState) {
+                    placeholderRow = onlyRow;
+                    placeholderMessage = $.trim(onlyCell.text()) || 'No records available.';
+                }
+            }
+        }
+
+        var compatible = true;
+        bodyRows.each(function() {
+            if (placeholderRow && this === placeholderRow[0]) {
+                return;
+            }
+
+            var row = $(this);
+            var cells = row.children('th, td');
+            var rowColumnCount = 0;
+
+            cells.each(function() {
+                var cell = $(this);
+                var colspan = parseInt(cell.attr('colspan'), 10);
+                var rowspan = parseInt(cell.attr('rowspan'), 10);
+
+                if (!Number.isNaN(rowspan) && rowspan > 1) {
+                    compatible = false;
+                    return false;
+                }
+
+                rowColumnCount += Number.isNaN(colspan) ? 1 : colspan;
+            });
+
+            if (!compatible) {
+                return false;
+            }
+
+            if (rowColumnCount !== columnCount) {
+                compatible = false;
+                return false;
+            }
+        });
+
+        return {
+            compatible: compatible,
+            columnCount: columnCount,
+            placeholderRow: placeholderRow,
+            emptyMessage: placeholderMessage || 'No records available.'
+        };
+    }
+
     function initDataTables() {
         if (isMobileViewport || !window.$ || !$.fn.DataTable) {
             return;
@@ -2205,6 +2298,16 @@
             if (tbl.find('thead').length === 0 || tbl.find('tbody').length === 0) return;
             if (tbl.hasClass('native-stack')) return;
             if ($.fn.DataTable.isDataTable(this)) return;
+
+            var layoutState = getDataTableLayoutState(tbl);
+            if (!layoutState.compatible) {
+                console.warn('Skipping DataTables init due to mismatched columns.', this);
+                return;
+            }
+
+            if (layoutState.placeholderRow) {
+                layoutState.placeholderRow.remove();
+            }
 
             tbl.DataTable({
                 dom: '<"dt-top-ctrl"fB><"table-responsive"t><"dt-bottom-ctrl"lip>',
@@ -2218,7 +2321,8 @@
                 language: {
                     search: "",
                     searchPlaceholder: "Search records...",
-                    lengthMenu: "Show _MENU_"
+                    lengthMenu: "Show _MENU_",
+                    emptyTable: layoutState.emptyMessage
                 }
             });
             datatableInitialized = true;
