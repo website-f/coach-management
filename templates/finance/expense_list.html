@@ -101,7 +101,7 @@
                     <td data-label="Action"><a href="{% url 'finance:expense_edit' expense.pk %}" class="btn btn-ghost btn-xs">Edit</a></td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="8"><div class="empty-state"><i class="fa-regular fa-note-sticky"></i><p>No expenses match the current filters.</p></div></td></tr>
+                <tr><td colspan="7"><div class="empty-state"><i class="fa-regular fa-note-sticky"></i><p>No expenses match the current filters.</p></div></td></tr>
                 {% endfor %}
             </tbody>
         </table>
