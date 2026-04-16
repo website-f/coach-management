@@ -4,39 +4,96 @@
 {% block title %}Finance | NYO Admin Dashboard{% endblock %}
 {% block page_heading %}Finance{% endblock %}
 
+{% block extra_head %}
+<style>
+/* ── Finance Tabs ── */
+.fin-tab-bar-shell {
+    position: sticky;
+    top: var(--header-h);
+    z-index: 90;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    margin: 0 -24px;
+    padding: 0 24px;
+}
+@media (max-width: 1023px) {
+    .fin-tab-bar-shell { top: 56px; margin: 0 -16px; padding: 0 16px; }
+}
+.fin-tab-bar {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    white-space: nowrap;
+}
+.fin-tab-bar::-webkit-scrollbar { display: none; }
+.fin-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 14px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    border: none;
+    background: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    white-space: nowrap;
+    font-family: inherit;
+    transition: color var(--transition), border-color var(--transition);
+    flex-shrink: 0;
+}
+.fin-tab:hover { color: var(--text); }
+.fin-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.fin-tab i { font-size: 12px; }
+.fin-panel { display: none; }
+.fin-panel.active { display: block; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="space-y">
-    <div class="card">
+<div>
+    <!-- ── Page header (always visible) ── -->
+    <div class="card" style="margin-bottom:0;border-radius:var(--radius-lg) var(--radius-lg) 0 0;border-bottom:none;">
         <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
-            <div style="max-width:860px;">
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.14em;margin-bottom:8px;">Finance workspace</p>
-                <h2 style="font-size:28px;font-weight:700;color:var(--text);letter-spacing:-.03em;">Revenue, collections, payroll, cashflow, forecasting, and compliance in one place.</h2>
-                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">
-                    Use this page to answer the owner questions quickly: are we profitable, where is money leaking,
-                    can we hire another coach, can we open another branch, and how long can we survive if revenue drops.
-                </p>
+            <div style="max-width:720px;">
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.14em;margin-bottom:8px;">Finance Workspace</p>
+                <h2 style="font-size:22px;font-weight:700;color:var(--text);letter-spacing:-.03em;">Revenue, collections, payroll, cashflow, forecasting, and compliance.</h2>
             </div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                <a href="{% url 'finance:invoice_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New Invoice</a>
-                <a href="{% url 'finance:expense_create' %}" class="btn btn-ghost"><i class="fa-solid fa-receipt"></i> Add Expense</a>
-                <a href="{% url 'finance:payroll_create' %}" class="btn btn-ghost"><i class="fa-solid fa-money-check-dollar"></i> Add Payroll</a>
-                <a href="{% url 'finance:forecasting' %}" class="btn btn-ghost"><i class="fa-solid fa-chart-line"></i> Forecasting</a>
-                <a href="{% url 'finance:export' %}" class="btn btn-ghost"><i class="fa-solid fa-download"></i> Export</a>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <a href="{% url 'finance:invoice_create' %}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> New Invoice</a>
+                <a href="{% url 'finance:expense_create' %}" class="btn btn-ghost btn-sm"><i class="fa-solid fa-receipt"></i> Expense</a>
+                <a href="{% url 'finance:payroll_create' %}" class="btn btn-ghost btn-sm"><i class="fa-solid fa-money-check-dollar"></i> Payroll</a>
+                <a href="{% url 'finance:export' %}" class="btn btn-ghost btn-sm"><i class="fa-solid fa-download"></i> Export</a>
             </div>
         </div>
     </div>
 
-    <div class="card">
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            {% for section_id, section_label in quick_sections %}
-            <a href="#{{ section_id }}" class="badge badge-neutral" style="text-decoration:none;padding:10px 14px;">{{ section_label }}</a>
-            {% endfor %}
+    <!-- ── Scrollable Tab Bar ── -->
+    <div class="fin-tab-bar-shell">
+        <div class="fin-tab-bar" role="tablist">
+            <button class="fin-tab active" data-tab="tab-overview" role="tab"><i class="fa-solid fa-chart-pie"></i> Overview</button>
+            <button class="fin-tab" data-tab="tab-revenue" role="tab"><i class="fa-solid fa-sack-dollar"></i> Revenue</button>
+            <button class="fin-tab" data-tab="tab-collections" role="tab"><i class="fa-solid fa-credit-card"></i> Collections</button>
+            <button class="fin-tab" data-tab="tab-expenses" role="tab"><i class="fa-solid fa-receipt"></i> Expenses</button>
+            <button class="fin-tab" data-tab="tab-payroll" role="tab"><i class="fa-solid fa-hand-holding-dollar"></i> Payroll</button>
+            <button class="fin-tab" data-tab="tab-pnl" role="tab"><i class="fa-solid fa-scale-balanced"></i> P&amp;L</button>
+            <button class="fin-tab" data-tab="tab-cashflow" role="tab"><i class="fa-solid fa-water"></i> Cashflow</button>
+            <button class="fin-tab" data-tab="tab-forecasting" role="tab"><i class="fa-solid fa-chart-line"></i> Forecasting</button>
+            <button class="fin-tab" data-tab="tab-compliance" role="tab"><i class="fa-solid fa-shield-check"></i> Compliance</button>
         </div>
     </div>
 
-    <div class="grid-3">
-        {% for card in answer_cards %}
-        <div class="card">
+    <!-- ══════════════════════════════════════════ -->
+    <!-- TAB: Overview                             -->
+    <!-- ══════════════════════════════════════════ -->
+    <div class="fin-panel active space-y" id="tab-overview" style="padding-top:20px;">
+        <div class="grid-3">
+            {% for card in answer_cards %}
+            <div class="card">
             <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;">{{ card.question }}</p>
             <p style="font-size:24px;font-weight:800;color:var(--text);margin-top:8px;">{{ card.answer }}</p>
             <p class="text-sm text-muted" style="margin-top:10px;line-height:1.7;">{{ card.detail }}</p>
@@ -82,8 +139,12 @@
             </div>
         </div>
     </div>
+    </div><!-- /tab-overview -->
 
-    <section id="revenue" class="space-y">
+    <!-- ══════════════════════════════════════════ -->
+    <!-- TAB: Revenue                              -->
+    <!-- ══════════════════════════════════════════ -->
+    <div class="fin-panel space-y" id="tab-revenue" style="padding-top:20px;">
         <div class="card">
             <div class="section-header">
                 <span class="section-title">Revenue</span>
@@ -131,9 +192,12 @@
                 </div>
             </div>
         </div>
-    </section>
+    </div><!-- /tab-revenue -->
 
-    <section id="collections" class="space-y">
+    <!-- ══════════════ -->
+    <!-- TAB: Collections -->
+    <!-- ══════════════ -->
+    <div class="fin-panel space-y" id="tab-collections" style="padding-top:20px;">
         <div class="card">
             <div class="section-header">
                 <span class="section-title">Payment and Collection</span>
@@ -216,9 +280,12 @@
                 </div>
             </div>
         </div>
-    </section>
+    </div><!-- /tab-collections -->
 
-    <section id="expenses" class="space-y">
+    <!-- ══════════════ -->
+    <!-- TAB: Expenses -->
+    <!-- ══════════════ -->
+    <div class="fin-panel space-y" id="tab-expenses" style="padding-top:20px;">
         <div class="card">
             <div class="section-header">
                 <span class="section-title">Expenses</span>
@@ -273,9 +340,12 @@
                 </table>
             </div>
         </div>
-    </section>
+    </div><!-- /tab-expenses -->
 
-    <section id="payroll" class="space-y">
+    <!-- ══════════════ -->
+    <!-- TAB: Payroll -->
+    <!-- ══════════════ -->
+    <div class="fin-panel space-y" id="tab-payroll" style="padding-top:20px;">
         <div class="card">
             <div class="section-header">
                 <span class="section-title">Payroll</span>
@@ -329,9 +399,12 @@
                 </table>
             </div>
         </div>
-    </section>
+    </div><!-- /tab-payroll -->
 
-    <section id="profit-loss" class="space-y">
+    <!-- ══════════════ -->
+    <!-- TAB: P&L -->
+    <!-- ══════════════ -->
+    <div class="fin-panel space-y" id="tab-pnl" style="padding-top:20px;">
         <div class="card"><div class="section-header"><span class="section-title">Profit and Loss</span></div></div>
         <div class="stat-cards">
             <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Gross Profit</p><p class="stat-value">RM {{ gross_profit|floatformat:2 }}</p></div><div class="stat-icon"><i class="fa-solid fa-chart-column"></i></div></div></div>
@@ -370,9 +443,12 @@
                 </div>
             </div>
         </div>
-    </section>
+    </div><!-- /tab-pnl -->
 
-    <section id="cashflow" class="space-y">
+    <!-- ══════════════ -->
+    <!-- TAB: Cashflow -->
+    <!-- ══════════════ -->
+    <div class="fin-panel space-y" id="tab-cashflow" style="padding-top:20px;">
         <div class="card"><div class="section-header"><span class="section-title">Cashflow</span></div></div>
         <div class="grid-2">
             <div class="card">
@@ -388,9 +464,12 @@
                 </div>
             </div>
         </div>
-    </section>
+    </div><!-- /tab-cashflow -->
 
-    <section id="forecasting" class="space-y">
+    <!-- ══════════════ -->
+    <!-- TAB: Forecasting -->
+    <!-- ══════════════ -->
+    <div class="fin-panel space-y" id="tab-forecasting" style="padding-top:20px;">
         <div class="card">
             <div class="section-header">
                 <span class="section-title">Forecasting</span>
@@ -424,9 +503,12 @@
                 </div>
             </div>
         </div>
-    </section>
+    </div><!-- /tab-forecasting -->
 
-    <section id="compliance" class="space-y">
+    <!-- ══════════════ -->
+    <!-- TAB: Compliance -->
+    <!-- ══════════════ -->
+    <div class="fin-panel space-y" id="tab-compliance" style="padding-top:20px;">
         <div class="card">
             <div class="section-header">
                 <span class="section-title">Report and Compliance</span>
@@ -480,12 +562,37 @@
                 </div>
             </div>
         </div>
-    </section>
-</div>
+    </div><!-- /tab-compliance -->
+</div><!-- /finance outer -->
 {% endblock %}
 
 {% block extra_js %}
 <script>
+    /* ── Finance Tab Switcher ── */
+    (function() {
+        var tabs    = document.querySelectorAll('.fin-tab');
+        var panels  = document.querySelectorAll('.fin-panel');
+
+        function activateTab(tabBtn) {
+            var targetId = tabBtn.dataset.tab;
+            tabs.forEach(function(t)  { t.classList.toggle('active', t === tabBtn); });
+            panels.forEach(function(p){ p.classList.toggle('active', p.id === targetId); });
+            // Update URL hash without scrolling
+            history.replaceState(null, '', '#' + targetId);
+        }
+
+        tabs.forEach(function(btn) {
+            btn.addEventListener('click', function() { activateTab(btn); });
+        });
+
+        // Restore tab from URL hash on load
+        var hash = location.hash.replace('#', '');
+        if (hash) {
+            var matchingBtn = document.querySelector('.fin-tab[data-tab="' + hash + '"]');
+            if (matchingBtn) activateTab(matchingBtn);
+        }
+    })();
+
     document.addEventListener("DOMContentLoaded", function() {
         const chartAnchor = document.getElementById("revenueChart");
         if (!chartAnchor) return;

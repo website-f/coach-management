@@ -84,7 +84,7 @@
             <a href="{% url 'members:application_list' %}" class="section-link">Open lead queue</a>
         </div>
         <div class="table-wrap" style="margin-top:14px;">
-            <table class="tbl native-stack">
+            <table class="tbl">
                 <thead>
                     <tr>
                         <th>Name</th>
@@ -123,7 +123,12 @@
                             Not yet
                             {% endif %}
                         </td>
-                        <td data-label="Action"><a href="{% url 'members:application_review' row.lead.pk %}" class="btn btn-ghost btn-xs">Review</a></td>
+                        <td>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                <a href="{% url 'members:application_review' row.lead.pk %}" class="btn btn-ghost btn-xs">Review</a>
+                                {% if row.lead.contact_number|whatsapp_url %}<a href="{{ row.lead.contact_number|whatsapp_url }}" target="_blank" rel="noopener" class="btn btn-success btn-xs" title="WhatsApp {{ row.lead.contact_number }}"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>{% endif %}
+                            </div>
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>
@@ -146,7 +151,7 @@
             <span class="section-link">Trial limit: {{ trial_session_limit }} class{{ trial_session_limit|pluralize }}</span>
         </div>
         <div class="table-wrap" style="margin-top:14px;">
-            <table class="tbl native-stack">
+            <table class="tbl">
                 <thead>
                     <tr>
                         <th>Student</th>
@@ -206,7 +211,7 @@
             <a href="{% url 'members:list' %}" class="section-link">Open all student profiles</a>
         </div>
         <div class="table-wrap" style="margin-top:14px;">
-            <table class="tbl native-stack">
+            <table class="tbl">
                 <thead>
                     <tr>
                         <th>Student Profile</th>
@@ -218,6 +223,7 @@
                         <th>Payment Status</th>
                         <th>Skill Level</th>
                         <th>Retention Risk Score</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -231,7 +237,10 @@
                         <td data-label="Attendance %">{{ row.attendance_rate }}%</td>
                         <td data-label="Payment Status"><span class="badge {{ row.payment_status|status_badge }}">{{ row.payment_status }}</span></td>
                         <td data-label="Skill Level">{{ row.member.get_skill_level_display }}</td>
-                        <td data-label="Retention Risk Score">{{ row.retention_risk }}/100</td>
+                        <td>{{ row.retention_risk }}/100</td>
+                        <td>
+                            {% if row.member.contact_number|whatsapp_url %}<a href="{{ row.member.contact_number|whatsapp_url }}" target="_blank" rel="noopener" class="btn btn-success btn-xs" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>{% else %}<span class="text-muted text-xs">No number</span>{% endif %}
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>
@@ -253,7 +262,7 @@
             <span class="section-title">Inactive / Churned</span>
         </div>
         <div class="table-wrap" style="margin-top:14px;">
-            <table class="tbl native-stack">
+            <table class="tbl">
                 <thead>
                     <tr>
                         <th>Student</th>
@@ -295,7 +304,7 @@
             <span class="section-title">Communication Log</span>
         </div>
         <div class="table-wrap" style="margin-top:14px;">
-            <table class="tbl native-stack">
+            <table class="tbl">
                 <thead>
                     <tr>
                         <th>Date</th>
