@@ -37,11 +37,11 @@
         /* ── Dark theme (default) ── */
         :root,
         [data-theme="dark"] {
-            --bg:         #0f0f11;
-            --surface:    rgba(24, 24, 28, 0.65);
-            --surface2:   rgba(30, 30, 36, 0.65);
-            --border:     rgba(255, 255, 255, 0.08);
-            --border2:    rgba(255, 255, 255, 0.12);
+            --bg:         #111114;
+            --surface:    #1c1c20;
+            --surface2:   #242428;
+            --border:     rgba(255, 255, 255, 0.07);
+            --border2:    rgba(255, 255, 255, 0.11);
             --text:       #f0f0f4;
             --text-2:     #c8c8d8;
             --muted:      #8a8a9a;
@@ -66,11 +66,11 @@
 
         /* ── Light theme ── */
         [data-theme="light"] {
-            --bg:         #f4f4f8;
-            --surface:    rgba(255, 255, 255, 0.7);
-            --surface2:   rgba(240, 240, 245, 0.75);
-            --border:     rgba(0, 0, 0, 0.06);
-            --border2:    rgba(0, 0, 0, 0.1);
+            --bg:         #f5f5f7;
+            --surface:    #ffffff;
+            --surface2:   #f0f0f3;
+            --border:     rgba(0, 0, 0, 0.07);
+            --border2:    rgba(0, 0, 0, 0.11);
             --text:       #0f0f11;
             --text-2:     #3a3a50;
             --muted:      #6b6b82;
@@ -148,14 +148,7 @@
             box-shadow: 0 12px 30px rgba(0,0,0,.28);
         }
 
-        /* Ambient Background Blobs for Glassmorphism */
-        body::before, body::after {
-            content: ''; position: fixed; border-radius: 50%; filter: blur(120px); z-index: -1; pointer-events: none; opacity: 0.6; transition: background 1s;
-        }
-        body::before { width: 500px; height: 500px; top: -100px; left: -100px; background: rgba(79, 110, 247, 0.15); }
-        body::after { width: 600px; height: 600px; bottom: -150px; right: -150px; background: rgba(59, 91, 219, 0.12); }
-        [data-theme="light"] body::before { background: rgba(79, 110, 247, 0.25); }
-        [data-theme="light"] body::after { background: rgba(37, 99, 235, 0.2); }
+        /* Clean enterprise background — no colored blobs */
 
         /* ── Animations ── */
         @keyframes fadeInUp {
@@ -496,11 +489,9 @@
             border: 1px solid var(--border);
             border-radius: var(--radius-lg);
             padding: 20px;
-            transition: background var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            transition: background var(--transition), border-color var(--transition);
         }
-        .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .card:hover { border-color: var(--border2); }
         .card-sm   { padding: 14px 16px; border-radius: var(--radius); }
         .card-inset {
             background: var(--surface2);
@@ -508,8 +499,6 @@
             border-radius: var(--radius);
             padding: 14px 16px;
             transition: background var(--transition), border-color var(--transition);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
         }
 
         /* ── Stat Cards ── */
@@ -526,12 +515,13 @@
         .stat-label { font-size: 12px; font-weight: 500; color: var(--muted); }
         .stat-value { font-size: 28px; font-weight: 700; color: var(--text); line-height: 1; margin-top: 8px; }
         .stat-icon {
-            width: 38px; height: 38px;
-            border-radius: 9px;
-            background: var(--accent-bg);
-            color: var(--accent);
+            width: 36px; height: 36px;
+            border-radius: 8px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--muted);
             display: flex; align-items: center; justify-content: center;
-            font-size: 15px; flex-shrink: 0;
+            font-size: 14px; flex-shrink: 0;
         }
 
         /* ── Tables ── */
@@ -557,30 +547,29 @@
         }
         .tbl tbody tr { border-bottom: 1px solid var(--border); transition: background var(--transition); }
         .tbl tbody tr:last-child { border-bottom: none; }
-        .tbl tbody tr:hover { background: rgba(79,110,247,0.03); }
+        .tbl tbody tr:hover { background: var(--surface2); }
         .tbl td { padding: 14px 24px; color: var(--text); vertical-align: middle; }
         .tbl td.muted { color: var(--muted); }
         .tbl-name { font-weight: 600; color: var(--text); }
         .tbl-sub  { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
-        /* ── Badges (Dot Style) ── */
+        /* ── Badges — clean pill labels, no glows ── */
         .badge {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 4px 10px; border-radius: 99px;
-            font-size: 11.5px; font-weight: 600; white-space: nowrap; 
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 3px 9px; border-radius: 6px;
+            font-size: 11px; font-weight: 600; white-space: nowrap; letter-spacing: .02em;
             border: 1px solid var(--border2);
             background: var(--surface2);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
-        .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; display: block; }
-        .badge-success { color: var(--success); }
-        .badge-success::before { background: var(--success); box-shadow: 0 0 4px var(--success); }
-        .badge-warning { color: var(--warning); }
-        .badge-warning::before { background: var(--warning); box-shadow: 0 0 4px var(--warning); }
-        .badge-danger  { color: var(--danger); }
-        .badge-danger::before { background: var(--danger); box-shadow: 0 0 4px var(--danger); }
-        .badge-info    { color: var(--info); }
-        .badge-info::before { background: var(--info); box-shadow: 0 0 4px var(--info); }
+        .badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; display: block; flex-shrink: 0; }
+        .badge-success { color: var(--success); background: rgba(34,197,94,.08); border-color: rgba(34,197,94,.18); }
+        .badge-success::before { background: var(--success); }
+        .badge-warning { color: var(--warning); background: rgba(245,158,11,.08); border-color: rgba(245,158,11,.18); }
+        .badge-warning::before { background: var(--warning); }
+        .badge-danger  { color: var(--danger); background: rgba(239,68,68,.08); border-color: rgba(239,68,68,.18); }
+        .badge-danger::before { background: var(--danger); }
+        .badge-info    { color: var(--info); background: rgba(79,110,247,.08); border-color: rgba(79,110,247,.18); }
+        .badge-info::before { background: var(--info); }
         .badge-neutral { color: var(--muted); }
         .badge-neutral::before { background: var(--muted); }
 
@@ -639,8 +628,7 @@
         input[type="number"]:focus, input[type="date"]:focus, input[type="time"]:focus,
         select:focus, textarea:focus {
             border-color: var(--accent);
-            box-shadow: 0 0 0 4px rgba(79,110,247,.18);
-            transform: translateY(-1px);
+            box-shadow: 0 0 0 3px rgba(79,110,247,.12);
         }
         input[type="file"] { padding: 8px 14px; cursor: pointer; color: var(--muted); }
         input[type="file"]::file-selector-button {
@@ -704,8 +692,6 @@
             display: flex; flex-wrap: wrap;
             align-items: flex-end; gap: 14px;
             transition: background var(--transition), border-color var(--transition);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
         }
         .filter-fields { display: flex; flex-wrap: wrap; gap: 12px; flex: 1; }
         .filter-field { display: flex; flex-direction: column; gap: 5px; min-width: 160px; flex: 1; }
@@ -748,7 +734,7 @@
         table.dataTable.no-footer { border-bottom: none !important; margin-bottom: 0px; }
         table.dataTable thead th, table.dataTable thead td { border-bottom: 1px solid var(--border2) !important; }
         table.dataTable tbody tr { background: transparent !important; }
-        table.dataTable.hover tbody tr:hover, table.dataTable.display tbody tr:hover { background: rgba(79,110,247,0.03) !important; }
+        table.dataTable.hover tbody tr:hover, table.dataTable.display tbody tr:hover { background: var(--surface2) !important; }
         table.dataTable.stripe tbody tr.odd, table.dataTable.display tbody tr.odd { background: transparent !important; }
         table.dataTable td { border-top: 1px solid var(--border) !important; padding: 14px 24px !important; }
         
@@ -878,7 +864,7 @@
             text-decoration: none;
             transition: border-color var(--transition), background var(--transition);
         }
-        .list-item:hover { border-color: var(--accent); background: var(--accent-bg); }
+        .list-item:hover { border-color: var(--border2); background: var(--border); }
         .list-item-title { font-size: 13.5px; font-weight: 600; color: var(--text); }
         .list-item-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
@@ -2294,15 +2280,7 @@
             }
         });
         
-        if (!isMobileViewport) {
-            var animateTargets = document.querySelectorAll('.card, .stat-card, .table-wrap, .list-item');
-            var animDelay = 0;
-            animateTargets.forEach(function(el) {
-                el.classList.add('anim-fade-in');
-                if (animDelay < 0.3) { animDelay += 0.05; }
-                el.style.animationDelay = animDelay + 's';
-            });
-        }
+        /* No staggered card animations — keeps the UI feeling snappy and functional */
 
         // ── Auto-Collapsible Filters ──
         document.querySelectorAll('.filter-bar').forEach(function(bar, idx) {
