@@ -45,7 +45,7 @@
                     <td data-label="Action"><a href="{% url 'payments:review' payment.pk %}" class="btn btn-primary btn-xs"><i class="fa-solid fa-eye"></i> Review</a></td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="6"><div class="empty-state"><i class="fa-regular fa-circle-check"></i><p>No payment proofs waiting for review.</p></div></td></tr>
+                <tr><td colspan="7"><div class="empty-state"><i class="fa-regular fa-circle-check"></i><p>No payment proofs waiting for review.</p></div></td></tr>
                 {% endfor %}
             </tbody>
         </table>
