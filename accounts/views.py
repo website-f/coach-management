@@ -520,7 +520,12 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                     item["member"].full_name,
                 )
             )
-            featured_child = child_portal_cards[0] if child_portal_cards else None
+            # Allow parent to switch the featured child via ?child=<pk>
+            selected_child_pk = self.request.GET.get("child", "")
+            featured_child = next(
+                (c for c in child_portal_cards if str(c["member"].pk) == selected_child_pk),
+                child_portal_cards[0] if child_portal_cards else None,
+            )
             if featured_child:
                 featured_child["momentum_label"] = (
                     f"{featured_child['streak']}-day streak" if featured_child["streak"] else "Ready for the next class"

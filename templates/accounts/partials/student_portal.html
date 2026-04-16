@@ -403,7 +403,7 @@
     {% if student_portal.children|length > 1 %}
     <section class="student-portal-switcher">
         {% for child in student_portal.children %}
-        <a href="{{ child.profile_url }}" class="student-switch-card {% if child.member.pk == featured.member.pk %}active{% endif %}">
+        <a href="{% url 'accounts:dashboard' %}?child={{ child.member.pk }}" class="student-switch-card {% if child.member.pk == featured.member.pk %}active{% endif %}">
             <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
                 <div>
                     <strong style="font-size:18px;display:block;color:var(--text);">{{ child.member.full_name }}</strong>

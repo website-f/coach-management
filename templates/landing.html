@@ -174,7 +174,7 @@
 
     /* ── Hero ───────────────────────────────────────────────── */
     .hero {
-      padding: 134px 0 100px;
+      padding: 120px 0 80px;
       text-align: center; position: relative; overflow: hidden;
     }
     .hero-glow {
@@ -492,14 +492,9 @@
 <section class="hero">
   <div class="hero-glow"></div>
   <div class="wrap" style="position:relative;z-index:1;">
-    <div class="hero-badge fu"><i class="fa-solid fa-bolt"></i>&nbsp;{{ landing_content.announcement_text }}</div>
-    <h1 class="fu d1">
-      Everything your<br>
-      <em>badminton club</em><br>
-      needs in one place.
-    </h1>
-    <p class="lead fu d2">{{ landing_content.hero_subtitle }}</p>
-    <div class="hero-btns fu d3">
+    <div class="hero-badge fu"><i class="fa-solid fa-shuttlecock"></i>&nbsp;{{ landing_content.announcement_text }}</div>
+    <h1 class="fu d1">Your <em>badminton club</em>,<br>managed simply.</h1>
+    <div class="hero-btns fu d2">
       <a href="{% url 'members:apply' %}" class="btn btn-p"><i class="fa-solid fa-user-plus"></i> {{ parent_signup_cta_text }}</a>
       <a href="/accounts/login/?role=parent" class="btn btn-g"><i class="fa-solid fa-child-reaching"></i> Parent Login</a>
       <a href="/accounts/login/?role=admin" class="btn btn-g"><i class="fa-solid fa-shield-halved"></i> Staff Login</a>

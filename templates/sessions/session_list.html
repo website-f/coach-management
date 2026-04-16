@@ -18,6 +18,43 @@
         border: 1px solid var(--border);
         border-radius: 20px;
         padding: 12px;
+        overflow: hidden;
+    }
+    .calendar-shell.is-loading #sessionCalendar {
+        opacity: 0.45;
+        pointer-events: none;
+    }
+    #sessionCalendar {
+        min-height: 320px;
+    }
+    .calendar-status {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+        border: 1px solid var(--border2);
+        border-radius: 16px;
+        padding: 12px 14px;
+        background: rgba(79,110,247,0.08);
+        color: var(--text);
+    }
+    .calendar-status[hidden] {
+        display: none;
+    }
+    .calendar-status[data-tone="error"] {
+        background: rgba(239,68,68,0.08);
+        border-color: rgba(239,68,68,0.24);
+    }
+    .calendar-status-copy {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+    }
+    .calendar-status-copy span {
+        line-height: 1.6;
     }
     .fc {
         --fc-border-color: var(--border);
@@ -29,6 +66,17 @@
     }
     .fc .fc-toolbar.fc-header-toolbar {
         margin-bottom: 1rem;
+        gap: 12px;
+    }
+    .fc .fc-toolbar-chunk {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .fc .fc-toolbar-title {
+        font-size: clamp(1rem, 2vw, 1.35rem);
+        line-height: 1.2;
     }
     .fc .fc-button {
         background: var(--surface2);
@@ -36,6 +84,14 @@
         color: var(--text);
         box-shadow: none;
         text-transform: capitalize;
+    }
+    .fc .fc-button-group {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .fc .fc-button-group > .fc-button {
+        border-radius: 10px !important;
     }
     .fc .fc-button-primary:not(:disabled).fc-button-active,
     .fc .fc-button-primary:not(:disabled):active,
@@ -57,30 +113,36 @@
         padding: 2px 4px;
         font-size: 11px;
     }
-    .calendar-mobile-note {
-        display: none;
-        border: 1px dashed var(--border2);
-        border-radius: 16px;
-        padding: 14px 16px;
-        background: var(--surface);
-        color: var(--text);
-    }
-    .calendar-mobile-note p {
-        margin: 0;
-        line-height: 1.7;
-        color: var(--muted);
-    }
-    .calendar-shell.is-mobile-pending #sessionCalendar {
-        display: none;
-    }
     @media (max-width: 767px) {
-        .calendar-mobile-note {
-            display: flex;
-            align-items: center;
+        .calendar-shell {
+            padding: 10px;
+            border-radius: 16px;
+        }
+        #sessionCalendar {
+            min-height: 260px;
+        }
+        .calendar-status {
+            align-items: flex-start;
+        }
+        .fc .fc-toolbar.fc-header-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .fc .fc-toolbar-chunk {
             justify-content: space-between;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 12px;
+        }
+        .fc .fc-button {
+            padding: 0.45em 0.65em;
+            font-size: 12px;
+        }
+        .fc .fc-toolbar-title {
+            font-size: 1rem;
+        }
+        .fc .fc-col-header-cell-cushion,
+        .fc .fc-daygrid-day-number,
+        .fc .fc-list-event-time,
+        .fc .fc-list-event-title a {
+            font-size: 12px;
         }
     }
 </style>
@@ -205,10 +267,13 @@
             </div>
         </div>
         <div class="calendar-shell" id="calendarShell">
-            <div class="calendar-mobile-note" id="calendarMobileNote">
-                <p>Mobile opens the faster agenda first. Load the visual monthly calendar only when you need it.</p>
-                <button type="button" class="btn btn-ghost btn-xs" id="calendarLoadBtn">
-                    <i class="fa-solid fa-calendar-days"></i> Load Calendar
+            <div class="calendar-status" id="calendarStatus" hidden aria-live="polite">
+                <div class="calendar-status-copy">
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    <span id="calendarStatusText">Loading calendar...</span>
+                </div>
+                <button type="button" class="btn btn-ghost btn-xs" id="calendarRetryBtn" hidden>
+                    <i class="fa-solid fa-rotate-right"></i> Retry
                 </button>
             </div>
             <div id="sessionCalendar"></div>
@@ -285,77 +350,103 @@
     document.addEventListener('DOMContentLoaded', function() {
         const calendarEl = document.getElementById('sessionCalendar');
         const calendarShell = document.getElementById('calendarShell');
-        const mobileNote = document.getElementById('calendarMobileNote');
-        const loadBtn = document.getElementById('calendarLoadBtn');
+        const statusBox = document.getElementById('calendarStatus');
+        const statusText = document.getElementById('calendarStatusText');
+        const retryBtn = document.getElementById('calendarRetryBtn');
         if (!calendarEl) return;
 
         let calendarInstance = null;
         let assetPromise = null;
+        let lastTrackedWidth = window.innerWidth;
+
+        function isCompactViewport() {
+            return window.innerWidth < 768;
+        }
+
+        function getHeaderToolbar() {
+            if (isCompactViewport()) {
+                return { left: 'title', center: 'prev,next', right: 'listMonth,dayGridMonth' };
+            }
+            return { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' };
+        }
+
+        function setStatus(message, tone) {
+            if (!statusBox || !statusText) return;
+            statusBox.hidden = !message;
+            statusBox.dataset.tone = tone || 'info';
+            statusText.textContent = message || '';
+            if (calendarShell) {
+                calendarShell.classList.toggle('is-loading', Boolean(message) && tone !== 'error');
+            }
+            if (retryBtn) {
+                retryBtn.hidden = tone !== 'error';
+            }
+        }
 
         async function ensureCalendarAssets() {
             if (window.FullCalendar) return;
             if (!assetPromise) {
-                assetPromise = Promise.all([
-                    window.nyoLoadStyleOnce('https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css'),
-                    window.nyoLoadScriptOnce('https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js')
-                ]);
+                assetPromise = window.nyoLoadScriptOnce('https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js');
             }
             await assetPromise;
         }
 
         async function buildCalendar() {
-            if (calendarInstance) return;
-            await ensureCalendarAssets();
-            if (calendarShell) calendarShell.classList.remove('is-mobile-pending');
-            if (mobileNote) mobileNote.style.display = 'none';
+            setStatus('Loading calendar...', 'loading');
+            try {
+                await ensureCalendarAssets();
+                const nextView = isCompactViewport() ? 'listMonth' : 'dayGridMonth';
 
-            // Track width so scroll-triggered height-only resize on mobile is ignored
-            let lastTrackedWidth = window.innerWidth;
-
-            calendarInstance = new FullCalendar.Calendar(calendarEl, {
-                initialView: window.innerWidth < 768 ? 'listMonth' : 'dayGridMonth',
-                height: 'auto',
-                initialDate: '{{ calendar_initial_date }}',
-                headerToolbar: window.innerWidth < 768
-                    ? { left: 'prev,next', center: 'title', right: 'dayGridMonth,listMonth' }
-                    : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' },
-                events: {{ calendar_events_json|safe }},
-                eventClick: function(info) {
-                    if (info.event.url) {
-                        info.jsEvent.preventDefault();
-                        window.location.href = info.event.url;
-                    }
-                },
-                windowResize: function() {
-                    // Only react to actual width changes (not mobile scroll height jitter)
-                    if (window.innerWidth === lastTrackedWidth) return;
-                    lastTrackedWidth = window.innerWidth;
-                    const nextView = window.innerWidth < 768 ? 'listMonth' : 'dayGridMonth';
+                if (!calendarInstance) {
+                    calendarInstance = new FullCalendar.Calendar(calendarEl, {
+                        initialView: nextView,
+                        height: 'auto',
+                        initialDate: '{{ calendar_initial_date }}',
+                        headerToolbar: getHeaderToolbar(),
+                        buttonText: {
+                            today: 'Today',
+                            dayGridMonth: 'Month',
+                            listMonth: 'Agenda'
+                        },
+                        events: {{ calendar_events_json|safe }},
+                        eventClick: function(info) {
+                            if (info.event.url) {
+                                info.jsEvent.preventDefault();
+                                window.location.href = info.event.url;
+                            }
+                        },
+                        windowResize: function() {
+                            if (!calendarInstance || window.innerWidth === lastTrackedWidth) return;
+                            lastTrackedWidth = window.innerWidth;
+                            const responsiveView = isCompactViewport() ? 'listMonth' : 'dayGridMonth';
+                            calendarInstance.setOption('headerToolbar', getHeaderToolbar());
+                            if (calendarInstance.view.type !== responsiveView) {
+                                calendarInstance.changeView(responsiveView);
+                            }
+                            calendarInstance.updateSize();
+                        }
+                    });
+                    calendarInstance.render();
+                } else {
+                    calendarInstance.setOption('headerToolbar', getHeaderToolbar());
                     if (calendarInstance.view.type !== nextView) {
                         calendarInstance.changeView(nextView);
                     }
+                    calendarInstance.updateSize();
                 }
-            });
-            calendarInstance.render();
+
+                setStatus('', 'ready');
+            } catch (error) {
+                assetPromise = null;
+                console.error('Failed to initialize session calendar.', error);
+                setStatus('Calendar could not load. You can still use the monthly agenda list below.', 'error');
+            }
         }
 
-        if (window.nyoIsMobileViewport) {
-            if (calendarShell) {
-                calendarShell.classList.add('is-mobile-pending');
-            }
-            if (loadBtn) {
-                loadBtn.addEventListener('click', async function() {
-                    loadBtn.disabled = true;
-                    loadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading';
-                    try {
-                        await buildCalendar();
-                    } catch (error) {
-                        loadBtn.disabled = false;
-                        loadBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Retry';
-                    }
-                });
-            }
-            return;
+        if (retryBtn) {
+            retryBtn.addEventListener('click', function() {
+                buildCalendar();
+            });
         }
 
         window.nyoRunDeferred(function() {

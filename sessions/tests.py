@@ -97,3 +97,23 @@ class SyllabusPageTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["selected_root"].pk, root.pk)
         self.assertContains(response, "Holiday Camp Curriculum")
+
+
+class SessionCalendarPageTests(TestCase):
+    def create_user(self, username, role):
+        user = User.objects.create_user(username=username, password="testpass123")
+        user.profile.role = role
+        user.profile.save()
+        return user
+
+    def setUp(self):
+        self.admin = self.create_user("calendar_admin", UserProfile.ROLE_ADMIN)
+        self.client.force_login(self.admin)
+
+    def test_session_calendar_uses_working_fullcalendar_asset_loader(self):
+        response = self.client.get(reverse("sessions:list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "index.global.min.js")
+        self.assertNotContains(response, "index.global.min.css")
+        self.assertContains(response, "Loading calendar...")
