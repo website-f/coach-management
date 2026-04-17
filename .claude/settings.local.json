@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(python manage.py check:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(find /c/Users/admin/Desktop/coach-management/templates -name \"base.html\" -exec head -50 {} \\\\;)"
     ]
   }
 }
