@@ -177,18 +177,18 @@
       flex-wrap:wrap;gap:10px;margin-bottom:64px;
     }
 
-    /* word cycle animation in hero */
-    .word-cycle{display:inline-block;overflow:hidden;vertical-align:bottom;}
-    .word-cycle-inner{
-      display:inline-flex;flex-direction:column;
-      animation:word-slide 9s steps(1) infinite;
+    /* hero em — animated underline sweep */
+    .hero h1 em{
+      position:relative;display:inline;
     }
-    @keyframes word-slide{
-      0%  {transform:translateY(0);}
-      33% {transform:translateY(-1.06em);}
-      66% {transform:translateY(-2.12em);}
+    .hero h1 em::after{
+      content:"";
+      position:absolute;left:0;bottom:-4px;
+      height:3px;border-radius:3px;
+      background:var(--acc);
+      width:0;animation:em-line .9s .55s ease forwards;
     }
-    .word-cycle-inner span{display:block;line-height:1.06;}
+    @keyframes em-line{to{width:100%;}}
 
     /* stats bar */
     .stats-bar{
@@ -594,18 +594,7 @@
       <span class="dot"></span>
       {{ landing_content.announcement_text }}
     </div>
-    <h1 class="rv d1">
-      The platform built<br>
-      for <em>
-        <span class="word-cycle" aria-label="every sports club">
-          <span class="word-cycle-inner" aria-hidden="true">
-            <span>every sport.</span>
-            <span>your coaches.</span>
-            <span>your members.</span>
-          </span>
-        </span>
-      </em>
-    </h1>
+    <h1 class="rv d1">The platform built<br>for <em>every sport.</em></h1>
     <p class="lead rv d2">Members, sessions, payments, and progress reports — all connected in one clean platform. Built for clubs of any sport, designed for everyone.</p>
     <div class="hero-btns rv d3">
       <a href="{% url 'members:apply' %}" class="btn btn-p"><i class="fa-solid fa-user-plus"></i> {{ parent_signup_cta_text }}</a>
