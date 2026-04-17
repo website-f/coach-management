@@ -79,7 +79,7 @@
       font-size:14px;font-weight:600;cursor:pointer;
       border:none;transition:all .18s;white-space:nowrap;font-family:inherit;
     }
-    .btn-p{background:var(--acc);color:#000;}
+    .btn-p{background:var(--acc);color:#fff;}
     .btn-p:hover{filter:brightness(1.1);transform:translateY(-1px);}
     .btn-g{background:var(--surf);border:1px solid var(--brd);color:var(--txt);}
     .btn-g:hover{background:var(--surf-h);transform:translateY(-1px);}
@@ -1086,6 +1086,9 @@
 </div>
 
 <script>
+/* ── Particle vars declared first to avoid TDZ ─────────────────── */
+let _raf, _particles, _ctx, _canvas;
+
 /* ── Theme ─────────────────────────────────────────────────────── */
 const html     = document.documentElement;
 const themeBtn = document.getElementById("themeBtn");
@@ -1107,7 +1110,6 @@ menuBtn.addEventListener("click", () => mobNav.classList.toggle("open"));
 function closeMob() { mobNav.classList.remove("open"); }
 
 /* ── Hero canvas — particle network ───────────────────────────── */
-let _raf, _particles, _ctx, _canvas;
 
 function startParticles() {
   if (_raf) cancelAnimationFrame(_raf);
