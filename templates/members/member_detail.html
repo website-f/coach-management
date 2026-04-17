@@ -284,8 +284,8 @@
                         </div>
                         <span class="badge {% if latest_report.is_published %}badge-success{% else %}badge-neutral{% endif %}">{% if latest_report.is_published %}Published{% else %}Draft{% endif %}</span>
                     </div>
-                    {% if latest_report.coach_reflection %}
-                    <p style="font-size:13.5px;color:var(--text);line-height:1.8;margin-top:12px;">{{ latest_report.coach_reflection|truncatechars:180 }}</p>
+                    {% if latest_report.report_brief or latest_report.coach_reflection %}
+                    <p style="font-size:13.5px;color:var(--text);line-height:1.8;margin-top:12px;">{{ latest_report.report_brief|default:latest_report.coach_reflection|truncatechars:180 }}</p>
                     {% endif %}
                 </div>
             </div>

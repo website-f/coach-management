@@ -60,8 +60,17 @@
             </div>
 
             <div class="card-inset mt-3">
-                <p class="text-xs text-muted" style="margin-bottom:6px;">Coach reflection</p>
-                <p style="font-size:13.5px;color:var(--text);line-height:1.8;">{{ report.coach_reflection|default:"No reflection added yet." }}</p>
+                <p class="text-xs text-muted" style="margin-bottom:6px;">Report brief</p>
+                <p style="font-size:13.5px;color:var(--text);line-height:1.8;">{{ report.report_brief|default:report.coach_reflection|default:"No summary added yet." }}</p>
+                {% if report.improvement_plan %}
+                <p class="text-xs text-muted" style="margin:14px 0 6px;">Improvement plan</p>
+                <p style="font-size:13.5px;color:var(--text);line-height:1.8;">{{ report.improvement_plan|truncatechars:220 }}</p>
+                {% endif %}
+                {% if report.video_proof %}
+                <div style="margin-top:14px;">
+                    <a href="{{ report.video_proof.url }}" target="_blank" class="btn btn-ghost btn-xs"><i class="fa-solid fa-video"></i> Open Video Proof</a>
+                </div>
+                {% endif %}
             </div>
         </div>
         {% empty %}

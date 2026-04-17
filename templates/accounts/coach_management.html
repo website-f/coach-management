@@ -3,61 +3,308 @@
 {% block title %}Coach Accounts | NYO Admin Dashboard{% endblock %}
 {% block page_heading %}Coach Accounts{% endblock %}
 
+{% block extra_head %}
+<style>
+    .coach-credentials-card {
+        border: 1px solid rgba(34, 197, 94, 0.24);
+        background: rgba(34, 197, 94, 0.08);
+    }
+    .coach-credentials-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 16px;
+    }
+    .coach-credentials-item {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--surface);
+        padding: 14px 16px;
+    }
+    .coach-credentials-item code {
+        display: block;
+        margin-top: 6px;
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text);
+        word-break: break-all;
+    }
+    .coach-table-actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .coach-modal-note {
+        border: 1px dashed var(--border2);
+        border-radius: 16px;
+        padding: 14px 16px;
+        background: var(--surface2);
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+    }
+    .coach-modal-note strong {
+        color: var(--text);
+    }
+    @media (max-width: 640px) {
+        .coach-credentials-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="grid-2">
+<div class="space-y">
     <div class="card">
-        <div class="section-header">
-            <span class="section-title">Create Coach Login</span>
+        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
+            <div style="max-width:760px;">
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;">Staff access</p>
+                <h2 style="font-size:28px;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1.1;">Manage coach logins, monitor account readiness, and open each coach profile from one place.</h2>
+                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">Create coach accounts with a generated temporary password, let coaches change it on first sign-in, and review their players, sessions, and reporting activity anytime.</p>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <a href="{% url 'sessions:list' %}" class="btn btn-ghost"><i class="fa-solid fa-calendar-days"></i> Open Schedule</a>
+                <button type="button" class="btn btn-primary" data-modal-open="createCoachModal">
+                    <i class="fa-solid fa-user-plus"></i> Create Coach Login
+                </button>
+            </div>
         </div>
-        <form method="post" class="form-grid">
-            {% csrf_token %}
-            {% for field in form %}
-            <div class="form-group {% if field.name == 'password1' or field.name == 'password2' %}full{% endif %}">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.errors %}
-                <p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ field.errors|join:", " }}</p>
-                {% endif %}
-            </div>
-            {% endfor %}
-            <div class="full" style="display:flex;justify-content:flex-end;gap:10px;">
-                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-user-plus"></i> Create Coach</button>
-            </div>
-        </form>
     </div>
 
-    <div class="card">
-        <div class="section-header">
-            <span class="section-title">Current Coaches</span>
+    {% if created_coach_credentials %}
+    <div class="card coach-credentials-card">
+        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
+            <div style="max-width:760px;">
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Temporary credentials ready</p>
+                <h3 style="font-size:24px;font-weight:700;color:var(--text);letter-spacing:-.02em;">{{ created_coach_credentials.name }} can sign in now.</h3>
+                <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;">Share the username and temporary password securely with the coach. The account will stay in password-change mode until the coach sets a new private password.</p>
+            </div>
+            <button type="button" class="btn btn-ghost" id="copyCoachPasswordBtn">
+                <i class="fa-regular fa-copy"></i> Copy Password
+            </button>
         </div>
-        <div class="space-y">
-            {% for coach in coach_rows %}
-            <div class="card-inset">
-                <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
-                    <div>
-                        <p style="font-weight:700;font-size:15px;color:var(--text);">{{ coach.get_full_name|default:coach.username }}</p>
-                        <p class="text-sm text-muted" style="margin-top:6px;">@{{ coach.username }}{% if coach.email %} · {{ coach.email }}{% endif %}</p>
-                    </div>
-                    <span class="badge badge-info">Coach</span>
-                </div>
-                <div class="grid-2 mt-3">
-                    <div>
-                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Assigned Players</p>
-                        <p style="font-size:22px;font-weight:700;color:var(--text);margin-top:4px;">{{ coach.member_count }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Scheduled Sessions</p>
-                        <p style="font-size:22px;font-weight:700;color:var(--text);margin-top:4px;">{{ coach.session_count }}</p>
-                    </div>
-                </div>
+        <div class="coach-credentials-grid">
+            <div class="coach-credentials-item">
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Username</p>
+                <code>{{ created_coach_credentials.username }}</code>
             </div>
-            {% empty %}
-            <div class="empty-state">
-                <i class="fa-regular fa-user"></i>
-                <p>No coach accounts created yet.</p>
+            <div class="coach-credentials-item">
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Temporary password</p>
+                <code id="coachTempPassword">{{ created_coach_credentials.temporary_password }}</code>
             </div>
-            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="stat-cards">
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Coach Accounts</p>
+                    <p class="stat-value">{{ coach_count }}</p>
+                </div>
+                <div class="stat-icon"><i class="fa-solid fa-user-tie"></i></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Assigned Players</p>
+                    <p class="stat-value">{{ coach_member_total }}</p>
+                </div>
+                <div class="stat-icon" style="background:rgba(79,110,247,.12);color:#93c5fd;"><i class="fa-solid fa-users"></i></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Upcoming Sessions</p>
+                    <p class="stat-value">{{ coach_upcoming_session_total }}</p>
+                </div>
+                <div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-calendar-check"></i></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-card-top">
+                <div>
+                    <p class="stat-label">Waiting Password Change</p>
+                    <p class="stat-value">{{ coach_waiting_password_change_count }}</p>
+                </div>
+                <div class="stat-icon" style="background:rgba(245,158,11,.12);color:#fbbf24;"><i class="fa-solid fa-key"></i></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <table class="tbl native-stack" id="coachAccountsTable">
+            <thead>
+                <tr>
+                    <th>Coach</th>
+                    <th>Contact</th>
+                    <th>Players</th>
+                    <th>Sessions</th>
+                    <th>Reports</th>
+                    <th>Password Status</th>
+                    <th>Last Login</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for coach in coach_rows %}
+                <tr>
+                    <td data-label="Coach">
+                        <div class="tbl-name">{{ coach.get_full_name|default:coach.username }}</div>
+                        <div class="tbl-sub">@{{ coach.username }}</div>
+                    </td>
+                    <td data-label="Contact">
+                        <div class="tbl-name">{{ coach.email|default:"No email added" }}</div>
+                        <div class="tbl-sub">{{ coach.profile.phone_number|default:"No phone number" }}</div>
+                    </td>
+                    <td data-label="Players">
+                        <div class="tbl-name">{{ coach.member_count }}</div>
+                        <div class="tbl-sub">{{ coach.active_member_count }} active</div>
+                    </td>
+                    <td data-label="Sessions">
+                        <div class="tbl-name">{{ coach.session_count }}</div>
+                        <div class="tbl-sub">{{ coach.upcoming_session_count }} upcoming</div>
+                    </td>
+                    <td data-label="Reports">{{ coach.report_count }}</td>
+                    <td data-label="Password Status">
+                        {% if coach.profile.must_change_password %}
+                        <span class="badge badge-warning">Temporary Password</span>
+                        {% else %}
+                        <span class="badge badge-success">Ready</span>
+                        {% endif %}
+                    </td>
+                    <td data-label="Last Login">{{ coach.last_login|date:"d M Y H:i"|default:"Never" }}</td>
+                    <td data-label="Action">
+                        <div class="coach-table-actions">
+                            <a href="{% url 'accounts:coach_detail' coach.pk %}" class="btn btn-ghost btn-xs">View Profile</a>
+                            <a href="{% url 'sessions:list' %}?coach={{ coach.pk }}" class="btn btn-xs" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:99px;padding:4px 12px;">View Sessions</a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8">
+                        <div class="empty-state">
+                            <i class="fa-regular fa-user"></i>
+                            <p>No coach accounts created yet.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal-overlay {% if show_create_modal %}open{% endif %}" id="createCoachModal" data-modal>
+    <div class="modal-box">
+        <div class="modal-header">
+            <span class="modal-title">Create Coach Login</span>
+            <button type="button" class="modal-close" data-modal-close aria-label="Close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="coach-modal-note" style="margin-bottom:18px;">
+                <strong>Temporary password flow:</strong> once this account is created, the system generates a temporary password automatically and flags the coach to change it immediately after the first login.
+            </div>
+            <form method="post" class="form-grid" novalidate>
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }}</label>
+                    {{ form.first_name }}
+                    {% if form.first_name.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.first_name.errors|join:", " }}</p>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.last_name.id_for_label }}">{{ form.last_name.label }}</label>
+                    {{ form.last_name }}
+                    {% if form.last_name.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.last_name.errors|join:", " }}</p>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+                    {{ form.username }}
+                    {% if form.username.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.username.errors|join:", " }}</p>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                    {{ form.email }}
+                    {% if form.email.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.email.errors|join:", " }}</p>{% endif %}
+                </div>
+                <div class="form-group full">
+                    <label for="{{ form.phone_number.id_for_label }}">{{ form.phone_number.label }}</label>
+                    {{ form.phone_number }}
+                    {% if form.phone_number.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.phone_number.errors|join:", " }}</p>{% endif %}
+                </div>
+                {% if form.non_field_errors %}
+                <div class="form-group full">
+                    <p class="text-sm" style="color:var(--danger);">{{ form.non_field_errors|join:", " }}</p>
+                </div>
+                {% endif %}
+                <div class="form-group full" style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;">
+                    <button type="button" class="btn btn-ghost" data-modal-close>Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-user-plus"></i> Create Coach</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var copyBtn = document.getElementById('copyCoachPasswordBtn');
+        var copyTarget = document.getElementById('coachTempPassword');
+        var table = document.getElementById('coachAccountsTable');
+
+        if (copyBtn && copyTarget && navigator.clipboard) {
+            copyBtn.addEventListener('click', async function() {
+                try {
+                    await navigator.clipboard.writeText(copyTarget.textContent.trim());
+                    copyBtn.innerHTML = '<i class="fa-solid fa-check"></i> Copied';
+                    setTimeout(function() {
+                        copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy Password';
+                    }, 1800);
+                } catch (error) {
+                    copyBtn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Copy Failed';
+                }
+            });
+        }
+
+        if (!table || window.nyoIsMobileViewport) {
+            return;
+        }
+
+        window.nyoRunDeferred(async function() {
+            await window.ensureDataTables();
+            if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.DataTable) return;
+            if (window.jQuery.fn.DataTable.isDataTable(table)) return;
+
+            window.jQuery(table).DataTable({
+                dom: '<"dt-top-ctrl"fB><"table-responsive"t><"dt-bottom-ctrl"lip>',
+                pageLength: 20,
+                ordering: true,
+                order: [[0, 'asc']],
+                responsive: true,
+                autoWidth: false,
+                buttons: [
+                    { extend: 'excelHtml5', text: '<i class="fa-solid fa-file-excel"></i> Export', className: 'dt-button' }
+                ],
+                language: {
+                    search: '',
+                    searchPlaceholder: 'Search coach name, username, or email...',
+                    lengthMenu: 'Show _MENU_',
+                    emptyTable: 'No coach accounts created yet.'
+                },
+                columnDefs: [
+                    { orderable: false, targets: [7] }
+                ]
+            });
+        });
+    });
+</script>
 {% endblock %}

@@ -13,6 +13,10 @@ from sessions.models import SyllabusRoot
 User = get_user_model()
 
 
+class RangeInput(forms.widgets.Input):
+    input_type = "range"
+
+
 class MemberForm(forms.ModelForm):
     class Meta:
         model = Member
@@ -259,18 +263,24 @@ class ProgressReportForm(forms.ModelForm):
             "period_start",
             "period_end",
             "overall_status",
+            "report_brief",
             "coach_reflection",
+            "improvement_plan",
+            "video_proof",
             "is_published",
         ]
         widgets = {
             "period_start": forms.DateInput(attrs={"type": "date"}),
             "period_end": forms.DateInput(attrs={"type": "date"}),
-            "coach_reflection": forms.Textarea(attrs={"rows": 5}),
+            "report_brief": forms.Textarea(attrs={"rows": 3}),
+            "coach_reflection": forms.Textarea(attrs={"rows": 4}),
+            "improvement_plan": forms.Textarea(attrs={"rows": 4}),
         }
 
-    def __init__(self, *args, current_user=None, **kwargs):
+    def __init__(self, *args, current_user=None, selected_member=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.current_user = current_user
+        self.selected_member = None
         member_queryset = Member.objects.select_related("assigned_coach", "parent_user").order_by("full_name")
         coach_queryset = User.objects.filter(profile__role=UserProfile.ROLE_COACH).order_by("first_name", "username")
         if current_user and has_role(current_user, ROLE_COACH) and not has_role(current_user, ROLE_ADMIN):
@@ -279,24 +289,68 @@ class ProgressReportForm(forms.ModelForm):
             self.fields["coach"].initial = current_user
         self.fields["member"].queryset = member_queryset
         self.fields["coach"].queryset = coach_queryset
+        if selected_member:
+            self.fields["member"].initial = selected_member
+            self.selected_member = member_queryset.filter(pk=selected_member).first()
+        elif self.instance.pk and self.instance.member_id:
+            self.selected_member = self.instance.member
+        self.fields["report_brief"].help_text = "Short summary parents can scan quickly."
+        self.fields["report_brief"].widget.attrs.update(
+            {"placeholder": "Briefly describe the student's current progress and confidence level."}
+        )
+        self.fields["coach_reflection"].label = "Coach remarks"
+        self.fields["coach_reflection"].widget.attrs.update(
+            {"placeholder": "Add your fuller coaching remarks, match observations, and session trends."}
+        )
+        self.fields["improvement_plan"].widget.attrs.update(
+            {"placeholder": "List the next improvement priorities, drills, and habits to focus on."}
+        )
+        self.fields["video_proof"].help_text = "Optional skill proof clip, rally video, or technique example."
+        self.skill_field_rows = []
 
         for skill in DEFAULT_SKILLS:
             slug = skill.lower().replace(" ", "_")
-            self.fields[f"skill_{slug}"] = forms.IntegerField(
+            rating_field_name = f"skill_{slug}"
+            note_field_name = f"note_{slug}"
+            self.fields[rating_field_name] = forms.IntegerField(
                 label=f"{skill} rating",
                 min_value=0,
-                max_value=5,
+                max_value=100,
                 required=False,
-                widget=forms.NumberInput(attrs={"min": 0, "max": 5}),
+                widget=RangeInput(
+                    attrs={
+                        "min": 0,
+                        "max": 100,
+                        "step": 5,
+                        "class": "report-slider-input",
+                        "data-skill-label": skill,
+                    }
+                ),
             )
-            self.fields[f"note_{slug}"] = forms.CharField(
+            self.fields[note_field_name] = forms.CharField(
                 label=f"{skill} note",
                 required=False,
-                widget=forms.Textarea(attrs={"rows": 2}),
+                widget=forms.Textarea(
+                    attrs={
+                        "rows": 2,
+                        "placeholder": f"Add a coaching note for {skill.lower()}...",
+                    }
+                ),
             )
             if self.instance.pk:
-                self.fields[f"skill_{slug}"].initial = self.instance.skill_snapshot.get(skill)
-                self.fields[f"note_{slug}"].initial = self.instance.skill_notes.get(skill)
+                self.fields[rating_field_name].initial = round((self.instance.skill_snapshot.get(skill) or 0) * 20)
+                self.fields[note_field_name].initial = self.instance.skill_notes.get(skill)
+            else:
+                self.fields[rating_field_name].initial = 60
+            self.skill_field_rows.append(
+                {
+                    "label": skill,
+                    "rating_name": rating_field_name,
+                    "rating_field": self[rating_field_name],
+                    "note_name": note_field_name,
+                    "note_field": self[note_field_name],
+                }
+            )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -314,10 +368,10 @@ class ProgressReportForm(forms.ModelForm):
         instance.skill_notes = {}
         for skill in DEFAULT_SKILLS:
             slug = skill.lower().replace(" ", "_")
-            rating = self.cleaned_data.get(f"skill_{slug}")
+            raw_rating = self.cleaned_data.get(f"skill_{slug}")
             note = self.cleaned_data.get(f"note_{slug}", "").strip()
-            if rating is not None:
-                instance.skill_snapshot[skill] = rating
+            if raw_rating is not None:
+                instance.skill_snapshot[skill] = round(raw_rating / 20, 2)
             if note:
                 instance.skill_notes[skill] = note
         if instance.member_id and instance.period_start and instance.period_end:

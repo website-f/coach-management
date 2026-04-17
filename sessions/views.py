@@ -490,12 +490,57 @@ class SyllabusStandardUpdateView(AdminRequiredMixin, UpdateView):
 
 
 class SessionListView(LoginRequiredMixin, ListView):
+    VIEW_CALENDAR = "calendar"
+    VIEW_CHECKLIST = "checklist"
+
     model = TrainingSession
     template_name = "sessions/session_list.html"
     context_object_name = "sessions"
 
     def get_month_anchor(self):
         return resolve_month_anchor(self.request.GET.get("month"))
+
+    def uses_checklist_first_mode(self):
+        return has_role(self.request.user, ROLE_COACH) and not has_role(self.request.user, ROLE_ADMIN)
+
+    def get_session_page_mode(self):
+        requested_mode = self.request.GET.get("view", "").strip()
+        if requested_mode == self.VIEW_CALENDAR:
+            return self.VIEW_CALENDAR
+        if requested_mode == self.VIEW_CHECKLIST and self.uses_checklist_first_mode():
+            return self.VIEW_CHECKLIST
+        return self.VIEW_CHECKLIST if self.uses_checklist_first_mode() else self.VIEW_CALENDAR
+
+    def get_focus_session(self, sessions):
+        if not sessions:
+            return None
+
+        requested_focus = self.request.GET.get("focus", "").strip()
+        if requested_focus:
+            for session in sessions:
+                if str(session.pk) == requested_focus:
+                    return session
+
+        today = timezone.localdate()
+        now_time = timezone.localtime().time()
+
+        today_upcoming = [
+            session
+            for session in sessions
+            if session.session_date == today and session.start_time >= now_time
+        ]
+        if today_upcoming:
+            return min(today_upcoming, key=lambda session: (session.start_time, session.pk))
+
+        today_sessions = [session for session in sessions if session.session_date == today]
+        if today_sessions:
+            return max(today_sessions, key=lambda session: (session.start_time, session.pk))
+
+        future_sessions = [session for session in sessions if session.session_date > today]
+        if future_sessions:
+            return min(future_sessions, key=lambda session: (session.session_date, session.start_time, session.pk))
+
+        return max(sessions, key=lambda session: (session.session_date, session.start_time, session.pk))
 
     def get_queryset(self):
         queryset = visible_sessions_for_user(self.request.user)
@@ -526,6 +571,21 @@ class SessionListView(LoginRequiredMixin, ListView):
         month_start, month_end = month_bounds(month_anchor)
         sessions = list(context["sessions"])
         today = timezone.localdate()
+        session_page_mode = self.get_session_page_mode()
+        checklist_enabled = self.uses_checklist_first_mode()
+        focus_session = self.get_focus_session(sessions) if checklist_enabled else None
+        checklist_plan = None
+        focus_session_status_label = ""
+        if focus_session and checklist_enabled:
+            ensure_default_syllabus()
+            checklist_plan = build_session_plan(focus_session)
+            if focus_session.session_date == today:
+                focus_session_status_label = "Today's session"
+            elif focus_session.session_date > today:
+                focus_session_status_label = "Next session"
+            else:
+                focus_session_status_label = "Recent session"
+
         calendar_events = []
         for training_session in sessions:
             is_past = training_session.session_date < today
@@ -562,6 +622,24 @@ class SessionListView(LoginRequiredMixin, ListView):
                 ),
                 "month_start": month_start,
                 "month_end": month_end,
+                "today": today,
+                "session_page_mode": session_page_mode,
+                "checklist_enabled": checklist_enabled,
+                "show_checklist_view": checklist_enabled and session_page_mode == self.VIEW_CHECKLIST,
+                "show_calendar_view": not checklist_enabled or session_page_mode == self.VIEW_CALENDAR,
+                "selected_focus_session": focus_session,
+                "focus_session_status_label": focus_session_status_label,
+                "checklist_plan": checklist_plan,
+                "checklist_items": checklist_plan["blocks"] if checklist_plan else [],
+                "view_query_base": "&".join(
+                    part
+                    for part in [
+                        f"month={month_anchor.strftime('%Y-%m')}",
+                        f"coach={self.request.GET.get('coach', '').strip()}" if self.request.GET.get("coach", "").strip() else "",
+                        f"member={self.request.GET.get('member', '').strip()}" if self.request.GET.get("member", "").strip() else "",
+                    ]
+                    if part
+                ),
             }
         )
         return context

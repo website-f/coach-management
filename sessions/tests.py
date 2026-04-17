@@ -1,12 +1,14 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from accounts.models import UserProfile
 from finance.models import BillingConfiguration, PaymentPlan
 from members.models import Member
 from sessions.forms import TrainingSessionForm
 from sessions.models import SyllabusRoot, TrainingSession
+from sessions.services import ensure_default_syllabus
 
 
 User = get_user_model()
@@ -117,3 +119,63 @@ class SessionCalendarPageTests(TestCase):
         self.assertContains(response, "index.global.min.js")
         self.assertNotContains(response, "index.global.min.css")
         self.assertContains(response, "Loading calendar...")
+
+
+class CoachSessionChecklistPageTests(TestCase):
+    def create_user(self, username, role):
+        user = User.objects.create_user(username=username, password="testpass123")
+        user.profile.role = role
+        user.profile.save()
+        return user
+
+    def setUp(self):
+        ensure_default_syllabus()
+        self.coach = self.create_user("coach_schedule", UserProfile.ROLE_COACH)
+        self.client.force_login(self.coach)
+        syllabus_root = SyllabusRoot.get_default()
+        self.member = Member.objects.create(
+            full_name="Alya Training",
+            date_of_birth="2014-05-12",
+            contact_number="0101234567",
+            email="alya@example.com",
+            emergency_contact_name="Parent",
+            emergency_contact_phone="0101234567",
+            status=Member.STATUS_ACTIVE,
+            skill_level=Member.LEVEL_INTERMEDIATE,
+            payment_plan=PaymentPlan.get_default(),
+            assigned_coach=self.coach,
+            syllabus_root=syllabus_root,
+        )
+        self.session = TrainingSession.objects.create(
+            title="Intermediate Squad B",
+            session_date=timezone.localdate(),
+            start_time="09:00",
+            end_time="10:30",
+            court="Court 2",
+            coach=self.coach,
+            syllabus_root=syllabus_root,
+        )
+        self.session.attendance_records.create(member=self.member)
+
+    def test_coach_session_page_defaults_to_checklist_first(self):
+        response = self.client.get(reverse("sessions:list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["session_page_mode"], "checklist")
+        self.assertTrue(response.context["show_checklist_view"])
+        self.assertFalse(response.context["show_calendar_view"])
+        self.assertContains(response, "Checklist First")
+        self.assertContains(response, "Training Checklist")
+        self.assertContains(response, "Open Calendar")
+        self.assertNotContains(response, "Loading calendar...")
+        self.assertNotContains(response, "index.global.min.js")
+
+    def test_coach_can_switch_back_to_calendar_view(self):
+        response = self.client.get(reverse("sessions:list"), {"view": "calendar"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["session_page_mode"], "calendar")
+        self.assertFalse(response.context["show_checklist_view"])
+        self.assertTrue(response.context["show_calendar_view"])
+        self.assertContains(response, "Loading calendar...")
+        self.assertContains(response, "index.global.min.js")

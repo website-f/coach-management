@@ -440,7 +440,10 @@ class ProgressReport(models.Model):
     overall_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_DEVELOPING)
     skill_snapshot = models.JSONField(default=dict, blank=True)
     skill_notes = models.JSONField(default=dict, blank=True)
+    report_brief = models.TextField(blank=True)
     coach_reflection = models.TextField(blank=True)
+    improvement_plan = models.TextField(blank=True)
+    video_proof = models.FileField(upload_to="progress_report_videos/", blank=True)
     is_published = models.BooleanField(default=False)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

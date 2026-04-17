@@ -4,27 +4,252 @@
 {% block page_heading %}{% if form_mode == "edit" %}Edit Progress Report{% else %}Create Progress Report{% endif %}{% endblock %}
 
 {% block content %}
-<div class="space-y">
+<style>
+    .evaluation-shell {
+        display: grid;
+        gap: 20px;
+    }
+    .evaluation-intro {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+    .evaluation-layout {
+        display: grid;
+        gap: 20px;
+        grid-template-columns: minmax(0, 1.2fr) minmax(340px, 0.9fr);
+        align-items: start;
+    }
+    .evaluation-panel {
+        border: 1px solid var(--border);
+        border-radius: 26px;
+        background: var(--surface);
+        padding: 24px;
+    }
+    .evaluation-panel h3 {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 6px;
+    }
+    .evaluation-panel-copy {
+        color: var(--muted);
+        line-height: 1.8;
+        margin-bottom: 18px;
+    }
+    .evaluation-divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--border2), transparent);
+        margin: 20px 0;
+    }
+    .evaluation-top-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .evaluation-top-grid .full {
+        grid-column: 1 / -1;
+    }
+    .evaluation-history-trigger {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .evaluation-sliders {
+        display: grid;
+        gap: 18px;
+    }
+    .evaluation-slider-card {
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        background: linear-gradient(180deg, rgba(79,110,247,0.05), rgba(79,110,247,0.015));
+        padding: 16px 18px;
+    }
+    .evaluation-slider-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: baseline;
+        margin-bottom: 12px;
+    }
+    .evaluation-slider-head strong {
+        color: var(--text);
+        font-size: 15px;
+    }
+    .evaluation-slider-score {
+        color: #16a34a;
+        font-weight: 800;
+        font-size: 14px;
+    }
+    .report-slider-input {
+        width: 100%;
+        accent-color: #243c8a;
+        padding: 0;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+    }
+    .report-slider-input:focus {
+        box-shadow: none !important;
+    }
+    .evaluation-slider-note {
+        margin-top: 12px;
+    }
+    .evaluation-chart-card {
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        background: linear-gradient(180deg, rgba(34,197,94,0.06), rgba(79,110,247,0.02));
+        padding: 20px;
+    }
+    .evaluation-chart-wrap {
+        min-height: 360px;
+        position: relative;
+    }
+    .evaluation-score-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 16px;
+    }
+    .evaluation-score-chip {
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: var(--surface);
+        padding: 14px 16px;
+    }
+    .evaluation-score-chip span {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 8px;
+    }
+    .evaluation-score-chip strong {
+        display: block;
+        color: var(--text);
+        font-size: 28px;
+        line-height: 1;
+        letter-spacing: -0.04em;
+    }
+    .evaluation-feed {
+        display: grid;
+        gap: 14px;
+    }
+    .evaluation-feed-item {
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: var(--surface2);
+        padding: 16px;
+    }
+    .evaluation-feed-item strong {
+        display: block;
+        color: var(--text);
+        margin-bottom: 6px;
+    }
+    .evaluation-feed-item small {
+        display: block;
+        color: var(--muted);
+        line-height: 1.7;
+    }
+    .evaluation-feed-item p {
+        margin-top: 10px;
+        color: var(--text);
+        line-height: 1.8;
+    }
+    .evaluation-feed-item video {
+        width: 100%;
+        margin-top: 12px;
+        border-radius: 14px;
+        background: #000;
+    }
+    .evaluation-brief-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .evaluation-brief-grid .full {
+        grid-column: 1 / -1;
+    }
+    .evaluation-empty {
+        border: 1px dashed var(--border2);
+        border-radius: 18px;
+        padding: 18px;
+        color: var(--muted);
+        background: var(--surface2);
+        text-align: center;
+        line-height: 1.8;
+    }
+    .current-proof {
+        margin-top: 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 600;
+    }
+    @media (max-width: 1100px) {
+        .evaluation-layout,
+        .evaluation-brief-grid,
+        .evaluation-score-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    @media (max-width: 720px) {
+        .evaluation-panel,
+        .evaluation-chart-card {
+            padding: 18px;
+            border-radius: 22px;
+        }
+        .evaluation-top-grid {
+            grid-template-columns: 1fr;
+        }
+        .evaluation-chart-wrap {
+            min-height: 300px;
+        }
+    }
+</style>
+
+<div class="evaluation-shell">
     <div class="card">
-        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
-            <div style="max-width:740px;">
+        <div class="evaluation-intro">
+            <div style="max-width:760px;">
                 <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;">Coach Evaluation</p>
-                <h2 style="font-size:28px;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1.1;">{% if form_mode == "edit" %}Refine the published story for this player.{% else %}Build a progress report that parents can actually act on.{% endif %}</h2>
-                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">Attendance metrics are calculated automatically from the real session records inside the selected period.</p>
+                <h2 style="font-size:28px;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1.1;">
+                    {% if form_mode == "edit" %}Refine this student evaluation with stronger evidence and clearer action steps.{% else %}Assess the student the way coaches actually work: rate, explain, improve, and attach proof.{% endif %}
+                </h2>
+                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">
+                    Visual thesis: a coach-first evaluation workspace with calm dark-surface depth, strong score hierarchy, and one live radar chart as the main visual anchor.
+                    Content plan: report setup, skill evaluation, coaching summary, proof, then previous feedback context.
+                    Interaction thesis: live slider score updates, live radar redraw, and fast member-history loading from the same screen.
+                </p>
             </div>
-            <a href="{% url 'members:report_list' %}" class="btn btn-ghost">Back to reports</a>
+            <a href="{% url 'members:report_list' %}" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Back to reports</a>
         </div>
     </div>
 
-    <form method="post" class="space-y">
+    <form method="post" enctype="multipart/form-data" class="evaluation-layout" novalidate>
         {% csrf_token %}
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Report Setup</span>
-            </div>
-            <div class="form-grid mt-3">
-                <div class="form-group">
-                    <label for="{{ form.member.id_for_label }}">Member</label>
+
+        <section class="evaluation-panel">
+            <h3>Assessment Form</h3>
+            <p class="evaluation-panel-copy">Choose the student, set the reporting window, rate each skill, and finish with a brief summary plus next-step improvement plan.</p>
+
+            <div class="evaluation-top-grid">
+                <div class="form-group full">
+                    <div class="evaluation-history-trigger">
+                        <label for="{{ form.member.id_for_label }}" style="margin-bottom:0;">Select student</label>
+                        {% if form_mode == "create" %}
+                        <button type="button" class="btn btn-ghost btn-xs" id="loadReportHistoryBtn">
+                            <i class="fa-solid fa-arrows-rotate"></i> Load History
+                        </button>
+                        {% endif %}
+                    </div>
                     {{ form.member }}
                     {% if form.member.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.member.errors|join:", " }}</p>{% endif %}
                 </div>
@@ -32,6 +257,11 @@
                     <label for="{{ form.coach.id_for_label }}">Coach</label>
                     {{ form.coach }}
                     {% if form.coach.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.coach.errors|join:", " }}</p>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.overall_status.id_for_label }}">Overall status</label>
+                    {{ form.overall_status }}
+                    {% if form.overall_status.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.overall_status.errors|join:", " }}</p>{% endif %}
                 </div>
                 <div class="form-group">
                     <label for="{{ form.period_start.id_for_label }}">Period start</label>
@@ -43,117 +273,275 @@
                     {{ form.period_end }}
                     {% if form.period_end.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.period_end.errors|join:", " }}</p>{% endif %}
                 </div>
-                <div class="form-group">
-                    <label for="{{ form.overall_status.id_for_label }}">Overall status</label>
-                    {{ form.overall_status }}
-                </div>
-                <div class="form-group">
+                <div class="form-group full">
                     <label for="{{ form.is_published.id_for_label }}">Publish to parent portal</label>
                     {{ form.is_published }}
+                    {% if form.is_published.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.is_published.errors|join:", " }}</p>{% endif %}
                 </div>
-                <div class="form-group" style="grid-column:1 / -1;">
-                    <label for="{{ form.coach_reflection.id_for_label }}">Coach reflection</label>
+            </div>
+
+            <div class="evaluation-divider"></div>
+
+            <h3>Skill Ratings</h3>
+            <p class="evaluation-panel-copy">Use the sliders to grade each skill out of 100. The radar chart updates live on the right.</p>
+
+            <div class="evaluation-sliders">
+                {% for row in form.skill_field_rows %}
+                <div class="evaluation-slider-card">
+                    <div class="evaluation-slider-head">
+                        <strong>{{ row.label }}</strong>
+                        <span class="evaluation-slider-score" data-slider-output-for="{{ row.rating_name }}">
+                            {{ row.rating_field.value|default:0 }}/100
+                        </span>
+                    </div>
+                    {{ row.rating_field }}
+                    {% if row.rating_field.errors %}<p class="text-sm" style="color:var(--danger);margin-top:8px;">{{ row.rating_field.errors|join:", " }}</p>{% endif %}
+                    <div class="evaluation-slider-note form-group">
+                        <label for="{{ row.note_field.id_for_label }}">Improvement note</label>
+                        {{ row.note_field }}
+                        {% if row.note_field.errors %}<p class="text-sm" style="color:var(--danger);">{{ row.note_field.errors|join:", " }}</p>{% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="evaluation-divider"></div>
+
+            <h3>Report Summary & Proof</h3>
+            <p class="evaluation-panel-copy">Add the concise update parents can scan fast, then write the concrete improvement steps and upload optional video evidence.</p>
+
+            <div class="evaluation-brief-grid">
+                <div class="form-group full">
+                    <label for="{{ form.report_brief.id_for_label }}">Report brief</label>
+                    {{ form.report_brief }}
+                    {% if form.report_brief.help_text %}<p class="text-sm text-muted">{{ form.report_brief.help_text }}</p>{% endif %}
+                    {% if form.report_brief.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.report_brief.errors|join:", " }}</p>{% endif %}
+                </div>
+                <div class="form-group full">
+                    <label for="{{ form.coach_reflection.id_for_label }}">{{ form.coach_reflection.label }}</label>
                     {{ form.coach_reflection }}
                     {% if form.coach_reflection.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.coach_reflection.errors|join:", " }}</p>{% endif %}
                 </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Skill Snapshot</span>
-            </div>
-            <div class="grid-2 mt-3">
-                <div class="card-inset">
-                    <h3 style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:12px;">Service</h3>
-                    <div class="form-group">
-                        <label for="{{ form.skill_service.id_for_label }}">Rating (0-5)</label>
-                        {{ form.skill_service }}
-                    </div>
-                    <div class="form-group mt-3">
-                        <label for="{{ form.note_service.id_for_label }}">Coach note</label>
-                        {{ form.note_service }}
-                    </div>
+                <div class="form-group full">
+                    <label for="{{ form.improvement_plan.id_for_label }}">Improvement plan</label>
+                    {{ form.improvement_plan }}
+                    {% if form.improvement_plan.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.improvement_plan.errors|join:", " }}</p>{% endif %}
                 </div>
-                <div class="card-inset">
-                    <h3 style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:12px;">Lobbing</h3>
-                    <div class="form-group">
-                        <label for="{{ form.skill_lobbing.id_for_label }}">Rating (0-5)</label>
-                        {{ form.skill_lobbing }}
-                    </div>
-                    <div class="form-group mt-3">
-                        <label for="{{ form.note_lobbing.id_for_label }}">Coach note</label>
-                        {{ form.note_lobbing }}
-                    </div>
-                </div>
-                <div class="card-inset">
-                    <h3 style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:12px;">Smashing</h3>
-                    <div class="form-group">
-                        <label for="{{ form.skill_smashing.id_for_label }}">Rating (0-5)</label>
-                        {{ form.skill_smashing }}
-                    </div>
-                    <div class="form-group mt-3">
-                        <label for="{{ form.note_smashing.id_for_label }}">Coach note</label>
-                        {{ form.note_smashing }}
-                    </div>
-                </div>
-                <div class="card-inset">
-                    <h3 style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:12px;">Drop Shot</h3>
-                    <div class="form-group">
-                        <label for="{{ form.skill_drop_shot.id_for_label }}">Rating (0-5)</label>
-                        {{ form.skill_drop_shot }}
-                    </div>
-                    <div class="form-group mt-3">
-                        <label for="{{ form.note_drop_shot.id_for_label }}">Coach note</label>
-                        {{ form.note_drop_shot }}
-                    </div>
-                </div>
-                <div class="card-inset">
-                    <h3 style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:12px;">Netting</h3>
-                    <div class="form-group">
-                        <label for="{{ form.skill_netting.id_for_label }}">Rating (0-5)</label>
-                        {{ form.skill_netting }}
-                    </div>
-                    <div class="form-group mt-3">
-                        <label for="{{ form.note_netting.id_for_label }}">Coach note</label>
-                        {{ form.note_netting }}
-                    </div>
-                </div>
-                <div class="card-inset">
-                    <h3 style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:12px;">Footwork</h3>
-                    <div class="form-group">
-                        <label for="{{ form.skill_footwork.id_for_label }}">Rating (0-5)</label>
-                        {{ form.skill_footwork }}
-                    </div>
-                    <div class="form-group mt-3">
-                        <label for="{{ form.note_footwork.id_for_label }}">Coach note</label>
-                        {{ form.note_footwork }}
-                    </div>
-                </div>
-                <div class="card-inset">
-                    <h3 style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:12px;">Defense</h3>
-                    <div class="form-group">
-                        <label for="{{ form.skill_defense.id_for_label }}">Rating (0-5)</label>
-                        {{ form.skill_defense }}
-                    </div>
-                    <div class="form-group mt-3">
-                        <label for="{{ form.note_defense.id_for_label }}">Coach note</label>
-                        {{ form.note_defense }}
-                    </div>
+                <div class="form-group full">
+                    <label for="{{ form.video_proof.id_for_label }}">Video proof</label>
+                    {{ form.video_proof }}
+                    {% if form.video_proof.help_text %}<p class="text-sm text-muted">{{ form.video_proof.help_text }}</p>{% endif %}
+                    {% if form.instance.pk and form.instance.video_proof %}
+                    <a href="{{ form.instance.video_proof.url }}" target="_blank" class="current-proof">
+                        <i class="fa-solid fa-video"></i> Open current uploaded video
+                    </a>
+                    {% endif %}
+                    {% if form.video_proof.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.video_proof.errors|join:", " }}</p>{% endif %}
                 </div>
             </div>
-        </div>
 
-        {% if form.non_field_errors %}
-        <div class="card" style="border-color:rgba(239,68,68,.35);">
-            <p class="text-sm" style="color:var(--danger);">{{ form.non_field_errors|join:", " }}</p>
-        </div>
-        {% endif %}
+            {% if form.non_field_errors %}
+            <div class="card" style="margin-top:18px;border-color:rgba(239,68,68,.35);">
+                <p class="text-sm" style="color:var(--danger);">{{ form.non_field_errors|join:", " }}</p>
+            </div>
+            {% endif %}
 
-        <div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;">
-            <a href="{% url 'members:report_list' %}" class="btn btn-ghost">Cancel</a>
-            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Report</button>
-        </div>
+            <div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:24px;">
+                <a href="{% url 'members:report_list' %}" class="btn btn-ghost">Cancel</a>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Evaluation</button>
+            </div>
+        </section>
+
+        <section style="display:grid;gap:20px;">
+            <article class="evaluation-chart-card">
+                <h3>Skill Visualization</h3>
+                <p class="evaluation-panel-copy">Live radar view of the current scoring across the student’s badminton skill profile.</p>
+                <div class="evaluation-chart-wrap">
+                    <canvas id="evaluationRadarChart"></canvas>
+                </div>
+                <div class="evaluation-score-grid">
+                    <div class="evaluation-score-chip">
+                        <span>Selected Student</span>
+                        <strong>{% if selected_report_member %}{{ selected_report_member.full_name }}{% else %}-{% endif %}</strong>
+                    </div>
+                    <div class="evaluation-score-chip">
+                        <span>Program</span>
+                        <strong>{% if selected_report_member %}{{ selected_report_member.program_enrolled|default:selected_report_member.syllabus_root|default:"-" }}{% else %}-{% endif %}</strong>
+                    </div>
+                    <div class="evaluation-score-chip">
+                        <span>Coach</span>
+                        <strong>{% if selected_report_member and selected_report_member.assigned_coach %}{{ selected_report_member.assigned_coach.get_full_name|default:selected_report_member.assigned_coach.username }}{% else %}-{% endif %}</strong>
+                    </div>
+                </div>
+            </article>
+
+            <article class="evaluation-panel">
+                <h3>Previous Feedback</h3>
+                <p class="evaluation-panel-copy">Use the recent history below to keep the new report consistent with what the player was already working on.</p>
+                {% if previous_reports %}
+                <div class="evaluation-feed">
+                    {% for previous in previous_reports %}
+                    <div class="evaluation-feed-item">
+                        <strong>{{ previous.period_label }}</strong>
+                        <small>{{ previous.get_overall_status_display }} | Coach {{ previous.coach|default:"Coaching team" }}</small>
+                        <p>{{ previous.report_brief|default:previous.coach_reflection|default:"No summary was written in that cycle." }}</p>
+                        {% if previous.improvement_plan %}
+                        <small style="margin-top:10px;"><strong style="display:inline;color:var(--text);">Improvement:</strong> {{ previous.improvement_plan|truncatechars:180 }}</small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="evaluation-empty">
+                    {% if selected_report_member %}
+                    No earlier progress reports were found for this student yet.
+                    {% else %}
+                    Choose a student first to load previous report history here.
+                    {% endif %}
+                </div>
+                {% endif %}
+            </article>
+
+            <article class="evaluation-panel">
+                <h3>Recent Session Feedback</h3>
+                <p class="evaluation-panel-copy">These are the latest session-by-session notes and proof clips already attached to the student.</p>
+                {% if recent_feedback_entries %}
+                <div class="evaluation-feed">
+                    {% for feedback in recent_feedback_entries %}
+                    <div class="evaluation-feed-item">
+                        <strong>{{ feedback.training_session.title }}</strong>
+                        <small>{{ feedback.training_session.session_date|date:"d M Y" }} | Coach {{ feedback.coach|default:"Coaching team" }}</small>
+                        <p>{{ feedback.feedback_text|truncatechars:220 }}</p>
+                        {% if feedback.video_proof %}
+                        <video controls preload="none" playsinline>
+                            <source src="{{ feedback.video_proof.url }}">
+                        </video>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="evaluation-empty">
+                    {% if selected_report_member %}
+                    No session feedback entries are available for this student yet.
+                    {% else %}
+                    Choose a student first to load recent session feedback here.
+                    {% endif %}
+                </div>
+                {% endif %}
+            </article>
+        </section>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const radarCanvas = document.getElementById('evaluationRadarChart');
+        const memberSelect = document.getElementById('{{ form.member.id_for_label }}');
+        const loadHistoryBtn = document.getElementById('loadReportHistoryBtn');
+        const sliderInputs = Array.from(document.querySelectorAll('.report-slider-input'));
+        const sliderOutputs = document.querySelectorAll('[data-slider-output-for]');
+        const seedSkills = JSON.parse('{{ form_skill_preview|escapejs }}');
+        let radarChart = null;
+
+        function getSkillRows() {
+            return seedSkills.map(function(row) {
+                const field = document.querySelector('[name="' + row.field_name + '"]');
+                return {
+                    label: row.label,
+                    value: field ? Number(field.value || 0) : Number(row.value || 0),
+                    fieldName: row.field_name
+                };
+            });
+        }
+
+        function updateSliderOutputs() {
+            sliderOutputs.forEach(function(output) {
+                const fieldName = output.dataset.sliderOutputFor;
+                const field = document.querySelector('[name="' + fieldName + '"]');
+                output.textContent = (field ? field.value : 0) + '/100';
+            });
+        }
+
+        async function renderRadarChart() {
+            if (!radarCanvas) return;
+            await window.ensureChartJs();
+            const skills = getSkillRows();
+            const chartData = {
+                labels: skills.map(function(row) { return row.label; }),
+                datasets: [{
+                    label: 'Skill score',
+                    data: skills.map(function(row) { return row.value; }),
+                    backgroundColor: 'rgba(52, 211, 153, 0.28)',
+                    borderColor: '#10b981',
+                    pointBackgroundColor: '#10b981',
+                    pointBorderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            };
+
+            if (radarChart) {
+                radarChart.data = chartData;
+                radarChart.update();
+                return;
+            }
+
+            radarChart = new Chart(radarCanvas, {
+                type: 'radar',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#8a8a9a',
+                                font: { family: 'Inter', size: 12 }
+                            }
+                        }
+                    },
+                    scales: {
+                        r: {
+                            min: 0,
+                            max: 100,
+                            ticks: { display: false, stepSize: 20 },
+                            angleLines: { color: 'rgba(148, 163, 184, 0.22)' },
+                            grid: { color: 'rgba(148, 163, 184, 0.22)' },
+                            pointLabels: {
+                                color: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#f0f0f4',
+                                font: { family: 'Inter', size: 12 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        updateSliderOutputs();
+        if (radarCanvas) {
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(renderRadarChart, { timeout: 1200 });
+            } else {
+                setTimeout(renderRadarChart, 0);
+            }
+        }
+
+        sliderInputs.forEach(function(input) {
+            input.addEventListener('input', function() {
+                updateSliderOutputs();
+                renderRadarChart();
+            });
+        });
+
+        if (loadHistoryBtn && memberSelect) {
+            loadHistoryBtn.addEventListener('click', function() {
+                const memberId = memberSelect.value || '';
+                const target = memberId ? ('?member=' + encodeURIComponent(memberId)) : window.location.pathname;
+                window.location.href = target;
+            });
+        }
+    });
+</script>
 {% endblock %}

@@ -86,6 +86,31 @@ def visible_reports_for_user(user):
     return queryset.none()
 
 
+def build_progress_report_form_context(user, member=None, current_report=None):
+    if not member:
+        return {
+            "selected_report_member": None,
+            "previous_reports": [],
+            "recent_feedback_entries": [],
+        }
+
+    reports_queryset = visible_reports_for_user(user).filter(member=member).order_by("-period_end", "-created_at")
+    if current_report and current_report.pk:
+        reports_queryset = reports_queryset.exclude(pk=current_report.pk)
+
+    previous_reports = list(reports_queryset[:4])
+    recent_feedback_entries = list(
+        SessionFeedback.objects.filter(member=member)
+        .select_related("training_session", "coach")
+        .order_by("-training_session__session_date", "-created_at")[:4]
+    )
+    return {
+        "selected_report_member": member,
+        "previous_reports": previous_reports,
+        "recent_feedback_entries": recent_feedback_entries,
+    }
+
+
 def visible_communication_logs_for_user(user):
     queryset = CommunicationLog.objects.select_related(
         "staff",
@@ -816,6 +841,7 @@ class ProgressReportCreateView(AdminOrCoachRequiredMixin, CreateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["current_user"] = self.request.user
+        kwargs["selected_member"] = self.request.POST.get("member") or self.request.GET.get("member")
         return kwargs
 
     def form_valid(self, form):
@@ -828,7 +854,20 @@ class ProgressReportCreateView(AdminOrCoachRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        form = context["form"]
+        selected_member = getattr(form, "selected_member", None)
         context["form_mode"] = "create"
+        context.update(build_progress_report_form_context(self.request.user, selected_member))
+        context["form_skill_preview"] = json.dumps(
+            [
+                {
+                    "label": skill,
+                    "field_name": f"skill_{skill.lower().replace(' ', '_')}",
+                    "value": form[f"skill_{skill.lower().replace(' ', '_')}"].value() or 0,
+                }
+                for skill in DEFAULT_SKILLS
+            ]
+        )
         return context
 
 
@@ -844,6 +883,7 @@ class ProgressReportUpdateView(AdminOrCoachRequiredMixin, UpdateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["current_user"] = self.request.user
+        kwargs["selected_member"] = self.object.member_id
         return kwargs
 
     def form_valid(self, form):
@@ -853,7 +893,19 @@ class ProgressReportUpdateView(AdminOrCoachRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        form = context["form"]
         context["form_mode"] = "edit"
+        context.update(build_progress_report_form_context(self.request.user, self.object.member, self.object))
+        context["form_skill_preview"] = json.dumps(
+            [
+                {
+                    "label": skill,
+                    "field_name": f"skill_{skill.lower().replace(' ', '_')}",
+                    "value": form[f"skill_{skill.lower().replace(' ', '_')}"].value() or 0,
+                }
+                for skill in DEFAULT_SKILLS
+            ]
+        )
         return context
 
 

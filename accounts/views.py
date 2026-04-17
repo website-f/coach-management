@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model, logout
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import LoginView, PasswordChangeView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncMonth
@@ -13,9 +13,9 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views import View
-from django.views.generic import FormView, ListView, RedirectView, TemplateView, UpdateView
+from django.views.generic import DetailView, FormView, ListView, RedirectView, TemplateView, UpdateView
 
-from accounts.forms import CoachAccountForm, LandingPageContentForm
+from accounts.forms import CoachAccountForm, CoachPasswordChangeForm, LandingPageContentForm
 from accounts.mixins import AdminRequiredMixin, ParentRequiredMixin
 from accounts.models import LandingPageContent, Notification, UserProfile
 from accounts.utils import (
@@ -118,6 +118,9 @@ class RoleAwareLoginView(LoginView):
     template_name = "registration/login.html"
 
     def get_success_url(self):
+        if getattr(getattr(self.request.user, "profile", None), "must_change_password", False):
+            messages.info(self.request, "Please change the temporary password before opening the coach workspace.")
+            return reverse("accounts:password_change")
         if has_role(self.request.user, ROLE_PARENT):
             has_onboarding_fees = Invoice.objects.filter(
                 member__parent_user=self.request.user,
@@ -134,6 +137,30 @@ class FastLogoutView(View):
     def post(self, request, *args, **kwargs):
         logout(request)
         return redirect(f"{reverse('accounts:login')}?logged_out=1")
+
+
+def coach_accounts_queryset():
+    today = timezone.localdate()
+    return (
+        User.objects.filter(profile__role=UserProfile.ROLE_COACH)
+        .select_related("profile")
+        .annotate(
+            member_count=Count("assigned_members", distinct=True),
+            active_member_count=Count(
+                "assigned_members",
+                filter=Q(assigned_members__status=Member.STATUS_ACTIVE),
+                distinct=True,
+            ),
+            session_count=Count("training_sessions", distinct=True),
+            upcoming_session_count=Count(
+                "training_sessions",
+                filter=Q(training_sessions__session_date__gte=today),
+                distinct=True,
+            ),
+            report_count=Count("progress_reports", distinct=True),
+        )
+        .order_by("first_name", "username")
+    )
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -636,6 +663,26 @@ class LandingContentUpdateView(AdminRequiredMixin, UpdateView):
         return response
 
 
+class CoachPasswordChangeView(PasswordChangeView):
+    template_name = "accounts/password_change.html"
+    form_class = CoachPasswordChangeForm
+    success_url = reverse_lazy("accounts:dashboard")
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        profile = self.request.user.profile
+        if profile.must_change_password:
+            profile.must_change_password = False
+            profile.save(update_fields=["must_change_password", "updated_at"])
+        messages.success(self.request, "Password updated successfully. Your coach account is now fully active.")
+        return response
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["password_change_required"] = getattr(self.request.user.profile, "must_change_password", False)
+        return context
+
+
 class CoachManagementView(AdminRequiredMixin, FormView):
     template_name = "accounts/coach_management.html"
     form_class = CoachAccountForm
@@ -643,23 +690,70 @@ class CoachManagementView(AdminRequiredMixin, FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["coach_rows"] = (
-            User.objects.filter(profile__role=UserProfile.ROLE_COACH)
-            .annotate(
-                member_count=Count("assigned_members", distinct=True),
-                session_count=Count("training_sessions", distinct=True),
-            )
-            .order_by("first_name", "username")
+        coach_rows = list(coach_accounts_queryset())
+        context["coach_rows"] = coach_rows
+        context["coach_count"] = len(coach_rows)
+        context["coach_waiting_password_change_count"] = sum(
+            1 for coach in coach_rows if coach.profile.must_change_password
         )
+        context["coach_member_total"] = sum(coach.member_count for coach in coach_rows)
+        context["coach_upcoming_session_total"] = sum(coach.upcoming_session_count for coach in coach_rows)
+        context["created_coach_credentials"] = self.request.session.pop("created_coach_credentials", None)
+        context["show_create_modal"] = bool(context["form"].errors)
         return context
 
     def form_valid(self, form):
-        user = form.save()
+        user, temporary_password = form.save()
+        self.request.session["created_coach_credentials"] = {
+            "name": user.get_full_name() or user.username,
+            "username": user.username,
+            "temporary_password": temporary_password,
+        }
         messages.success(
             self.request,
-            f"Coach account {user.username} created successfully and is ready for admin scheduling.",
+            f"Coach account {user.username} created successfully.",
         )
         return super().form_valid(form)
+
+
+class CoachDetailView(AdminRequiredMixin, DetailView):
+    template_name = "accounts/coach_detail.html"
+    context_object_name = "coach_user"
+
+    def get_queryset(self):
+        return coach_accounts_queryset()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        coach = self.object
+        today = timezone.localdate()
+        assigned_members = coach.assigned_members.select_related("payment_plan", "syllabus_root").order_by("full_name")
+        recent_reports = coach.progress_reports.select_related("member").order_by("-period_end", "-created_at")[:6]
+        upcoming_sessions = coach.training_sessions.filter(session_date__gte=today).order_by("session_date", "start_time")[:6]
+        recent_sessions = coach.training_sessions.order_by("-session_date", "-start_time")[:6]
+        unpaid_invoices = (
+            Invoice.objects.filter(member__assigned_coach=coach)
+            .exclude(status=Invoice.STATUS_PAID)
+            .select_related("member")
+            .order_by("due_date", "member__full_name")[:6]
+        )
+        context.update(
+            {
+                "assigned_members": assigned_members[:12],
+                "assigned_members_total": assigned_members.count(),
+                "recent_reports": recent_reports,
+                "upcoming_sessions": upcoming_sessions,
+                "recent_sessions": recent_sessions,
+                "unpaid_invoices": unpaid_invoices,
+                "unpaid_invoice_total": (
+                    Invoice.objects.filter(member__assigned_coach=coach)
+                    .exclude(status=Invoice.STATUS_PAID)
+                    .aggregate(total=Sum("amount"))["total"]
+                    or Decimal("0.00")
+                ),
+            }
+        )
+        return context
 
 
 class NotificationListView(LoginRequiredMixin, ListView):

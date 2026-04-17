@@ -22,6 +22,7 @@ class UserProfile(models.Model):
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=ROLE_PARENT)
     phone_number = models.CharField(max_length=30, blank=True)
+    must_change_password = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

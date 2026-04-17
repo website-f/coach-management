@@ -214,7 +214,7 @@
                 </div>
             </div>
             <div class="report-note">
-                "{{ report.coach_reflection|default:'Coach reflection will appear here once it has been added.' }}"
+                "{{ report.report_brief|default:report.coach_reflection|default:'Coach summary will appear here once it has been added.' }}"
             </div>
         </div>
     </section>
@@ -257,6 +257,45 @@
             <div class="report-chart">
                 <canvas id="growthLineChart"></canvas>
             </div>
+        </article>
+    </section>
+
+    <section class="report-grid" style="grid-template-columns:repeat(2, minmax(0, 1fr));">
+        <article class="report-card">
+            <h3>Report Brief</h3>
+            <p class="section-copy">Short summary written by the coach for the current reporting cycle.</p>
+            <div class="report-note" style="margin-top:0;">
+                {{ report.report_brief|default:report.coach_reflection|default:"No brief summary was added to this report yet." }}
+            </div>
+            {% if report.coach_reflection and report.coach_reflection != report.report_brief %}
+            <div class="report-row" style="margin-top:16px;">
+                <div>
+                    <strong>Coach remarks</strong>
+                    <small>{{ report.coach_reflection }}</small>
+                </div>
+            </div>
+            {% endif %}
+        </article>
+
+        <article class="report-card">
+            <h3>Improvement Plan & Proof</h3>
+            <p class="section-copy">Concrete next steps and optional video evidence attached directly to this report.</p>
+            <div class="report-note" style="margin-top:0;border-left-color:#16a34a;background:rgba(34,197,94,0.08);">
+                {{ report.improvement_plan|default:"No dedicated improvement plan was added to this report yet." }}
+            </div>
+            {% if report.video_proof %}
+            <div class="report-feedback-item" style="margin-top:16px;">
+                <strong>Coach Video Proof</strong>
+                <small>Attached directly to this progress report.</small>
+                <video controls preload="none" playsinline>
+                    <source src="{{ report.video_proof.url }}">
+                    Your browser does not support HTML5 video.
+                </video>
+                <a href="{{ report.video_proof.url }}" download class="download">
+                    <i class="fa-solid fa-download"></i> Download Report Video
+                </a>
+            </div>
+            {% endif %}
         </article>
     </section>
 

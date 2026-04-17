@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Sessions | NYO Admin Dashboard{% endblock %}
-{% block page_heading %}Session Calendar{% endblock %}
+{% block title %}{% if show_checklist_view %}Coach Session Checklist | NYO Admin Dashboard{% else %}Sessions | NYO Admin Dashboard{% endif %}{% endblock %}
+{% block page_heading %}{% if show_checklist_view %}Session Checklist{% else %}Session Calendar{% endif %}{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -55,6 +55,127 @@
     }
     .calendar-status-copy span {
         line-height: 1.6;
+    }
+    .session-view-switch {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+    }
+    .session-view-pill {
+        border-radius: 999px;
+        padding: 9px 16px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-decoration: none;
+        transition: all .18s ease;
+    }
+    .session-view-pill:hover {
+        color: var(--text);
+        background: rgba(79,110,247,0.08);
+    }
+    .session-view-pill.is-active {
+        background: var(--accent);
+        color: #fff;
+    }
+    .coach-checklist {
+        display: grid;
+        gap: 12px;
+        margin-top: 18px;
+    }
+    .coach-checklist-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+        cursor: pointer;
+    }
+    .coach-checklist-item input {
+        margin-top: 3px;
+        width: 18px;
+        height: 18px;
+    }
+    .coach-checklist-copy {
+        min-width: 0;
+    }
+    .coach-checklist-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .coach-checklist-copy p {
+        margin: 8px 0 0;
+        font-size: 14px;
+        color: var(--text-muted);
+        line-height: 1.7;
+    }
+    .coach-kv-grid {
+        display: grid;
+        gap: 12px;
+    }
+    .coach-kv {
+        border-radius: 18px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+        padding: 14px 16px;
+    }
+    .coach-kv-label {
+        margin: 0 0 6px;
+        font-size: 11px;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+    .coach-kv-value {
+        margin: 0;
+        font-size: 15px;
+        line-height: 1.6;
+        color: var(--text);
+    }
+    .coach-note-list {
+        margin: 0;
+        padding-left: 18px;
+        display: grid;
+        gap: 10px;
+        color: var(--text);
+    }
+    .coach-note-list li {
+        line-height: 1.7;
+    }
+    .coach-session-link {
+        display: block;
+        border-radius: 18px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+        padding: 14px 16px;
+        text-decoration: none;
+        transition: border-color .18s ease, transform .18s ease, background .18s ease;
+    }
+    .coach-session-link:hover {
+        border-color: rgba(79,110,247,0.28);
+        transform: translateY(-1px);
+    }
+    .coach-session-link.is-active {
+        background: rgba(79,110,247,0.08);
+        border-color: rgba(79,110,247,0.28);
+    }
+    .coach-session-link p {
+        margin: 0;
+    }
+    .coach-session-link-meta {
+        margin-top: 6px;
+        font-size: 13px;
+        color: var(--text-muted);
+        line-height: 1.7;
     }
     .fc {
         --fc-border-color: var(--border);
@@ -124,6 +245,17 @@
         .calendar-status {
             align-items: flex-start;
         }
+        .session-view-switch {
+            width: 100%;
+            justify-content: stretch;
+        }
+        .session-view-pill {
+            flex: 1 1 0;
+            text-align: center;
+        }
+        .coach-checklist-item {
+            border-radius: 16px;
+        }
         .fc .fc-toolbar.fc-header-toolbar {
             flex-direction: column;
             align-items: stretch;
@@ -153,6 +285,13 @@
     <div class="card">
         <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
             <div>
+                {% if show_checklist_view %}
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Coach Workflow</p>
+                <h2 style="font-size:28px;font-weight:700;color:var(--text);">Checklist First</h2>
+                <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;max-width:760px;">
+                    Start with the syllabus-based checklist for the session that needs your attention first, then switch to the calendar when you want the full month schedule.
+                </p>
+                {% else %}
                 <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Planning Window</p>
                 <h2 style="font-size:28px;font-weight:700;color:var(--text);">{{ calendar_month_label }}</h2>
                 <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;max-width:760px;">
@@ -162,28 +301,237 @@
                     Your session calendar is synced from the admin plan. Open any event to view the roster, attendance, and follow-up actions.
                     {% endif %}
                 </p>
+                {% endif %}
             </div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                <a href="?month={{ prev_month }}{% if selected_coach %}&coach={{ selected_coach }}{% endif %}{% if selected_member %}&member={{ selected_member }}{% endif %}" class="btn btn-ghost">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                {% if checklist_enabled %}
+                <div class="session-view-switch">
+                    <a href="{% url 'sessions:list' %}?{{ view_query_base }}&view=checklist{% if selected_focus_session %}&focus={{ selected_focus_session.pk }}{% endif %}" class="session-view-pill {% if show_checklist_view %}is-active{% endif %}">
+                        Checklist
+                    </a>
+                    <a href="{% url 'sessions:list' %}?{{ view_query_base }}&view=calendar" class="session-view-pill {% if show_calendar_view %}is-active{% endif %}">
+                        Calendar
+                    </a>
+                </div>
+                {% endif %}
+
+                {% if show_checklist_view %}
+                    {% if selected_focus_session %}
+                    <a href="{% url 'sessions:detail' selected_focus_session.pk %}" class="btn btn-ghost">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Session
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'sessions:list' %}?{{ view_query_base }}&view=calendar" class="btn btn-primary">
+                        <i class="fa-solid fa-calendar-days"></i> Open Calendar
+                    </a>
+                {% else %}
+                <a href="?month={{ prev_month }}{% if selected_coach %}&coach={{ selected_coach }}{% endif %}{% if selected_member %}&member={{ selected_member }}{% endif %}{% if checklist_enabled %}&view=calendar{% endif %}" class="btn btn-ghost">
                     <i class="fa-solid fa-chevron-left"></i> Previous
                 </a>
-                <a href="?month={{ next_month }}{% if selected_coach %}&coach={{ selected_coach }}{% endif %}{% if selected_member %}&member={{ selected_member }}{% endif %}" class="btn btn-ghost">
+                <a href="?month={{ next_month }}{% if selected_coach %}&coach={{ selected_coach }}{% endif %}{% if selected_member %}&member={{ selected_member }}{% endif %}{% if checklist_enabled %}&view=calendar{% endif %}" class="btn btn-ghost">
                     Next <i class="fa-solid fa-chevron-right"></i>
                 </a>
                 {% if can_plan %}
                 <a href="{% url 'sessions:syllabus' %}" class="btn btn-ghost">
                     <i class="fa-solid fa-book-open"></i> Syllabus
                 </a>
-                {% endif %}
-                {% if can_plan %}
                 <a href="{% url 'sessions:create' %}" class="btn btn-primary">
                     <i class="fa-solid fa-plus"></i> Create Schedule
                 </a>
+                {% endif %}
                 {% endif %}
             </div>
         </div>
     </div>
 
+    {% if show_checklist_view %}
+        {% if selected_focus_session and checklist_plan %}
+        <div class="stat-cards">
+            <div class="stat-card">
+                <div class="stat-card-top">
+                    <div>
+                        <p class="stat-label">Focus Session</p>
+                        <p class="stat-value" style="font-size:20px;">{{ selected_focus_session.session_date|date:"d M" }}</p>
+                    </div>
+                    <div class="stat-icon"><i class="fa-solid fa-calendar-day"></i></div>
+                </div>
+                <p class="text-sm text-muted" style="margin-top:10px;">{{ selected_focus_session.start_time|time:"H:i" }} - {{ selected_focus_session.end_time|time:"H:i" }} on Court {{ selected_focus_session.court }}</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-top">
+                    <div>
+                        <p class="stat-label">Roster Size</p>
+                        <p class="stat-value">{{ checklist_plan.roster_size }}</p>
+                    </div>
+                    <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+                </div>
+                <p class="text-sm text-muted" style="margin-top:10px;">{{ checklist_plan.roster_level_summary }}</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-top">
+                    <div>
+                        <p class="stat-label">Track</p>
+                        <p class="stat-value" style="font-size:20px;">{{ checklist_plan.track_label }}</p>
+                    </div>
+                    <div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-road"></i></div>
+                </div>
+                <p class="text-sm text-muted" style="margin-top:10px;">{{ checklist_plan.syllabus_root_name|default:"Default syllabus" }}</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-top">
+                    <div>
+                        <p class="stat-label">Phase</p>
+                        <p class="stat-value" style="font-size:20px;">{{ checklist_plan.phase_label|default:"Adaptive block" }}</p>
+                    </div>
+                    <div class="stat-icon" style="background:rgba(245,158,11,.12);color:#f59e0b;"><i class="fa-solid fa-bullseye"></i></div>
+                </div>
+                <p class="text-sm text-muted" style="margin-top:10px;">{{ focus_session_status_label }}</p>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="card">
+                <div class="section-header">
+                    <span class="section-title">Training Checklist</span>
+                    {% if current_role == 'coach' or current_role == 'admin' %}
+                    <a href="{% url 'sessions:plan' selected_focus_session.pk %}" class="section-link">Open planner</a>
+                    {% endif %}
+                </div>
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">{{ selected_focus_session.title }}</p>
+                <h3 style="font-size:24px;font-weight:700;color:var(--text);margin-top:8px;">{{ checklist_plan.plan_title }}</h3>
+                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">{{ checklist_plan.summary }}</p>
+
+                <div class="coach-checklist">
+                    {% for item in checklist_items %}
+                    <label class="coach-checklist-item" for="coachChecklist{{ forloop.counter }}">
+                        <input type="checkbox" id="coachChecklist{{ forloop.counter }}">
+                        <div class="coach-checklist-copy">
+                            <div class="coach-checklist-title-row">
+                                <strong style="font-size:16px;color:var(--text);">{{ item.title }}</strong>
+                                <span class="badge badge-info">{{ item.duration }}</span>
+                            </div>
+                            <p>{{ item.detail }}</p>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="space-y">
+                <div class="card">
+                    <div class="section-header">
+                        <span class="section-title">Session Focus</span>
+                        {% if selected_focus_session.session_date == today %}
+                        <span class="badge badge-success">Today</span>
+                        {% elif selected_focus_session.session_date > today %}
+                        <span class="badge badge-info">Upcoming</span>
+                        {% else %}
+                        <span class="badge badge-neutral">Reference</span>
+                        {% endif %}
+                    </div>
+                    <div class="coach-kv-grid">
+                        <div class="coach-kv">
+                            <p class="coach-kv-label">Session Window</p>
+                            <p class="coach-kv-value">{{ selected_focus_session.session_date|date:"l, d F Y" }}<br>{{ selected_focus_session.start_time|time:"H:i" }} - {{ selected_focus_session.end_time|time:"H:i" }}</p>
+                        </div>
+                        <div class="coach-kv">
+                            <p class="coach-kv-label">Assessment Focus</p>
+                            <p class="coach-kv-value">{{ checklist_plan.syllabus_reference.assessment_focus|default:"Observe the main session pattern and player responses." }}</p>
+                        </div>
+                        <div class="coach-kv">
+                            <p class="coach-kv-label">Success Criteria</p>
+                            <p class="coach-kv-value">{{ checklist_plan.syllabus_reference.success_criteria }}</p>
+                        </div>
+                        <div class="coach-kv">
+                            <p class="coach-kv-label">Homework</p>
+                            <p class="coach-kv-value">{{ checklist_plan.syllabus_reference.homework }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="section-header">
+                        <span class="section-title">Coach Cues</span>
+                        {% if can_mark_attendance %}
+                        <a href="{% url 'sessions:attendance' selected_focus_session.pk %}" class="section-link">Attendance</a>
+                        {% endif %}
+                    </div>
+                    <ul class="coach-note-list">
+                        {% for cue in checklist_plan.coach_prompts %}
+                        <li>{{ cue }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="card">
+                <div class="section-header">
+                    <span class="section-title">Syllabus Anchor</span>
+                    {% if checklist_plan.standard_reference.code %}
+                    <span class="badge badge-info">{{ checklist_plan.standard_reference.code }}</span>
+                    {% endif %}
+                </div>
+                <div class="space-y">
+                    <div class="coach-kv">
+                        <p class="coach-kv-label">Objective</p>
+                        <p class="coach-kv-value">{{ checklist_plan.syllabus_reference.objective|default:"No active syllabus objective is linked yet, so this checklist is using the adaptive session plan." }}</p>
+                    </div>
+                    {% if checklist_plan.standard_reference.title %}
+                    <div class="coach-kv">
+                        <p class="coach-kv-label">Curriculum Standard</p>
+                        <p class="coach-kv-value">{{ checklist_plan.standard_reference.title }}</p>
+                    </div>
+                    {% endif %}
+                    {% if checklist_plan.standard_reference.learning_standards %}
+                    <div class="coach-kv">
+                        <p class="coach-kv-label">Learning Standards</p>
+                        <ul class="coach-note-list" style="margin-top:8px;">
+                            {% for standard_item in checklist_plan.standard_reference.learning_standards|slice:":3" %}
+                            <li>{{ standard_item }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-header">
+                    <span class="section-title">This Month's Sessions</span>
+                    <a href="{% url 'sessions:list' %}?{{ view_query_base }}&view=calendar" class="section-link">Open calendar</a>
+                </div>
+                <div class="space-y">
+                    {% for session in sessions %}
+                    <a href="{% url 'sessions:list' %}?{{ view_query_base }}&view=checklist&focus={{ session.pk }}" class="coach-session-link {% if selected_focus_session and selected_focus_session.pk == session.pk %}is-active{% endif %}">
+                        <p style="font-weight:700;font-size:15px;color:var(--text);">{{ session.title }}</p>
+                        <p class="coach-session-link-meta">
+                            {{ session.session_date|date:"d M Y" }} &middot; {{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}<br>
+                            Court {{ session.court }} &middot; {{ session.attendee_count }} player(s)
+                        </p>
+                    </a>
+                    {% empty %}
+                    <div class="empty-state">
+                        <i class="fa-regular fa-calendar-xmark"></i>
+                        <p>No sessions are scheduled in this month yet.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="empty-state">
+                <i class="fa-regular fa-calendar-xmark"></i>
+                <p>No coach sessions are scheduled in this month yet. Open the calendar if you want the wider schedule view.</p>
+                <a href="{% url 'sessions:list' %}?{{ view_query_base }}&view=calendar" class="btn btn-primary">Open Calendar</a>
+            </div>
+        </div>
+        {% endif %}
+    {% endif %}
+
+    {% if show_calendar_view %}
     <div class="stat-cards">
         <div class="stat-card">
             <div class="stat-card-top">
@@ -226,6 +574,9 @@
     <div class="filter-bar">
         <form method="get" class="filter-fields">
             <input type="hidden" name="month" value="{{ selected_month }}">
+            {% if checklist_enabled %}
+            <input type="hidden" name="view" value="calendar">
+            {% endif %}
             <div class="filter-field">
                 <label>Coach</label>
                 <select name="coach">
@@ -250,7 +601,7 @@
             </div>
             <div class="filter-actions" style="margin-top:auto;">
                 <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Apply</button>
-                <a href="{% url 'sessions:list' %}?month={{ selected_month }}" class="btn btn-ghost">Reset</a>
+                <a href="{% url 'sessions:list' %}?month={{ selected_month }}{% if checklist_enabled %}&view=calendar{% endif %}" class="btn btn-ghost">Reset</a>
             </div>
         </form>
     </div>
@@ -295,8 +646,8 @@
                         <div>
                             <p style="font-weight:700;font-size:15px;color:var(--text);">{{ session.title }}</p>
                             <p class="text-sm text-muted" style="margin-top:6px;">
-                                {{ session.session_date }} · {{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}<br>
-                                Coach: {{ session.coach|default:"Unassigned" }} · Court {{ session.court }} · {{ session.attendee_count }} player(s)
+                                {{ session.session_date|date:"d M Y" }} &middot; {{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}<br>
+                                Coach: {{ session.coach|default:"Unassigned" }} &middot; Court {{ session.court }} &middot; {{ session.attendee_count }} player(s)
                             </p>
                         </div>
                         <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -333,7 +684,7 @@
                 </div>
                 <div class="card-inset">
                     <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Recurring sessions</p>
-                    <p style="font-size:14px;color:var(--text);line-height:1.7;">Choose “Repeat weekly for this month” inside the session form, then tick Friday, Saturday, or any weekday combination to generate the month schedule in one step.</p>
+                    <p style="font-size:14px;color:var(--text);line-height:1.7;">Choose "Repeat weekly for this month" inside the session form, then tick Friday, Saturday, or any weekday combination to generate the month schedule in one step.</p>
                 </div>
                 <div class="card-inset">
                     <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Alerts</p>
@@ -342,10 +693,12 @@
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
 {% endblock %}
 
 {% block extra_js %}
+{% if show_calendar_view %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const calendarEl = document.getElementById('sessionCalendar');
@@ -454,4 +807,5 @@
         });
     });
 </script>
+{% endif %}
 {% endblock %}

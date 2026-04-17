@@ -1,9 +1,13 @@
+import shutil
+import tempfile
+
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
 from accounts.models import UserProfile
-from members.models import AdmissionApplication, CommunicationLog, Member
+from members.models import AdmissionApplication, CommunicationLog, Member, ProgressReport
 
 
 User = get_user_model()
@@ -227,3 +231,92 @@ class ParentRegistrationTests(TestCase):
         self.assertEqual(member_list_response.status_code, 200)
         self.assertTrue(member_list_response.context["is_parent_view"])
         self.assertContains(member_list_response, "Add Child")
+
+
+class ProgressReportEvaluationTests(TestCase):
+    def create_user(self, username, role, email=""):
+        user = User.objects.create_user(username=username, password="testpass123", email=email)
+        user.profile.role = role
+        user.profile.save()
+        return user
+
+    def setUp(self):
+        self.temp_media = tempfile.mkdtemp()
+        self.coach = self.create_user("coach_eval", UserProfile.ROLE_COACH, "coach-eval@example.com")
+        self.member = Member.objects.create(
+            full_name="Report Student",
+            date_of_birth="2013-02-14",
+            contact_number="0111000222",
+            email="report@student.com",
+            emergency_contact_name="Parent One",
+            emergency_contact_phone="0111000222",
+            assigned_coach=self.coach,
+            status=Member.STATUS_ACTIVE,
+            program_enrolled="Junior Development",
+        )
+
+    def tearDown(self):
+        shutil.rmtree(self.temp_media, ignore_errors=True)
+
+    def test_coach_can_create_report_with_brief_improvement_and_video(self):
+        self.client.force_login(self.coach)
+        video = SimpleUploadedFile("report-proof.mp4", b"fake-video-bytes", content_type="video/mp4")
+
+        with self.settings(MEDIA_ROOT=self.temp_media):
+            response = self.client.post(
+                reverse("members:report_create"),
+                data={
+                    "member": self.member.pk,
+                    "coach": self.coach.pk,
+                    "period_start": "2026-04-01",
+                    "period_end": "2026-04-30",
+                    "overall_status": ProgressReport.STATUS_DEVELOPING,
+                    "report_brief": "Good effort this month and stronger consistency in rallies.",
+                    "coach_reflection": "Confidence is improving during longer exchanges.",
+                    "improvement_plan": "Focus on recovery steps, shot selection, and backhand control.",
+                    "video_proof": video,
+                    "is_published": "on",
+                    "skill_service": "70",
+                    "skill_lobbing": "60",
+                    "skill_smashing": "75",
+                    "skill_drop_shot": "55",
+                    "skill_netting": "65",
+                    "skill_footwork": "80",
+                    "skill_defense": "50",
+                    "note_service": "Cleaner contact point now.",
+                    "note_footwork": "Recovery speed is noticeably better.",
+                },
+            )
+
+        self.assertRedirects(response, reverse("members:report_list"))
+        report = ProgressReport.objects.get(member=self.member, coach=self.coach)
+        self.assertEqual(report.report_brief, "Good effort this month and stronger consistency in rallies.")
+        self.assertEqual(report.improvement_plan, "Focus on recovery steps, shot selection, and backhand control.")
+        self.assertTrue(report.is_published)
+        self.assertAlmostEqual(report.skill_snapshot["Service"], 3.5)
+        self.assertAlmostEqual(report.skill_snapshot["Footwork"], 4.0)
+        self.assertEqual(report.skill_notes["Service"], "Cleaner contact point now.")
+        self.assertTrue(bool(report.video_proof))
+
+    def test_report_create_page_loads_previous_feedback_for_selected_member(self):
+        ProgressReport.objects.create(
+            member=self.member,
+            coach=self.coach,
+            period_start="2026-03-01",
+            period_end="2026-03-31",
+            overall_status=ProgressReport.STATUS_ADVANCED,
+            report_brief="March report summary for this player.",
+            coach_reflection="March reflection details.",
+            improvement_plan="Keep building footwork timing.",
+            skill_snapshot={"Service": 3.5, "Lobbing": 3, "Smashing": 4, "Drop Shot": 3, "Netting": 3, "Footwork": 4, "Defense": 3},
+            is_published=True,
+            created_by=self.coach,
+        )
+        self.client.force_login(self.coach)
+
+        response = self.client.get(reverse("members:report_create"), {"member": self.member.pk})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["selected_report_member"], self.member)
+        self.assertContains(response, "Previous Feedback")
+        self.assertContains(response, "March report summary for this player.")
