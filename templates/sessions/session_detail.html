@@ -8,56 +8,107 @@
 <style>
     .session-workspace {
         display: grid;
-        gap: 16px;
+        gap: 18px;
     }
-    .feedback-hero {
-        padding: 0;
+
+    /* ============ HERO ============ */
+    .session-hero {
+        position: relative;
         overflow: hidden;
+        padding: 0;
+        border-radius: 24px;
     }
-    .feedback-hero-layout {
+    .session-hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image:
+            radial-gradient(circle at 18% 12%, rgba(79, 110, 247, 0.22), transparent 42%),
+            radial-gradient(circle at 85% 88%, rgba(34, 197, 94, 0.14), transparent 46%);
+        pointer-events: none;
+    }
+    .session-hero::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image:
+            radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+        background-size: 22px 22px;
+        mask-image: radial-gradient(ellipse at 30% 20%, #000 45%, transparent 80%);
+        -webkit-mask-image: radial-gradient(ellipse at 30% 20%, #000 45%, transparent 80%);
+        pointer-events: none;
+    }
+    [data-theme="light"] .session-hero::after {
+        background-image: radial-gradient(rgba(15, 23, 42, 0.06) 1px, transparent 1px);
+    }
+    .session-hero-layout {
+        position: relative;
+        z-index: 1;
         display: grid;
         grid-template-columns: minmax(0, 1.55fr) minmax(280px, 1fr);
     }
-    .feedback-hero-main {
-        padding: 24px;
-        background:
-            radial-gradient(circle at top left, rgba(79, 110, 247, 0.18), transparent 38%),
-            linear-gradient(140deg, rgba(79, 110, 247, 0.1), rgba(79, 110, 247, 0.03) 45%, transparent 100%);
+    .session-hero-main {
+        padding: 28px 28px 26px;
     }
-    .feedback-hero-rail {
-        padding: 24px;
+    .session-hero-rail {
+        padding: 28px;
         border-left: 1px solid var(--border);
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent);
     }
-    .feedback-eyebrow {
+    [data-theme="light"] .session-hero-rail {
+        background: linear-gradient(180deg, rgba(79, 110, 247, 0.04), transparent);
+    }
+    .hero-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
         font-size: 11px;
         font-weight: 700;
-        letter-spacing: 0.12em;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
         color: var(--muted);
-        margin-bottom: 12px;
     }
-    .feedback-title {
-        font-size: 32px;
-        line-height: 1.1;
-        letter-spacing: -0.04em;
-        max-width: 12ch;
+    .hero-eyebrow-dot {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: var(--accent);
+        box-shadow: 0 0 0 4px rgba(79, 110, 247, 0.18);
+        animation: hero-pulse 2.4s ease-in-out infinite;
+    }
+    @keyframes hero-pulse {
+        0%, 100% { box-shadow: 0 0 0 4px rgba(79, 110, 247, 0.18); }
+        50% { box-shadow: 0 0 0 8px rgba(79, 110, 247, 0.05); }
+    }
+    .hero-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
         margin-top: 14px;
     }
-    .feedback-copy {
-        max-width: 700px;
+    .hero-title {
+        font-size: 30px;
+        line-height: 1.12;
+        letter-spacing: -0.035em;
+        font-weight: 700;
+        margin-top: 16px;
+        max-width: 22ch;
+    }
+    .hero-copy {
+        max-width: 640px;
         margin-top: 12px;
-        color: var(--text-2);
+        color: var(--muted);
         font-size: 14px;
         line-height: 1.75;
     }
-    .feedback-status-row {
+    .hero-chip-row {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 16px;
+        gap: 8px;
+        margin-top: 18px;
     }
-    .feedback-chip {
+    .hero-chip {
         display: inline-flex;
         align-items: center;
         gap: 8px;
@@ -65,97 +116,254 @@
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.04);
         border: 1px solid var(--border2);
-        color: var(--text-2);
+        color: var(--text-2, var(--text));
         font-size: 12.5px;
         font-weight: 600;
+        transition: transform var(--transition), border-color var(--transition), background var(--transition);
     }
-    [data-theme="light"] .feedback-chip {
-        background: rgba(79, 110, 247, 0.06);
+    [data-theme="light"] .hero-chip {
+        background: rgba(79, 110, 247, 0.05);
     }
-    .feedback-progress {
-        margin-top: 20px;
+    .hero-chip:hover {
+        transform: translateY(-1px);
+        border-color: rgba(79, 110, 247, 0.3);
     }
-    .feedback-meter {
+    .hero-chip i {
+        color: var(--accent);
+    }
+
+    /* ============ PROGRESS ============ */
+    .hero-progress {
+        margin-top: 22px;
+    }
+    .hero-progress-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+    .hero-progress-label {
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 700;
+    }
+    .hero-progress-count {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+    }
+    .hero-progress-bar {
         height: 10px;
         border-radius: 999px;
         background: var(--surface2);
         border: 1px solid var(--border);
         overflow: hidden;
+        position: relative;
     }
-    .feedback-meter span {
+    .hero-progress-fill {
         display: block;
         height: 100%;
         border-radius: inherit;
         background: linear-gradient(90deg, var(--accent), #22c55e);
+        position: relative;
+        transition: width .7s cubic-bezier(.22,.61,.36,1);
     }
-    .feedback-primary-actions {
+    .hero-progress-fill::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.35),
+            transparent
+        );
+        transform: translateX(-100%);
+        animation: progress-shimmer 2.4s ease-in-out infinite;
+    }
+    @keyframes progress-shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+
+    /* ============ ACTIONS ============ */
+    .hero-actions {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
-        margin-top: 18px;
+        margin-top: 20px;
     }
-    .feedback-notice {
+    .hero-notice {
         margin-top: 18px;
         padding: 14px 16px;
-        border-radius: 16px;
+        border-radius: 14px;
         border: 1px solid var(--border);
         background: rgba(255, 255, 255, 0.03);
-        color: var(--text-2);
+        color: var(--muted);
         line-height: 1.7;
+        font-size: 13.5px;
     }
-    [data-theme="light"] .feedback-notice {
-        background: rgba(79, 110, 247, 0.05);
+    [data-theme="light"] .hero-notice {
+        background: rgba(79, 110, 247, 0.04);
     }
-    .quick-feedback-list {
+
+    /* ============ CHECKLIST (RAIL) ============ */
+    .checklist {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+        position: relative;
+    }
+    .checklist::before {
+        content: "";
+        position: absolute;
+        left: 19px;
+        top: 14px;
+        bottom: 14px;
+        width: 2px;
+        background: linear-gradient(180deg, var(--accent), rgba(79,110,247,.05));
+        opacity: .55;
+        border-radius: 2px;
+    }
+    .check-item {
+        position: relative;
+        display: grid;
+        grid-template-columns: 40px 1fr;
+        gap: 10px;
+        padding: 10px 12px 10px 4px;
+        border-radius: 12px;
+        transition: background var(--transition);
+    }
+    .check-item:hover { background: rgba(79,110,247,.05); }
+    .check-dot {
+        width: 38px;
+        height: 38px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1.5px solid var(--border2);
+        background: var(--surface);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 1;
+        transition: transform var(--transition), border-color var(--transition), color var(--transition), background var(--transition);
+    }
+    .check-item.is-done .check-dot {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        transform: scale(1.04);
+        box-shadow: 0 0 0 4px rgba(79,110,247,.15);
+    }
+    .check-item.is-current .check-dot {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(79,110,247,.08);
+    }
+    .check-body strong {
+        display: block;
+        color: var(--text);
+        font-size: 13.5px;
+        margin-bottom: 3px;
+    }
+    .check-body p {
+        font-size: 12.5px;
+        color: var(--muted);
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    /* ============ QUICK FEEDBACK LIST ============ */
+    .quick-list {
         display: grid;
         gap: 10px;
         margin-top: 18px;
     }
-    .quick-feedback-link {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+    .quick-link {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
         gap: 14px;
+        align-items: center;
         padding: 14px 16px;
         border-radius: 16px;
         border: 1px solid var(--border2);
-        background: rgba(15, 23, 42, 0.3);
+        background: rgba(15, 23, 42, 0.28);
         color: inherit;
         text-decoration: none;
-        transition: transform var(--transition), border-color var(--transition), background var(--transition);
+        position: relative;
+        overflow: hidden;
+        transition: transform var(--transition), border-color var(--transition), background var(--transition), box-shadow var(--transition);
     }
-    .quick-feedback-link:hover {
-        transform: translateY(-1px);
-        border-color: rgba(79, 110, 247, 0.32);
-        background: rgba(79, 110, 247, 0.12);
+    [data-theme="light"] .quick-link {
+        background: rgba(79, 110, 247, 0.04);
     }
-    [data-theme="light"] .quick-feedback-link {
-        background: rgba(79, 110, 247, 0.05);
+    .quick-link::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: linear-gradient(180deg, var(--accent), transparent);
+        opacity: 0;
+        transition: opacity var(--transition);
     }
-    .quick-feedback-step {
+    .quick-link:hover {
+        transform: translateY(-2px);
+        border-color: rgba(79, 110, 247, 0.38);
+        background: rgba(79, 110, 247, 0.09);
+        box-shadow: 0 8px 24px -14px rgba(79, 110, 247, 0.5);
+    }
+    .quick-link:hover::before { opacity: 1; }
+    .quick-check {
+        width: 34px;
+        height: 34px;
+        border-radius: 999px;
+        border: 1.5px dashed rgba(79, 110, 247, 0.55);
+        background: rgba(79, 110, 247, 0.06);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--accent);
+        flex-shrink: 0;
+        font-size: 11px;
+        font-weight: 700;
+    }
+    .quick-link:hover .quick-check {
+        border-style: solid;
+        background: rgba(79, 110, 247, 0.18);
+    }
+    .quick-step {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        font-size: 11px;
+        font-size: 10.5px;
         font-weight: 700;
         letter-spacing: 0.08em;
         text-transform: uppercase;
         color: var(--accent);
     }
-    .quick-feedback-name {
+    .quick-name {
         display: block;
         margin-top: 4px;
         color: var(--text);
         font-size: 15px;
         font-weight: 700;
     }
-    .quick-feedback-meta {
+    .quick-meta {
         display: block;
-        margin-top: 6px;
+        margin-top: 4px;
         color: var(--muted);
         font-size: 12px;
     }
-    .quick-feedback-arrow {
+    .quick-arrow {
         width: 34px;
         height: 34px;
         border-radius: 999px;
@@ -165,78 +373,198 @@
         background: rgba(79, 110, 247, 0.14);
         color: var(--accent);
         flex-shrink: 0;
+        transition: transform var(--transition);
     }
-    .flow-step-list {
-        display: grid;
-        gap: 12px;
+    .quick-link:hover .quick-arrow { transform: translateX(3px); }
+
+    /* ============ ROSTER TABLE ============ */
+    .roster-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 14px;
+        flex-wrap: wrap;
     }
-    .flow-step {
-        display: grid;
-        grid-template-columns: auto 1fr;
-        gap: 12px;
-        padding: 12px;
-        border-radius: 14px;
-        border: 1px solid var(--border);
+    .roster-head p {
+        margin-top: 6px;
+        max-width: 720px;
+    }
+    .roster-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 6px;
+    }
+    .roster-filter {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--border2);
         background: var(--surface2);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: border-color var(--transition), color var(--transition), background var(--transition);
     }
-    .flow-step-number {
-        width: 30px;
-        height: 30px;
+    .roster-filter:hover { border-color: rgba(79,110,247,.4); color: var(--accent); }
+    .roster-filter.is-active {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(79,110,247,.1);
+    }
+    .roster-filter .count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 18px;
+        padding: 0 6px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.08);
+        font-size: 10.5px;
+        font-weight: 700;
+    }
+    [data-theme="light"] .roster-filter .count { background: rgba(0,0,0,.05); }
+
+    .roster-row { transition: background var(--transition); }
+    .roster-row.row-pending {
+        background: linear-gradient(90deg, rgba(245, 158, 11, 0.08), rgba(245, 158, 11, 0.02));
+    }
+    .roster-row.row-pending:hover {
+        background: linear-gradient(90deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.04)) !important;
+    }
+    .roster-row.row-done {
+        background: linear-gradient(90deg, rgba(34, 197, 94, 0.05), transparent);
+    }
+    .roster-row.row-locked { opacity: 0.7; }
+    .roster-row.is-hidden { display: none; }
+
+    .roster-check {
+        width: 32px;
+        height: 32px;
         border-radius: 999px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: var(--accent-bg);
-        color: var(--accent);
+        border: 1.5px solid var(--border2);
+        background: var(--surface2);
+        color: var(--muted);
         font-size: 12px;
-        font-weight: 700;
+        flex-shrink: 0;
+        transition: all var(--transition);
     }
-    .flow-step strong {
-        display: block;
-        margin-bottom: 4px;
-        color: var(--text);
-        font-size: 13.5px;
+    .roster-row.row-done .roster-check {
+        background: rgba(34, 197, 94, 0.15);
+        border-color: rgba(34, 197, 94, 0.45);
+        color: var(--success);
     }
-    .session-table-header p {
-        margin-top: 6px;
-        max-width: 720px;
+    .roster-row.row-pending .roster-check {
+        background: rgba(245, 158, 11, 0.12);
+        border-color: rgba(245, 158, 11, 0.45);
+        color: var(--warning);
+        animation: check-glow 1.8s ease-in-out infinite;
     }
-    .feedback-row-pending {
-        background: rgba(245, 158, 11, 0.05);
+    @keyframes check-glow {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.25); }
+        50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
     }
-    .feedback-row-pending:hover {
-        background: rgba(245, 158, 11, 0.1) !important;
-    }
-    .feedback-row-locked {
-        opacity: 0.8;
-    }
+
     .btn-disabled {
         opacity: 0.55;
         pointer-events: none;
     }
-    @media (max-width: 980px) {
-        .feedback-hero-layout {
-            grid-template-columns: 1fr;
+
+    /* ============ FEEDBACK FEED ============ */
+    .feed-card { transition: transform var(--transition), border-color var(--transition); }
+    .feed-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(79, 110, 247, 0.28);
+    }
+
+    /* ============ STAT CARDS ============ */
+    .session-workspace .stat-card {
+        position: relative;
+        overflow: hidden;
+        transition: transform var(--transition), border-color var(--transition);
+    }
+    .session-workspace .stat-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(79, 110, 247, 0.28);
+    }
+    .session-workspace .stat-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(rgba(255,255,255,.03) 1px, transparent 1px);
+        background-size: 14px 14px;
+        pointer-events: none;
+        opacity: .5;
+    }
+    [data-theme="light"] .session-workspace .stat-card::before {
+        background-image: radial-gradient(rgba(0,0,0,.04) 1px, transparent 1px);
+    }
+
+    /* ============ REVEAL ANIMATION ============ */
+    .reveal {
+        opacity: 0;
+        transform: translateY(8px);
+        animation: reveal-in .5s cubic-bezier(.22,.61,.36,1) forwards;
+    }
+    .reveal.delay-1 { animation-delay: .05s; }
+    .reveal.delay-2 { animation-delay: .1s; }
+    .reveal.delay-3 { animation-delay: .15s; }
+    .reveal.delay-4 { animation-delay: .2s; }
+    @keyframes reveal-in {
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .reveal, .hero-progress-fill, .hero-progress-fill::after, .hero-eyebrow-dot,
+        .roster-row.row-pending .roster-check {
+            animation: none !important;
+            transition: none !important;
         }
-        .feedback-hero-rail {
+        .reveal { opacity: 1; transform: none; }
+    }
+
+    /* ============ RESPONSIVE ============ */
+    @media (max-width: 980px) {
+        .session-hero-layout { grid-template-columns: 1fr; }
+        .session-hero-rail {
             border-left: none;
             border-top: 1px solid var(--border);
         }
-        .feedback-title {
-            font-size: 28px;
-            max-width: none;
+        .hero-title { font-size: 26px; max-width: none; }
+        .session-hero-main, .session-hero-rail { padding: 22px; }
+    }
+    @media (max-width: 640px) {
+        .hero-title { font-size: 22px; }
+        .hero-copy { font-size: 13px; }
+        .quick-link {
+            grid-template-columns: auto 1fr;
+            gap: 10px;
         }
+        .quick-arrow { display: none; }
+        .session-hero-main, .session-hero-rail { padding: 18px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="space-y session-workspace">
-    <div class="card feedback-hero">
-        <div class="feedback-hero-layout">
-            <div class="feedback-hero-main">
-                <p class="feedback-eyebrow">Coach session report workspace</p>
-                <div style="display:flex;flex-wrap:wrap;gap:10px;">
+
+    <!-- ============ HERO ============ -->
+    <div class="card session-hero reveal">
+        <div class="session-hero-layout">
+            <div class="session-hero-main">
+                <p class="hero-eyebrow">
+                    <span class="hero-eyebrow-dot"></span>
+                    Coach Session Workspace
+                </p>
+
+                <div class="hero-badges">
                     {% if feedback_is_open %}
                         {% if feedback_pending_count %}
                         <span class="badge badge-warning">Action Needed</span>
@@ -244,58 +572,55 @@
                         <span class="badge badge-success">All Reports Submitted</span>
                         {% endif %}
                     {% else %}
-                    <span class="badge badge-neutral">Report Opens On {{ training_session.session_date|date:"d M Y" }}</span>
+                    <span class="badge badge-neutral">Opens {{ training_session.session_date|date:"d M Y" }}</span>
                     {% endif %}
                     {% if can_feedback %}
-                    <span class="badge badge-info">Assigned Coach Can Submit</span>
+                    <span class="badge badge-info">You Can Submit Reports</span>
                     {% endif %}
                 </div>
 
-                <h2 class="feedback-title">
+                <h2 class="hero-title">
                     {% if can_feedback and feedback_is_open and feedback_pending_count %}
-                    Press "Write Report" for each student below
+                    {{ feedback_pending_count }} student{{ feedback_pending_count|pluralize }} still waiting on a report.
                     {% elif can_feedback and feedback_is_open %}
-                    This after-session reporting is complete
+                    Every report is submitted. Nice work.
                     {% elif can_feedback %}
-                    This is the page coaches return to after the session ends
+                    Reports unlock on the session date.
                     {% else %}
                     Session overview and submitted coaching notes
                     {% endif %}
                 </h2>
 
-                <p class="feedback-copy">
+                <p class="hero-copy">
                     {% if can_feedback and feedback_is_open and feedback_pending_count %}
-                    Start with the first highlighted player below. Pending students stay pinned at the top, and every
-                    <span class="fw-7">Write Report</span> button opens the full session report form for that student.
+                    Tap any pending student below to open their rating screen. Progress auto-syncs with the student history.
                     {% elif can_feedback and feedback_is_open %}
-                    Every student in this session already has a report. Use <span class="fw-7">Edit Report</span> any
-                    time if you want to refine the scoring, summary, or video proof.
+                    Use <span class="fw-7">Edit Report</span> any time to refine scoring, notes, or video proof.
                     {% elif can_feedback %}
-                    Review the roster now, then come back here on the session date. The coach report actions will unlock and
-                    show exactly where to press for each student.
+                    Confirm the roster now. When the session date arrives, reports unlock right here on this page.
                     {% else %}
                     Review attendance, session reports, and uploaded video proof from one place.
                     {% endif %}
                 </p>
 
-                <div class="feedback-status-row">
-                    <span class="feedback-chip"><i class="fa-regular fa-calendar"></i>{{ training_session.session_date|date:"d M Y" }}</span>
-                    <span class="feedback-chip"><i class="fa-regular fa-clock"></i>{{ training_session.start_time|time:"H:i" }} - {{ training_session.end_time|time:"H:i" }}</span>
-                    <span class="feedback-chip"><i class="fa-solid fa-location-dot"></i>Court {{ training_session.court }}</span>
-                    <span class="feedback-chip"><i class="fa-solid fa-user-tie"></i>{{ training_session.coach|default:"Unassigned coach" }}</span>
+                <div class="hero-chip-row">
+                    <span class="hero-chip"><i class="fa-regular fa-calendar"></i>{{ training_session.session_date|date:"d M Y" }}</span>
+                    <span class="hero-chip"><i class="fa-regular fa-clock"></i>{{ training_session.start_time|time:"H:i" }} - {{ training_session.end_time|time:"H:i" }}</span>
+                    <span class="hero-chip"><i class="fa-solid fa-location-dot"></i>Court {{ training_session.court }}</span>
+                    <span class="hero-chip"><i class="fa-solid fa-user-tie"></i>{{ training_session.coach|default:"Unassigned coach" }}</span>
                 </div>
 
-                <div class="feedback-progress">
-                    <div class="flex-between" style="margin-bottom:8px;">
-                        <span class="text-sm text-muted">Report progress</span>
-                        <span class="text-sm fw-6">{{ feedback_completed_count }}/{{ feedback_total_count }} reports submitted</span>
+                <div class="hero-progress">
+                    <div class="hero-progress-head">
+                        <span class="hero-progress-label">Report progress</span>
+                        <span class="hero-progress-count">{{ feedback_completed_count }}/{{ feedback_total_count }} submitted</span>
                     </div>
-                    <div class="feedback-meter">
-                        <span style="width:{{ feedback_completion_percent }}%;"></span>
+                    <div class="hero-progress-bar">
+                        <span class="hero-progress-fill" style="width:{{ feedback_completion_percent }}%;"></span>
                     </div>
                 </div>
 
-                <div class="feedback-primary-actions">
+                <div class="hero-actions">
                     {% if can_feedback and feedback_is_open and next_feedback_member %}
                     <a href="{% url 'sessions:feedback' training_session.pk next_feedback_member.pk %}" class="btn btn-primary">
                         <i class="fa-solid fa-pen-to-square"></i> Start With {{ next_feedback_member.full_name }}
@@ -322,56 +647,69 @@
                 </div>
 
                 {% if training_session.notes %}
-                <div class="feedback-notice">
-                    <span class="fw-7">Session brief:</span> {{ training_session.notes }}
+                <div class="hero-notice">
+                    <span class="fw-7" style="color:var(--text);">Session brief:</span> {{ training_session.notes }}
                 </div>
                 {% endif %}
 
                 {% if can_feedback and feedback_is_open and feedback_pending_rows %}
-                <div class="quick-feedback-list">
+                <div class="quick-list">
                     {% for row in feedback_pending_rows|slice:":5" %}
-                    <a href="{% url 'sessions:feedback' training_session.pk row.record.member.pk %}" class="quick-feedback-link">
+                    <a href="{% url 'sessions:feedback' training_session.pk row.record.member.pk %}" class="quick-link">
+                        <span class="quick-check"><i class="fa-regular fa-square"></i></span>
                         <div>
-                            <span class="quick-feedback-step">Step {{ forloop.counter }}</span>
-                            <span class="quick-feedback-name">{{ row.record.member.full_name }}</span>
-                            <span class="quick-feedback-meta">
+                            <span class="quick-step">Step {{ forloop.counter }}</span>
+                            <span class="quick-name">{{ row.record.member.full_name }}</span>
+                            <span class="quick-meta">
                                 Attendance {{ row.record.get_status_display }}{% if row.record.member.assigned_coach %} | Coach {{ row.record.member.assigned_coach }}{% endif %}
                             </span>
                         </div>
-                        <span class="quick-feedback-arrow"><i class="fa-solid fa-arrow-right"></i></span>
+                        <span class="quick-arrow"><i class="fa-solid fa-arrow-right"></i></span>
                     </a>
                     {% endfor %}
                 </div>
                 {% elif can_feedback and not feedback_is_open %}
-                <div class="feedback-notice">
-                    <span class="fw-7">Next step:</span> when the session date arrives, return here and press
-                    <span class="fw-7">Write Report</span> in the roster table for each player.
+                <div class="hero-notice">
+                    <span class="fw-7" style="color:var(--text);">Next step:</span> when the session date arrives, return here and press
+                    <span class="fw-7" style="color:var(--text);">Write Report</span> in the roster table for each player.
                 </div>
                 {% endif %}
             </div>
 
-            <div class="feedback-hero-rail">
-                <p class="feedback-eyebrow">Coach steps</p>
-                <div class="flow-step-list">
-                    <div class="flow-step">
-                        <span class="flow-step-number">1</span>
-                        <div>
+            <div class="session-hero-rail">
+                <p class="hero-eyebrow">Coach steps</p>
+                <div class="checklist">
+                    <div class="check-item {% if feedback_total_count and feedback_pending_count == 0 %}is-done{% else %}is-current{% endif %}">
+                        <span class="check-dot">
+                            {% if feedback_total_count and feedback_pending_count == 0 %}
+                            <i class="fa-solid fa-check"></i>
+                            {% else %}1{% endif %}
+                        </span>
+                        <div class="check-body">
                             <strong>Check attendance</strong>
-                            <p class="text-sm text-muted">Confirm present, late, or absent first so the session record is complete.</p>
+                            <p>Confirm present, late, or absent so the session record is complete.</p>
                         </div>
                     </div>
-                    <div class="flow-step">
-                        <span class="flow-step-number">2</span>
-                        <div>
-                            <strong>Press Write Report</strong>
-                            <p class="text-sm text-muted">Use the last column in the roster table. Pending students are shown first and highlighted.</p>
+                    <div class="check-item {% if feedback_pending_count == 0 and feedback_total_count %}is-done{% elif feedback_is_open %}is-current{% endif %}">
+                        <span class="check-dot">
+                            {% if feedback_pending_count == 0 and feedback_total_count %}
+                            <i class="fa-solid fa-check"></i>
+                            {% else %}2{% endif %}
+                        </span>
+                        <div class="check-body">
+                            <strong>Rate every student</strong>
+                            <p>Pending students stay pinned at the top of the roster and are highlighted below.</p>
                         </div>
                     </div>
-                    <div class="flow-step">
-                        <span class="flow-step-number">3</span>
-                        <div>
-                            <strong>Publish the scored report and optional video</strong>
-                            <p class="text-sm text-muted">After saving, the report appears in the session record and student history automatically.</p>
+                    <div class="check-item {% if feedback_pending_count == 0 and feedback_total_count %}is-done{% endif %}">
+                        <span class="check-dot">
+                            {% if feedback_pending_count == 0 and feedback_total_count %}
+                            <i class="fa-solid fa-check"></i>
+                            {% else %}3{% endif %}
+                        </span>
+                        <div class="check-body">
+                            <strong>Publish report &amp; video</strong>
+                            <p>Reports auto-appear in the session record and in each student's history.</p>
                         </div>
                     </div>
                 </div>
@@ -379,7 +717,8 @@
         </div>
     </div>
 
-    <div class="stat-cards">
+    <!-- ============ STAT CARDS ============ -->
+    <div class="stat-cards reveal delay-1">
         {% for item in session_progress_summary %}
         <div class="stat-card">
             <div class="stat-card-top">
@@ -403,11 +742,25 @@
         {% endfor %}
     </div>
 
-    <div class="card">
-        <div class="section-header session-table-header">
+    <!-- ============ ROSTER ============ -->
+    <div class="card reveal delay-2">
+        <div class="section-header roster-head">
             <div>
                 <span class="section-title">Coach Action List</span>
                 <p class="text-sm text-muted">Press <span class="fw-7">Write Report</span> in the last column for each player. Pending students stay at the top so the next click is obvious.</p>
+                {% if feedback_total_count %}
+                <div class="roster-toolbar" id="rosterFilters" role="tablist">
+                    <button type="button" class="roster-filter is-active" data-filter="all">
+                        All <span class="count">{{ feedback_total_count }}</span>
+                    </button>
+                    <button type="button" class="roster-filter" data-filter="pending">
+                        Pending <span class="count">{{ feedback_pending_count }}</span>
+                    </button>
+                    <button type="button" class="roster-filter" data-filter="done">
+                        Done <span class="count">{{ feedback_completed_count }}</span>
+                    </button>
+                </div>
+                {% endif %}
             </div>
             {% if can_feedback and feedback_is_open and next_feedback_member %}
             <a href="{% url 'sessions:feedback' training_session.pk next_feedback_member.pk %}" class="section-link">Open first pending player</a>
@@ -417,6 +770,7 @@
             <table class="tbl native-stack">
                 <thead>
                     <tr>
+                        <th style="width:40px;"></th>
                         <th>Player</th>
                         <th>Attendance</th>
                         <th>Report Status</th>
@@ -426,7 +780,19 @@
                 </thead>
                 <tbody>
                     {% for row in feedback_rows %}
-                    <tr class="{% if row.needs_feedback and feedback_is_open %}feedback-row-pending{% elif not feedback_is_open %}feedback-row-locked{% endif %}">
+                    <tr class="roster-row {% if row.needs_feedback and feedback_is_open %}row-pending{% elif not feedback_is_open %}row-locked{% elif not row.needs_feedback %}row-done{% endif %}"
+                        data-state="{% if row.needs_feedback %}pending{% else %}done{% endif %}">
+                        <td data-label="" style="width:40px;">
+                            <span class="roster-check">
+                                {% if not row.needs_feedback %}
+                                <i class="fa-solid fa-check"></i>
+                                {% elif feedback_is_open %}
+                                <i class="fa-regular fa-clock"></i>
+                                {% else %}
+                                <i class="fa-regular fa-calendar"></i>
+                                {% endif %}
+                            </span>
+                        </td>
                         <td data-label="Player">
                             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                                 <div class="tbl-name">{{ row.record.member.full_name }}</div>
@@ -451,7 +817,7 @@
                         </td>
                         <td data-label="Video">
                             {% if row.feedback and row.feedback.video_proof %}
-                            <a href="{{ row.feedback.video_proof.url }}" class="btn btn-ghost btn-xs" target="_blank">Open Video</a>
+                            <a href="{{ row.feedback.video_proof.url }}" class="btn btn-ghost btn-xs" target="_blank"><i class="fa-solid fa-video"></i> Open</a>
                             {% else %}
                             <span class="text-sm text-muted">No file</span>
                             {% endif %}
@@ -466,7 +832,7 @@
                                     </a>
                                     {% else %}
                                     <span class="btn btn-ghost btn-xs btn-disabled">
-                                        <i class="fa-regular fa-clock"></i> Available On {{ training_session.session_date|date:"d M" }}
+                                        <i class="fa-regular fa-clock"></i> {{ training_session.session_date|date:"d M" }}
                                     </span>
                                     {% endif %}
                                 {% endif %}
@@ -476,7 +842,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5">
+                        <td colspan="6">
                             <div class="empty-state">
                                 <i class="fa-regular fa-users"></i>
                                 <p>No players assigned to this session yet.</p>
@@ -489,14 +855,15 @@
         </div>
     </div>
 
-    <div class="grid-2">
+    <!-- ============ FEEDBACK FEED + HELP ============ -->
+    <div class="grid-2 reveal delay-3">
         <div class="card">
             <div class="section-header">
                 <span class="section-title">Submitted Session Reports</span>
             </div>
             <div class="space-y">
                 {% for feedback in feedback_entries %}
-                <div class="card-inset">
+                <div class="card-inset feed-card">
                     <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
                         <div>
                             <p style="font-weight:700;font-size:14px;color:var(--text);">{{ feedback.member.full_name }}</p>
@@ -535,18 +902,43 @@
             <div class="space-y">
                 <div class="card-inset">
                     <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Where to press</p>
-                    <p class="workflow-panel-copy" style="font-size:14px;color:var(--text);">The roster table above is the working area. Coaches should use the last column and press <span class="fw-7">Write Report</span> for each player.</p>
+                    <p style="font-size:14px;color:var(--text);">The roster table above is the working area. Coaches should use the last column and press <span class="fw-7">Write Report</span> for each player.</p>
                 </div>
                 <div class="card-inset">
                     <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">What to add</p>
-                    <p class="workflow-panel-copy" style="font-size:14px;color:var(--text);">Each student can get a written recap plus an optional proof video. That is the exact post-session follow-up saved into the student history.</p>
+                    <p style="font-size:14px;color:var(--text);">Each student gets skill ratings, a written recap, and an optional proof video. That is the exact post-session follow-up saved into the student history.</p>
                 </div>
                 <div class="card-inset">
                     <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">When it appears</p>
-                    <p class="workflow-panel-copy" style="font-size:14px;color:var(--text);">Once submitted, the report appears in this session record, the member profile, and any later progress report that references recent session reports.</p>
+                    <p style="font-size:14px;color:var(--text);">Once submitted, the report appears in this session record, the member profile, and any later progress report.</p>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function() {
+        const toolbar = document.getElementById('rosterFilters');
+        if (!toolbar) return;
+        const buttons = toolbar.querySelectorAll('[data-filter]');
+        const rows = document.querySelectorAll('.roster-row');
+        buttons.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                buttons.forEach(function(b) { b.classList.remove('is-active'); });
+                btn.classList.add('is-active');
+                const filter = btn.dataset.filter;
+                rows.forEach(function(row) {
+                    if (filter === 'all' || row.dataset.state === filter) {
+                        row.classList.remove('is-hidden');
+                    } else {
+                        row.classList.add('is-hidden');
+                    }
+                });
+            });
+        });
+    })();
+</script>
 {% endblock %}

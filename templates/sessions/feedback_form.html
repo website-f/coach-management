@@ -3,205 +3,492 @@
 {% block title %}{% if is_edit %}Edit Session Report{% else %}New Session Report{% endif %} | NYO Admin Dashboard{% endblock %}
 {% block page_heading %}{% if is_edit %}Edit Session Report{% else %}Create Session Report{% endif %}{% endblock %}
 
-{% block content %}
+{% block extra_head %}
 <style>
-    .evaluation-shell {
+    /* ============ SHELL ============ */
+    .rate-shell {
         display: grid;
-        gap: 20px;
-    }
-    .evaluation-intro {
-        display: flex;
-        justify-content: space-between;
         gap: 18px;
-        align-items: flex-start;
-        flex-wrap: wrap;
     }
-    .evaluation-layout {
+
+    /* ============ HEADER ============ */
+    .rate-header {
+        position: relative;
+        overflow: hidden;
+        padding: 0;
+        border-radius: 24px;
+    }
+    .rate-header::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at 10% 0%, rgba(79, 110, 247, 0.22), transparent 45%),
+            radial-gradient(circle at 95% 100%, rgba(16, 185, 129, 0.15), transparent 50%);
+        pointer-events: none;
+    }
+    .rate-header::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(rgba(255,255,255,.035) 1px, transparent 1px);
+        background-size: 22px 22px;
+        mask-image: radial-gradient(ellipse at 50% 50%, #000 55%, transparent 85%);
+        -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 55%, transparent 85%);
+        pointer-events: none;
+    }
+    [data-theme="light"] .rate-header::after {
+        background-image: radial-gradient(rgba(15,23,42,.055) 1px, transparent 1px);
+    }
+    .rate-header-inner {
+        position: relative;
+        z-index: 1;
+        padding: 26px 28px;
         display: grid;
-        gap: 20px;
-        grid-template-columns: minmax(0, 1.2fr) minmax(340px, 0.9fr);
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 18px;
         align-items: start;
     }
-    .evaluation-panel {
-        border: 1px solid var(--border);
-        border-radius: 26px;
-        background: var(--surface);
-        padding: 24px;
+    .rate-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
     }
-    .evaluation-panel h3 {
+    .rate-eyebrow-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: var(--accent);
+        box-shadow: 0 0 0 4px rgba(79,110,247,.18);
+        animation: rate-pulse 2.4s ease-in-out infinite;
+    }
+    @keyframes rate-pulse {
+        0%, 100% { box-shadow: 0 0 0 4px rgba(79,110,247,.18); }
+        50% { box-shadow: 0 0 0 8px rgba(79,110,247,.04); }
+    }
+    .rate-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        color: var(--text);
+        line-height: 1.15;
+        margin-top: 12px;
+        max-width: 24ch;
+    }
+    .rate-sub {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 13.5px;
+        line-height: 1.75;
+        max-width: 720px;
+    }
+    .rate-meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+    }
+    .rate-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--border2);
+        background: rgba(255,255,255,.04);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text);
+    }
+    [data-theme="light"] .rate-chip { background: rgba(79,110,247,.05); }
+    .rate-chip i { color: var(--accent); }
+
+    /* ============ STEPPER TABS ============ */
+    .stepper {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        padding: 14px 16px;
+        background: color-mix(in srgb, var(--surface) 92%, transparent);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        align-items: stretch;
+    }
+    .stepper-item {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        border: 1px solid transparent;
+        background: transparent;
+        text-align: left;
+        cursor: pointer;
+        color: inherit;
+        transition: border-color var(--transition), background var(--transition);
+        position: relative;
+    }
+    .stepper-item:hover {
+        border-color: var(--border2);
+        background: var(--surface2);
+    }
+    .stepper-item.is-active {
+        border-color: rgba(79,110,247,.35);
+        background: rgba(79,110,247,.08);
+    }
+    .stepper-dot {
+        width: 34px;
+        height: 34px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--surface2);
+        border: 1.5px solid var(--border2);
+        color: var(--muted);
+        font-weight: 700;
+        font-size: 13px;
+        flex-shrink: 0;
+        transition: all var(--transition);
+    }
+    .stepper-item.is-active .stepper-dot {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        box-shadow: 0 0 0 5px rgba(79,110,247,.15);
+    }
+    .stepper-item.is-done .stepper-dot {
+        background: rgba(34,197,94,.15);
+        border-color: rgba(34,197,94,.5);
+        color: var(--success);
+    }
+    .stepper-label {
+        display: block;
+        font-size: 10.5px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 700;
+    }
+    .stepper-title {
+        display: block;
+        color: var(--text);
+        font-weight: 700;
+        font-size: 14px;
+        margin-top: 2px;
+    }
+    .stepper-progress-bar {
+        grid-column: 1 / -1;
+        height: 3px;
+        border-radius: 999px;
+        background: var(--surface2);
+        overflow: hidden;
+    }
+    .stepper-progress-fill {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--accent), #22c55e);
+        transition: width .45s cubic-bezier(.22,.61,.36,1);
+    }
+
+    /* ============ LAYOUT ============ */
+    .rate-layout {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.85fr);
+        align-items: start;
+    }
+    .rate-main {
+        display: grid;
+        gap: 16px;
+    }
+    .rate-side {
+        display: grid;
+        gap: 16px;
+        position: sticky;
+        top: 90px;
+    }
+    .rate-panel {
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        background: var(--surface);
+        padding: 22px;
+    }
+    .rate-panel h3 {
         font-size: 16px;
         font-weight: 700;
         color: var(--text);
         margin-bottom: 6px;
     }
-    .evaluation-panel-copy {
+    .panel-copy {
         color: var(--muted);
-        line-height: 1.8;
-        margin-bottom: 18px;
+        line-height: 1.75;
+        font-size: 13.5px;
+        margin-bottom: 16px;
     }
-    .evaluation-divider {
-        height: 1px;
-        background: linear-gradient(90deg, transparent, var(--border2), transparent);
-        margin: 20px 0;
-    }
-    .evaluation-top-grid {
-        display: grid;
-        gap: 16px;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .evaluation-top-grid .full {
-        grid-column: 1 / -1;
-    }
-    .evaluation-data-card {
-        border: 1px solid var(--border);
-        border-radius: 18px;
-        background: var(--surface2);
-        padding: 16px;
-    }
-    .evaluation-data-card span {
+    .rate-step { display: none; }
+    .rate-step.is-active {
         display: block;
-        color: var(--muted);
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        margin-bottom: 8px;
+        animation: step-in .35s cubic-bezier(.22,.61,.36,1);
     }
-    .evaluation-data-card strong {
-        display: block;
-        color: var(--text);
-        font-size: 18px;
-        line-height: 1.3;
+    @keyframes step-in {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
     }
-    .evaluation-data-card small {
-        display: block;
-        margin-top: 8px;
-        color: var(--muted);
-        line-height: 1.7;
-    }
-    .evaluation-sliders {
-        display: grid;
-        gap: 18px;
-    }
-    .evaluation-slider-card {
-        border: 1px solid var(--border);
-        border-radius: 20px;
-        background: linear-gradient(180deg, rgba(79,110,247,0.05), rgba(79,110,247,0.015));
-        padding: 16px 18px;
-    }
-    .evaluation-slider-head {
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        align-items: baseline;
-        margin-bottom: 12px;
-    }
-    .evaluation-slider-head strong {
-        color: var(--text);
-        font-size: 15px;
-    }
-    .evaluation-slider-score {
-        color: #16a34a;
-        font-weight: 800;
-        font-size: 14px;
-    }
-    .report-slider-input {
-        width: 100%;
-        accent-color: #243c8a;
-        padding: 0;
-        background: transparent;
-        border: none;
-        box-shadow: none;
-    }
-    .report-slider-input:focus {
-        box-shadow: none !important;
-    }
-    .evaluation-slider-note {
-        margin-top: 12px;
-    }
-    .evaluation-chart-card {
-        border: 1px solid var(--border);
-        border-radius: 24px;
-        background: linear-gradient(180deg, rgba(34,197,94,0.06), rgba(79,110,247,0.02));
-        padding: 20px;
-    }
-    .evaluation-chart-wrap {
-        min-height: 360px;
-        position: relative;
-    }
-    .evaluation-score-grid {
+
+    /* ============ STUDENT CARDS ============ */
+    .rate-context-grid {
         display: grid;
         gap: 12px;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        margin-top: 16px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-bottom: 18px;
     }
-    .evaluation-score-chip {
+    .rate-context-card {
         border: 1px solid var(--border);
-        border-radius: 18px;
-        background: var(--surface);
+        border-radius: 16px;
+        background: var(--surface2);
         padding: 14px 16px;
     }
-    .evaluation-score-chip span {
+    .rate-context-card span {
         display: block;
         color: var(--muted);
         font-size: 11px;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
     }
-    .evaluation-score-chip strong {
+    .rate-context-card strong {
         display: block;
         color: var(--text);
-        font-size: 28px;
-        line-height: 1;
-        letter-spacing: -0.04em;
+        font-size: 16px;
+        line-height: 1.3;
     }
-    .evaluation-feed {
+    .rate-context-card small {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    /* ============ SLIDER CARDS ============ */
+    .skill-grid {
         display: grid;
         gap: 14px;
     }
-    .evaluation-feed-item {
+    .skill-card {
+        position: relative;
         border: 1px solid var(--border);
         border-radius: 18px;
-        background: var(--surface2);
-        padding: 16px;
+        padding: 16px 18px;
+        background:
+            linear-gradient(180deg, rgba(79,110,247,.04), rgba(79,110,247,.01)),
+            var(--surface);
+        overflow: hidden;
+        transition: border-color var(--transition), transform var(--transition);
     }
-    .evaluation-feed-item strong {
-        display: block;
+    .skill-card:hover {
+        border-color: rgba(79,110,247,.3);
+        transform: translateY(-1px);
+    }
+    .skill-card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: linear-gradient(180deg, var(--accent), transparent);
+        opacity: .55;
+    }
+    .skill-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+    }
+    .skill-head-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .skill-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(79,110,247,.12);
+        color: var(--accent);
+        font-size: 13px;
+    }
+    .skill-name {
+        color: var(--text);
+        font-size: 14.5px;
+        font-weight: 700;
+    }
+    .skill-score {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-weight: 700;
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+    }
+    .skill-score.tone-low { color: var(--danger); border-color: rgba(239,68,68,.25); background: rgba(239,68,68,.06); }
+    .skill-score.tone-mid { color: var(--warning); border-color: rgba(245,158,11,.25); background: rgba(245,158,11,.06); }
+    .skill-score.tone-good { color: var(--success); border-color: rgba(34,197,94,.25); background: rgba(34,197,94,.06); }
+    .skill-tone-label {
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    /* slider */
+    .slider-wrap {
+        position: relative;
+        padding: 8px 0 4px;
+    }
+    .slider-track {
+        position: relative;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        overflow: hidden;
+    }
+    .slider-fill {
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #ef4444 0%, #f59e0b 45%, #22c55e 90%);
+        transition: width .2s cubic-bezier(.22,.61,.36,1);
+    }
+    .slider-marks {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+    }
+    input.report-slider-input[type="range"] {
+        width: 100%;
+        appearance: none;
+        -webkit-appearance: none;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        padding: 0;
+        margin: -14px 0 -10px;
+        position: relative;
+        z-index: 2;
+        height: 36px;
+        cursor: grab;
+    }
+    input.report-slider-input[type="range"]:active { cursor: grabbing; }
+    input.report-slider-input[type="range"]:focus { outline: none; box-shadow: none !important; }
+    input.report-slider-input[type="range"]::-webkit-slider-runnable-track {
+        height: 36px;
+        background: transparent;
+    }
+    input.report-slider-input[type="range"]::-moz-range-track {
+        height: 36px;
+        background: transparent;
+        border: none;
+    }
+    input.report-slider-input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        background: #fff;
+        border: 3px solid var(--accent);
+        box-shadow: 0 4px 14px -4px rgba(79,110,247,.55), 0 0 0 4px rgba(79,110,247,.1);
+        margin-top: 7px;
+        transition: transform .15s ease;
+        cursor: grab;
+    }
+    input.report-slider-input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.15); }
+    input.report-slider-input[type="range"]::-moz-range-thumb {
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        background: #fff;
+        border: 3px solid var(--accent);
+        box-shadow: 0 4px 14px -4px rgba(79,110,247,.55), 0 0 0 4px rgba(79,110,247,.1);
+        cursor: grab;
+    }
+    [data-theme="light"] input.report-slider-input[type="range"]::-webkit-slider-thumb { background: #fff; }
+
+    .quick-rating-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 12px;
+    }
+    .quick-rating {
+        appearance: none;
+        -webkit-appearance: none;
+        border: 1px solid var(--border2);
+        background: var(--surface2);
+        color: var(--muted);
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all var(--transition);
+    }
+    .quick-rating:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+    /* ============ NOTE CARDS ============ */
+    .note-grid {
+        display: grid;
+        gap: 14px;
+    }
+    .note-card {
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: var(--surface);
+        padding: 16px 18px;
+    }
+    .note-card .form-group label {
+        font-weight: 600;
         color: var(--text);
         margin-bottom: 6px;
     }
-    .evaluation-feed-item small {
-        display: block;
-        color: var(--muted);
-        line-height: 1.7;
-    }
-    .evaluation-feed-item p {
-        margin-top: 10px;
-        color: var(--text);
-        line-height: 1.8;
-    }
-    .evaluation-feed-item video {
-        width: 100%;
-        margin-top: 12px;
-        border-radius: 14px;
-        background: #000;
-    }
-    .evaluation-brief-grid {
+    .note-card textarea { min-height: 70px; }
+
+    /* ============ SUMMARY STEP ============ */
+    .summary-grid {
         display: grid;
-        gap: 16px;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .evaluation-brief-grid .full {
-        grid-column: 1 / -1;
-    }
-    .evaluation-empty {
-        border: 1px dashed var(--border2);
-        border-radius: 18px;
-        padding: 18px;
-        color: var(--muted);
-        background: var(--surface2);
-        text-align: center;
-        line-height: 1.8;
+        gap: 14px;
+        grid-template-columns: 1fr;
     }
     .current-proof {
         margin-top: 10px;
@@ -212,212 +499,420 @@
         text-decoration: none;
         font-weight: 600;
     }
+
+    /* ============ RADAR SIDE PANEL ============ */
+    .radar-card {
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 20px;
+        background:
+            linear-gradient(180deg, rgba(34,197,94,.06), rgba(79,110,247,.02)),
+            var(--surface);
+        position: relative;
+        overflow: hidden;
+    }
+    .radar-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(rgba(255,255,255,.03) 1px, transparent 1px);
+        background-size: 18px 18px;
+        pointer-events: none;
+        opacity: .6;
+    }
+    [data-theme="light"] .radar-card::before {
+        background-image: radial-gradient(rgba(15,23,42,.05) 1px, transparent 1px);
+    }
+    .radar-card > * { position: relative; z-index: 1; }
+    .radar-wrap {
+        min-height: 300px;
+        position: relative;
+    }
+    .radar-average {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-top: 14px;
+    }
+    .radar-stat {
+        text-align: center;
+        padding: 10px;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+    }
+    .radar-stat span {
+        display: block;
+        color: var(--muted);
+        font-size: 10.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 4px;
+    }
+    .radar-stat strong {
+        display: block;
+        color: var(--text);
+        font-size: 20px;
+        letter-spacing: -0.02em;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* ============ PREVIOUS / HISTORY ============ */
+    .history-feed {
+        display: grid;
+        gap: 12px;
+    }
+    .history-item {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--surface2);
+        padding: 14px 16px;
+    }
+    .history-item strong {
+        display: block;
+        color: var(--text);
+        margin-bottom: 4px;
+        font-size: 13.5px;
+    }
+    .history-item small {
+        display: block;
+        color: var(--muted);
+        line-height: 1.6;
+        font-size: 12px;
+    }
+    .history-item p {
+        margin-top: 10px;
+        color: var(--text);
+        line-height: 1.75;
+        font-size: 13px;
+    }
+    .history-item video {
+        width: 100%;
+        margin-top: 10px;
+        border-radius: 12px;
+        background: #000;
+    }
+    .history-empty {
+        border: 1px dashed var(--border2);
+        border-radius: 14px;
+        padding: 14px;
+        color: var(--muted);
+        background: var(--surface2);
+        text-align: center;
+        font-size: 12.5px;
+        line-height: 1.7;
+    }
+
+    /* ============ NAV BUTTONS ============ */
+    .rate-nav {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+        padding-top: 18px;
+        border-top: 1px solid var(--border);
+    }
+    .rate-nav-right {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    /* ============ RESPONSIVE ============ */
     @media (max-width: 1100px) {
-        .evaluation-layout,
-        .evaluation-brief-grid,
-        .evaluation-score-grid {
-            grid-template-columns: 1fr;
-        }
+        .rate-layout { grid-template-columns: 1fr; }
+        .rate-side { position: static; }
     }
     @media (max-width: 720px) {
-        .evaluation-panel,
-        .evaluation-chart-card {
-            padding: 18px;
-            border-radius: 22px;
-        }
-        .evaluation-top-grid {
+        .rate-header-inner {
             grid-template-columns: 1fr;
+            padding: 20px;
         }
-        .evaluation-chart-wrap {
-            min-height: 300px;
+        .rate-title { font-size: 22px; }
+        .stepper {
+            grid-template-columns: repeat(3, 1fr);
+            padding: 10px;
+            gap: 6px;
+        }
+        .stepper-item { padding: 8px; }
+        .stepper-title { font-size: 12px; }
+        .stepper-label { font-size: 9.5px; }
+        .rate-panel { padding: 18px; border-radius: 18px; }
+        .rate-context-grid { grid-template-columns: 1fr; }
+        .skill-head { flex-direction: column; align-items: flex-start; gap: 8px; }
+        .skill-score { align-self: flex-start; }
+        .radar-average { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    }
+    @media (max-width: 480px) {
+        .stepper-title { display: none; }
+        .stepper-item { grid-template-columns: 1fr; justify-items: center; }
+        .stepper-dot { margin: 0 auto; }
+        .stepper-label { text-align: center; }
+        .radar-average { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .rate-eyebrow-dot, .rate-step.is-active,
+        .slider-fill, .stepper-progress-fill {
+            animation: none !important;
+            transition: none !important;
         }
     }
 </style>
+{% endblock %}
 
-<div class="evaluation-shell">
-    <div class="card">
-        <div class="evaluation-intro">
-            <div style="max-width:760px;">
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;">After-Session Report</p>
-                <h2 style="font-size:28px;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1.1;">
-                    {% if is_edit %}Refine this ended-session report with clearer scores, better notes, and stronger proof.{% else %}Assess the student the same way as the progress report: drag the skill scores, review the live radar, and finish the session report before moving on.{% endif %}
-                </h2>
-                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">
-                    This report is for the session that already ended. Rate the student's skills, add coaching notes, write a short session summary, and attach video proof when it helps.
+{% block content %}
+<div class="rate-shell">
+
+    <!-- ============ HEADER ============ -->
+    <div class="card rate-header">
+        <div class="rate-header-inner">
+            <div>
+                <p class="rate-eyebrow">
+                    <span class="rate-eyebrow-dot"></span>
+                    After-Session Report
                 </p>
+                <h2 class="rate-title">
+                    {% if is_edit %}Refine the scoring for {{ member.full_name }}.{% else %}Rate {{ member.full_name }} in three short steps.{% endif %}
+                </h2>
+                <p class="rate-sub">
+                    Slide the skill scores, add coaching notes, then write a session summary with an optional video proof. The radar updates live on the right so you see the shape of the rating instantly.
+                </p>
+                <div class="rate-meta">
+                    <span class="rate-chip"><i class="fa-regular fa-user"></i>{{ member.full_name }}</span>
+                    <span class="rate-chip"><i class="fa-regular fa-calendar"></i>{{ training_session.session_date|date:"d M Y" }}</span>
+                    <span class="rate-chip"><i class="fa-regular fa-clock"></i>{{ training_session.start_time|time:"H:i" }} - {{ training_session.end_time|time:"H:i" }}</span>
+                    {% if current_member_position %}
+                    <span class="rate-chip"><i class="fa-solid fa-list-ol"></i>Student {{ current_member_position }} / {{ feedback_total_count }}</span>
+                    {% endif %}
+                </div>
             </div>
-            <a href="{% url 'sessions:detail' training_session.pk %}" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Back to session</a>
+            <a href="{% url 'sessions:detail' training_session.pk %}" class="btn btn-ghost" style="white-space:nowrap;">
+                <i class="fa-solid fa-arrow-left"></i> Back
+            </a>
         </div>
     </div>
 
-    <form method="post" enctype="multipart/form-data" class="evaluation-layout" novalidate>
+    <!-- ============ STEPPER ============ -->
+    <div class="stepper" role="tablist" id="rateStepper">
+        <button type="button" class="stepper-item is-active" data-step="1" role="tab">
+            <span class="stepper-dot">1</span>
+            <span>
+                <span class="stepper-label">Step 1</span>
+                <span class="stepper-title">Rate Skills</span>
+            </span>
+        </button>
+        <button type="button" class="stepper-item" data-step="2" role="tab">
+            <span class="stepper-dot">2</span>
+            <span>
+                <span class="stepper-label">Step 2</span>
+                <span class="stepper-title">Coaching Notes</span>
+            </span>
+        </button>
+        <button type="button" class="stepper-item" data-step="3" role="tab">
+            <span class="stepper-dot">3</span>
+            <span>
+                <span class="stepper-label">Step 3</span>
+                <span class="stepper-title">Summary &amp; Video</span>
+            </span>
+        </button>
+        <div class="stepper-progress-bar"><span class="stepper-progress-fill" id="stepperProgress" style="width:33%;"></span></div>
+    </div>
+
+    <!-- ============ FORM ============ -->
+    <form method="post" enctype="multipart/form-data" class="rate-layout" id="rateForm" novalidate>
         {% csrf_token %}
 
-        <section class="evaluation-panel">
-            <h3>Session Report Form</h3>
-            <p class="evaluation-panel-copy">Review the student and session details, then score each skill the same way the progress report works.</p>
+        <!-- MAIN -->
+        <section class="rate-main">
 
-            <div class="evaluation-top-grid">
-                <div class="evaluation-data-card">
-                    <span>Student</span>
-                    <strong>{{ member.full_name }}</strong>
-                    <small>{% if member.assigned_coach %}Assigned coach {{ member.assigned_coach }}{% else %}No assigned coach on file{% endif %}</small>
-                </div>
-                <div class="evaluation-data-card">
-                    <span>Session</span>
-                    <strong>{{ training_session.title }}</strong>
-                    <small>{{ training_session.session_date|date:"d M Y" }} | {{ training_session.start_time|time:"H:i" }} - {{ training_session.end_time|time:"H:i" }}</small>
-                </div>
-                <div class="evaluation-data-card">
-                    <span>Queue Position</span>
-                    <strong>{% if current_member_position %}Student {{ current_member_position }} of {{ feedback_total_count }}{% else %}-{% endif %}</strong>
-                    <small>{{ feedback_completed_count }} reports completed | {{ feedback_pending_count }} still pending</small>
-                </div>
-                <div class="evaluation-data-card">
-                    <span>Next After Save</span>
-                    <strong>{% if next_feedback_member %}{{ next_feedback_member.full_name }}{% else %}Return to session{% endif %}</strong>
-                    <small>{% if next_feedback_member %}Use the green button to jump to the next student immediately.{% else %}This is the last pending report in the queue.{% endif %}</small>
-                </div>
-            </div>
+            <!-- STEP 1: RATE SKILLS -->
+            <div class="rate-panel rate-step is-active" data-step-panel="1">
+                <h3>Skill Ratings</h3>
+                <p class="panel-copy">Drag each slider from 0 to 100. The radar on the right updates live. The tone label on the pill changes as the score moves.</p>
 
-            <div class="evaluation-divider"></div>
-
-            <h3>Skill Ratings</h3>
-            <p class="evaluation-panel-copy">Use the sliders to grade each skill out of 100. The radar chart updates live on the right exactly like the progress report flow.</p>
-
-            <div class="evaluation-sliders">
-                {% for row in form.skill_field_rows %}
-                <div class="evaluation-slider-card">
-                    <div class="evaluation-slider-head">
-                        <strong>{{ row.label }}</strong>
-                        <span class="evaluation-slider-score" data-slider-output-for="{{ row.rating_name }}">
-                            {{ row.rating_field.value|default:0 }}/100
-                        </span>
-                    </div>
-                    {{ row.rating_field }}
-                    {% if row.rating_field.errors %}<p class="text-sm" style="color:var(--danger);margin-top:8px;">{{ row.rating_field.errors|join:", " }}</p>{% endif %}
-                    <div class="evaluation-slider-note form-group">
-                        <label for="{{ row.note_field.id_for_label }}">Improvement note</label>
-                        {{ row.note_field }}
-                        {% if row.note_field.errors %}<p class="text-sm" style="color:var(--danger);">{{ row.note_field.errors|join:", " }}</p>{% endif %}
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-
-            <div class="evaluation-divider"></div>
-
-            <h3>Session Summary & Proof</h3>
-            <p class="evaluation-panel-copy">Finish the ended-session report with one concise summary and optional proof video.</p>
-
-            <div class="evaluation-brief-grid">
-                <div class="form-group full">
-                    <label for="{{ form.feedback_text.id_for_label }}">{{ form.feedback_text.label }}</label>
-                    {{ form.feedback_text }}
-                    {% if form.feedback_text.help_text %}<p class="text-sm text-muted">{{ form.feedback_text.help_text }}</p>{% endif %}
-                    {% if form.feedback_text.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.feedback_text.errors|join:", " }}</p>{% endif %}
-                </div>
-                <div class="form-group full">
-                    <label for="{{ form.video_proof.id_for_label }}">Video proof</label>
-                    {{ form.video_proof }}
-                    {% if form.video_proof.help_text %}<p class="text-sm text-muted">{{ form.video_proof.help_text }}</p>{% endif %}
-                    {% if feedback and feedback.video_proof %}
-                    <a href="{{ feedback.video_proof.url }}" target="_blank" class="current-proof">
-                        <i class="fa-solid fa-video"></i> Open current uploaded video
-                    </a>
-                    {% endif %}
-                    {% if form.video_proof.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.video_proof.errors|join:", " }}</p>{% endif %}
-                </div>
-            </div>
-
-            {% if form.non_field_errors %}
-            <div class="card" style="margin-top:18px;border-color:rgba(239,68,68,.35);">
-                <p class="text-sm" style="color:var(--danger);">{{ form.non_field_errors|join:", " }}</p>
-            </div>
-            {% endif %}
-
-            <div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:24px;">
-                <a href="{% url 'sessions:detail' training_session.pk %}" class="btn btn-ghost">Cancel</a>
-                {% if next_feedback_member %}
-                <button type="submit" name="save_and_next" value="1" class="btn btn-success">
-                    <i class="fa-solid fa-forward-step"></i> Save And Open {{ next_feedback_member.full_name }}
-                </button>
-                {% endif %}
-                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Session Report</button>
-            </div>
-        </section>
-
-        <section style="display:grid;gap:20px;">
-            <article class="evaluation-chart-card">
-                <h3>Skill Visualization</h3>
-                <p class="evaluation-panel-copy">Live radar view of the current scoring for this ended-session report.</p>
-                <div class="evaluation-chart-wrap">
-                    <canvas id="evaluationRadarChart"></canvas>
-                </div>
-                <div class="evaluation-score-grid">
-                    <div class="evaluation-score-chip">
+                <div class="rate-context-grid">
+                    <div class="rate-context-card">
                         <span>Student</span>
                         <strong>{{ member.full_name }}</strong>
+                        <small>{% if member.assigned_coach %}Assigned coach {{ member.assigned_coach }}{% else %}No assigned coach on file{% endif %}</small>
                     </div>
-                    <div class="evaluation-score-chip">
-                        <span>Program</span>
-                        <strong>{{ member.program_enrolled|default:member.syllabus_root|default:"-" }}</strong>
+                    <div class="rate-context-card">
+                        <span>Queue</span>
+                        <strong>{% if current_member_position %}Student {{ current_member_position }} of {{ feedback_total_count }}{% else %}-{% endif %}</strong>
+                        <small>{{ feedback_completed_count }} done | {{ feedback_pending_count }} pending</small>
                     </div>
-                    <div class="evaluation-score-chip">
-                        <span>Session Date</span>
-                        <strong>{{ training_session.session_date|date:"d M" }}</strong>
+                </div>
+
+                <div class="skill-grid">
+                    {% for row in form.skill_field_rows %}
+                    <div class="skill-card" data-skill="{{ row.rating_name }}">
+                        <div class="skill-head">
+                            <div class="skill-head-left">
+                                <span class="skill-icon"><i class="fa-solid fa-bullseye"></i></span>
+                                <span class="skill-name">{{ row.label }}</span>
+                            </div>
+                            <span class="skill-score" data-slider-output-for="{{ row.rating_name }}">
+                                <span class="skill-tone-label" data-slider-tone-for="{{ row.rating_name }}">Good</span>
+                                <span data-slider-value-for="{{ row.rating_name }}">{{ row.rating_field.value|default:0 }}</span>/100
+                            </span>
+                        </div>
+                        <div class="slider-wrap">
+                            <div class="slider-track">
+                                <span class="slider-fill" data-slider-fill-for="{{ row.rating_name }}" style="width:{{ row.rating_field.value|default:0 }}%;"></span>
+                            </div>
+                            {{ row.rating_field }}
+                            <div class="slider-marks">
+                                <span>0</span><span>25</span><span>50</span><span>75</span><span>100</span>
+                            </div>
+                        </div>
+                        {% if row.rating_field.errors %}<p class="text-sm" style="color:var(--danger);margin-top:8px;">{{ row.rating_field.errors|join:", " }}</p>{% endif %}
+                        <div class="quick-rating-row">
+                            <button type="button" class="quick-rating" data-quick-set="{{ row.rating_name }}" data-value="25">25</button>
+                            <button type="button" class="quick-rating" data-quick-set="{{ row.rating_name }}" data-value="50">50</button>
+                            <button type="button" class="quick-rating" data-quick-set="{{ row.rating_name }}" data-value="75">75</button>
+                            <button type="button" class="quick-rating" data-quick-set="{{ row.rating_name }}" data-value="90">90</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- STEP 2: NOTES -->
+            <div class="rate-panel rate-step" data-step-panel="2">
+                <h3>Coaching Notes</h3>
+                <p class="panel-copy">Optional. Short, specific notes show up in the student's progression history so drills can be built from them.</p>
+
+                <div class="note-grid">
+                    {% for row in form.skill_field_rows %}
+                    <div class="note-card">
+                        <div class="form-group">
+                            <label for="{{ row.note_field.id_for_label }}">
+                                <span class="skill-icon" style="width:24px;height:24px;border-radius:7px;font-size:11px;display:inline-flex;vertical-align:-6px;margin-right:6px;"><i class="fa-solid fa-pen"></i></span>
+                                {{ row.label }} note
+                            </label>
+                            {{ row.note_field }}
+                            {% if row.note_field.errors %}<p class="text-sm" style="color:var(--danger);">{{ row.note_field.errors|join:", " }}</p>{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- STEP 3: SUMMARY & VIDEO -->
+            <div class="rate-panel rate-step" data-step-panel="3">
+                <h3>Session Summary &amp; Video Proof</h3>
+                <p class="panel-copy">Finish the report with one concise session summary and attach a proof clip if it helps explain the scoring.</p>
+
+                <div class="summary-grid">
+                    <div class="form-group full">
+                        <label for="{{ form.feedback_text.id_for_label }}">{{ form.feedback_text.label }}</label>
+                        {{ form.feedback_text }}
+                        {% if form.feedback_text.help_text %}<p class="text-sm text-muted">{{ form.feedback_text.help_text }}</p>{% endif %}
+                        {% if form.feedback_text.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.feedback_text.errors|join:", " }}</p>{% endif %}
+                    </div>
+                    <div class="form-group full">
+                        <label for="{{ form.video_proof.id_for_label }}">Video proof</label>
+                        {{ form.video_proof }}
+                        {% if form.video_proof.help_text %}<p class="text-sm text-muted">{{ form.video_proof.help_text }}</p>{% endif %}
+                        {% if feedback and feedback.video_proof %}
+                        <a href="{{ feedback.video_proof.url }}" target="_blank" class="current-proof">
+                            <i class="fa-solid fa-video"></i> Open current uploaded video
+                        </a>
+                        {% endif %}
+                        {% if form.video_proof.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.video_proof.errors|join:", " }}</p>{% endif %}
+                    </div>
+                </div>
+
+                {% if form.non_field_errors %}
+                <div style="margin-top:16px;padding:12px 14px;border-radius:14px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.06);">
+                    <p class="text-sm" style="color:var(--danger);">{{ form.non_field_errors|join:", " }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- NAV -->
+            <div class="rate-nav">
+                <button type="button" class="btn btn-ghost" id="prevStepBtn" disabled>
+                    <i class="fa-solid fa-arrow-left"></i> Previous
+                </button>
+                <div class="rate-nav-right">
+                    <a href="{% url 'sessions:detail' training_session.pk %}" class="btn btn-ghost">Cancel</a>
+                    <button type="button" class="btn btn-primary" id="nextStepBtn">
+                        Next <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                    {% if next_feedback_member %}
+                    <button type="submit" name="save_and_next" value="1" class="btn btn-success" id="saveNextBtn" style="display:none;">
+                        <i class="fa-solid fa-forward-step"></i> Save &amp; Open {{ next_feedback_member.full_name }}
+                    </button>
+                    {% endif %}
+                    <button type="submit" class="btn btn-primary" id="saveBtn" style="display:none;">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Session Report
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SIDE -->
+        <aside class="rate-side">
+            <article class="radar-card">
+                <h3 style="margin-bottom:4px;">Live Spider Graph</h3>
+                <p class="panel-copy">Visual of the current scoring for this report.</p>
+                <div class="radar-wrap">
+                    <canvas id="evaluationRadarChart"></canvas>
+                </div>
+                <div class="radar-average">
+                    <div class="radar-stat">
+                        <span>Average</span>
+                        <strong id="radarAverage">0</strong>
+                    </div>
+                    <div class="radar-stat">
+                        <span>Strongest</span>
+                        <strong id="radarStrongest" style="font-size:13px;line-height:1.3;">-</strong>
+                    </div>
+                    <div class="radar-stat">
+                        <span>Weakest</span>
+                        <strong id="radarWeakest" style="font-size:13px;line-height:1.3;">-</strong>
                     </div>
                 </div>
             </article>
 
-            <article class="evaluation-panel">
+            <article class="rate-panel">
                 <h3>Previous Progress Reports</h3>
-                <p class="evaluation-panel-copy">Use the latest report history to keep this ended-session report aligned with the player's broader development plan.</p>
+                <p class="panel-copy">Reference from earlier cycles.</p>
                 {% if previous_reports %}
-                <div class="evaluation-feed">
+                <div class="history-feed">
                     {% for previous in previous_reports %}
-                    <div class="evaluation-feed-item">
+                    <div class="history-item">
                         <strong>{{ previous.period_label }}</strong>
                         <small>{{ previous.get_overall_status_display }} | Coach {{ previous.coach|default:"Coaching team" }}</small>
-                        <p>{{ previous.report_brief|default:previous.coach_reflection|default:"No summary was written in that cycle." }}</p>
-                        {% if previous.improvement_plan %}
-                        <small style="margin-top:10px;"><strong style="display:inline;color:var(--text);">Improvement:</strong> {{ previous.improvement_plan|truncatechars:180 }}</small>
-                        {% endif %}
+                        <p>{{ previous.report_brief|default:previous.coach_reflection|default:"No summary written in that cycle."|truncatechars:200 }}</p>
                     </div>
                     {% endfor %}
                 </div>
                 {% else %}
-                <div class="evaluation-empty">
-                    No earlier progress reports were found for this student yet.
-                </div>
+                <div class="history-empty">No earlier progress reports yet.</div>
                 {% endif %}
             </article>
 
-            <article class="evaluation-panel">
+            <article class="rate-panel">
                 <h3>Earlier Session Reports</h3>
-                <p class="evaluation-panel-copy">These are the most recent ended-session reports already saved for this student.</p>
+                <p class="panel-copy">Most recent ended-session reports for this student.</p>
                 {% if recent_feedback_entries %}
-                <div class="evaluation-feed">
+                <div class="history-feed">
                     {% for prior_feedback in recent_feedback_entries %}
-                    <div class="evaluation-feed-item">
+                    <div class="history-item">
                         <strong>{{ prior_feedback.training_session.title }}</strong>
                         <small>{{ prior_feedback.training_session.session_date|date:"d M Y" }} | Coach {{ prior_feedback.coach|default:"Coaching team" }}</small>
-                        <p>{{ prior_feedback.feedback_text|truncatechars:220 }}</p>
-                        {% if prior_feedback.video_proof %}
-                        <video controls preload="none" playsinline>
-                            <source src="{{ prior_feedback.video_proof.url }}">
-                        </video>
-                        {% endif %}
+                        <p>{{ prior_feedback.feedback_text|truncatechars:200 }}</p>
                     </div>
                     {% endfor %}
                 </div>
                 {% else %}
-                <div class="evaluation-empty">
-                    No earlier session reports are available for this student yet.
-                </div>
+                <div class="history-empty">No earlier session reports yet.</div>
                 {% endif %}
             </article>
-        </section>
+        </aside>
     </form>
 </div>
 {% endblock %}
@@ -425,11 +920,78 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const radarCanvas = document.getElementById('evaluationRadarChart');
+        // ============ STEPPER ============
+        const steps = document.querySelectorAll('.stepper-item');
+        const panels = document.querySelectorAll('[data-step-panel]');
+        const progress = document.getElementById('stepperProgress');
+        const prevBtn = document.getElementById('prevStepBtn');
+        const nextBtn = document.getElementById('nextStepBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const saveNextBtn = document.getElementById('saveNextBtn');
+        const totalSteps = steps.length;
+        let current = 1;
+
+        function showStep(n) {
+            current = Math.max(1, Math.min(totalSteps, n));
+            steps.forEach(function(step) {
+                const s = Number(step.dataset.step);
+                step.classList.toggle('is-active', s === current);
+                step.classList.toggle('is-done', s < current);
+            });
+            panels.forEach(function(panel) {
+                panel.classList.toggle('is-active', Number(panel.dataset.stepPanel) === current);
+            });
+            progress.style.width = ((current / totalSteps) * 100) + '%';
+            prevBtn.disabled = current === 1;
+            const isLast = current === totalSteps;
+            nextBtn.style.display = isLast ? 'none' : '';
+            if (saveBtn) saveBtn.style.display = isLast ? '' : 'none';
+            if (saveNextBtn) saveNextBtn.style.display = isLast ? '' : 'none';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        steps.forEach(function(step) {
+            step.addEventListener('click', function() {
+                showStep(Number(step.dataset.step));
+            });
+        });
+        prevBtn.addEventListener('click', function() { showStep(current - 1); });
+        nextBtn.addEventListener('click', function() { showStep(current + 1); });
+
+        // If form has errors, jump to the step that contains them.
+        const errorField = document.querySelector('.rate-step p[style*="--danger"]');
+        if (errorField) {
+            const panel = errorField.closest('[data-step-panel]');
+            if (panel) showStep(Number(panel.dataset.stepPanel));
+        }
+
+        // ============ SLIDERS ============
         const sliderInputs = Array.from(document.querySelectorAll('.report-slider-input'));
-        const sliderOutputs = document.querySelectorAll('[data-slider-output-for]');
         const seedSkills = JSON.parse('{{ session_skill_preview|escapejs }}');
         let radarChart = null;
+
+        function getTone(value) {
+            if (value < 40) return { key: 'low', label: 'Needs Work' };
+            if (value < 70) return { key: 'mid', label: 'Developing' };
+            return { key: 'good', label: 'Strong' };
+        }
+
+        function updateSliderVisual(input) {
+            const name = input.name;
+            const value = Number(input.value || 0);
+            const fill = document.querySelector('[data-slider-fill-for="' + name + '"]');
+            const valueNode = document.querySelector('[data-slider-value-for="' + name + '"]');
+            const toneNode = document.querySelector('[data-slider-tone-for="' + name + '"]');
+            const chip = document.querySelector('[data-slider-output-for="' + name + '"]');
+            if (fill) fill.style.width = value + '%';
+            if (valueNode) valueNode.textContent = value;
+            const tone = getTone(value);
+            if (toneNode) toneNode.textContent = tone.label;
+            if (chip) {
+                chip.classList.remove('tone-low', 'tone-mid', 'tone-good');
+                chip.classList.add('tone-' + tone.key);
+            }
+        }
 
         function getSkillRows() {
             return seedSkills.map(function(row) {
@@ -442,50 +1004,55 @@
             });
         }
 
-        function updateSliderOutputs() {
-            sliderOutputs.forEach(function(output) {
-                const fieldName = output.dataset.sliderOutputFor;
-                const field = document.querySelector('[name="' + fieldName + '"]');
-                output.textContent = (field ? field.value : 0) + '/100';
-            });
+        function updateRadarStats(skills) {
+            if (!skills.length) return;
+            const total = skills.reduce(function(acc, r) { return acc + r.value; }, 0);
+            const avg = Math.round(total / skills.length);
+            const sorted = skills.slice().sort(function(a, b) { return b.value - a.value; });
+            const avgNode = document.getElementById('radarAverage');
+            const strongNode = document.getElementById('radarStrongest');
+            const weakNode = document.getElementById('radarWeakest');
+            if (avgNode) avgNode.textContent = avg;
+            if (strongNode) strongNode.textContent = sorted[0].label;
+            if (weakNode) weakNode.textContent = sorted[sorted.length - 1].label;
         }
 
         async function renderRadarChart() {
-            if (!radarCanvas) return;
+            const canvas = document.getElementById('evaluationRadarChart');
+            if (!canvas) return;
             await window.ensureChartJs();
             const skills = getSkillRows();
+            updateRadarStats(skills);
             const chartData = {
-                labels: skills.map(function(row) { return row.label; }),
+                labels: skills.map(function(r) { return r.label; }),
                 datasets: [{
                     label: 'Skill score',
-                    data: skills.map(function(row) { return row.value; }),
-                    backgroundColor: 'rgba(52, 211, 153, 0.28)',
-                    borderColor: '#10b981',
-                    pointBackgroundColor: '#10b981',
+                    data: skills.map(function(r) { return r.value; }),
+                    backgroundColor: 'rgba(79, 110, 247, 0.22)',
+                    borderColor: '#4f6ef7',
+                    pointBackgroundColor: '#4f6ef7',
                     pointBorderColor: '#ffffff',
-                    borderWidth: 2
+                    pointHoverBackgroundColor: '#ffffff',
+                    pointHoverBorderColor: '#4f6ef7',
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
                 }]
             };
-
             if (radarChart) {
                 radarChart.data = chartData;
                 radarChart.update();
                 return;
             }
-
-            radarChart = new Chart(radarCanvas, {
+            radarChart = new Chart(canvas, {
                 type: 'radar',
                 data: chartData,
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    animation: { duration: 400 },
                     plugins: {
-                        legend: {
-                            labels: {
-                                color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#8a8a9a',
-                                font: { family: 'Inter', size: 12 }
-                            }
-                        }
+                        legend: { display: false }
                     },
                     scales: {
                         r: {
@@ -496,7 +1063,7 @@
                             grid: { color: 'rgba(148, 163, 184, 0.22)' },
                             pointLabels: {
                                 color: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#f0f0f4',
-                                font: { family: 'Inter', size: 12 }
+                                font: { family: 'Inter', size: 11 }
                             }
                         }
                     }
@@ -504,18 +1071,32 @@
             });
         }
 
-        updateSliderOutputs();
-        if (radarCanvas) {
-            if ('requestIdleCallback' in window) {
-                requestIdleCallback(renderRadarChart, { timeout: 1200 });
-            } else {
-                setTimeout(renderRadarChart, 0);
-            }
+        // init slider visuals
+        sliderInputs.forEach(function(input) { updateSliderVisual(input); });
+
+        // init radar chart (idle to keep TTI fast)
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(renderRadarChart, { timeout: 1200 });
+        } else {
+            setTimeout(renderRadarChart, 0);
         }
 
         sliderInputs.forEach(function(input) {
             input.addEventListener('input', function() {
-                updateSliderOutputs();
+                updateSliderVisual(input);
+                renderRadarChart();
+            });
+        });
+
+        // quick-rating pills
+        document.querySelectorAll('[data-quick-set]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const fieldName = btn.dataset.quickSet;
+                const value = btn.dataset.value;
+                const field = document.querySelector('[name="' + fieldName + '"]');
+                if (!field) return;
+                field.value = value;
+                updateSliderVisual(field);
                 renderRadarChart();
             });
         });
