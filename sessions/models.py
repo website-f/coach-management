@@ -320,6 +320,8 @@ class SessionFeedback(models.Model):
     )
     feedback_text = models.TextField()
     video_proof = models.FileField(upload_to="session_feedback_videos/", blank=True)
+    skill_snapshot = models.JSONField(default=dict, blank=True)
+    skill_notes = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

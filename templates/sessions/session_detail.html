@@ -235,16 +235,16 @@
     <div class="card feedback-hero">
         <div class="feedback-hero-layout">
             <div class="feedback-hero-main">
-                <p class="feedback-eyebrow">Coach feedback workspace</p>
+                <p class="feedback-eyebrow">Coach session report workspace</p>
                 <div style="display:flex;flex-wrap:wrap;gap:10px;">
                     {% if feedback_is_open %}
                         {% if feedback_pending_count %}
                         <span class="badge badge-warning">Action Needed</span>
                         {% else %}
-                        <span class="badge badge-success">All Feedback Submitted</span>
+                        <span class="badge badge-success">All Reports Submitted</span>
                         {% endif %}
                     {% else %}
-                    <span class="badge badge-neutral">Feedback Opens On {{ training_session.session_date|date:"d M Y" }}</span>
+                    <span class="badge badge-neutral">Report Opens On {{ training_session.session_date|date:"d M Y" }}</span>
                     {% endif %}
                     {% if can_feedback %}
                     <span class="badge badge-info">Assigned Coach Can Submit</span>
@@ -253,11 +253,11 @@
 
                 <h2 class="feedback-title">
                     {% if can_feedback and feedback_is_open and feedback_pending_count %}
-                    Press "Write Feedback" for each student below
+                    Press "Write Report" for each student below
                     {% elif can_feedback and feedback_is_open %}
-                    This session follow-up is complete
+                    This after-session reporting is complete
                     {% elif can_feedback %}
-                    This is the page coaches return to after the session
+                    This is the page coaches return to after the session ends
                     {% else %}
                     Session overview and submitted coaching notes
                     {% endif %}
@@ -266,15 +266,15 @@
                 <p class="feedback-copy">
                     {% if can_feedback and feedback_is_open and feedback_pending_count %}
                     Start with the first highlighted player below. Pending students stay pinned at the top, and every
-                    <span class="fw-7">Write Feedback</span> button opens the exact form for that student.
+                    <span class="fw-7">Write Report</span> button opens the full session report form for that student.
                     {% elif can_feedback and feedback_is_open %}
-                    Every student in this session already has a recap. Use <span class="fw-7">Edit Feedback</span> any
-                    time if you want to improve the note or replace the video.
+                    Every student in this session already has a report. Use <span class="fw-7">Edit Report</span> any
+                    time if you want to refine the scoring, summary, or video proof.
                     {% elif can_feedback %}
-                    Review the roster now, then come back here on the session date. The coach actions will unlock and
+                    Review the roster now, then come back here on the session date. The coach report actions will unlock and
                     show exactly where to press for each student.
                     {% else %}
-                    Review attendance, written recaps, and uploaded video proof from one place.
+                    Review attendance, session reports, and uploaded video proof from one place.
                     {% endif %}
                 </p>
 
@@ -287,8 +287,8 @@
 
                 <div class="feedback-progress">
                     <div class="flex-between" style="margin-bottom:8px;">
-                        <span class="text-sm text-muted">Feedback progress</span>
-                        <span class="text-sm fw-6">{{ feedback_completed_count }}/{{ feedback_total_count }} students submitted</span>
+                        <span class="text-sm text-muted">Report progress</span>
+                        <span class="text-sm fw-6">{{ feedback_completed_count }}/{{ feedback_total_count }} reports submitted</span>
                     </div>
                     <div class="feedback-meter">
                         <span style="width:{{ feedback_completion_percent }}%;"></span>
@@ -345,7 +345,7 @@
                 {% elif can_feedback and not feedback_is_open %}
                 <div class="feedback-notice">
                     <span class="fw-7">Next step:</span> when the session date arrives, return here and press
-                    <span class="fw-7">Write Feedback</span> in the roster table for each player.
+                    <span class="fw-7">Write Report</span> in the roster table for each player.
                 </div>
                 {% endif %}
             </div>
@@ -363,15 +363,15 @@
                     <div class="flow-step">
                         <span class="flow-step-number">2</span>
                         <div>
-                            <strong>Press Write Feedback</strong>
+                            <strong>Press Write Report</strong>
                             <p class="text-sm text-muted">Use the last column in the roster table. Pending students are shown first and highlighted.</p>
                         </div>
                     </div>
                     <div class="flow-step">
                         <span class="flow-step-number">3</span>
                         <div>
-                            <strong>Publish the note and optional video</strong>
-                            <p class="text-sm text-muted">After saving, the recap appears in the session record and student history automatically.</p>
+                            <strong>Publish the scored report and optional video</strong>
+                            <p class="text-sm text-muted">After saving, the report appears in the session record and student history automatically.</p>
                         </div>
                     </div>
                 </div>
@@ -407,7 +407,7 @@
         <div class="section-header session-table-header">
             <div>
                 <span class="section-title">Coach Action List</span>
-                <p class="text-sm text-muted">Press <span class="fw-7">Write Feedback</span> in the last column for each player. Pending students stay at the top so the next click is obvious.</p>
+                <p class="text-sm text-muted">Press <span class="fw-7">Write Report</span> in the last column for each player. Pending students stay at the top so the next click is obvious.</p>
             </div>
             {% if can_feedback and feedback_is_open and next_feedback_member %}
             <a href="{% url 'sessions:feedback' training_session.pk next_feedback_member.pk %}" class="section-link">Open first pending player</a>
@@ -419,7 +419,7 @@
                     <tr>
                         <th>Player</th>
                         <th>Attendance</th>
-                        <th>Feedback Status</th>
+                        <th>Report Status</th>
                         <th>Video</th>
                         <th>Coach Action</th>
                     </tr>
@@ -439,12 +439,12 @@
                         <td data-label="Attendance">
                             <span class="badge {{ row.record.status|status_badge }}">{{ row.record.get_status_display }}</span>
                         </td>
-                        <td data-label="Feedback Status">
+                        <td data-label="Report Status">
                             <span class="badge badge-{{ row.feedback_status_tone }}">{{ row.feedback_status_label }}</span>
                             {% if row.feedback %}
                             <div class="tbl-sub">Updated {{ row.feedback.updated_at|date:"d M Y H:i" }}</div>
                             {% elif feedback_is_open %}
-                            <div class="tbl-sub">Coach still needs to post the recap.</div>
+                            <div class="tbl-sub">Coach still needs to complete this session report.</div>
                             {% else %}
                             <div class="tbl-sub">This unlocks on the session date.</div>
                             {% endif %}
@@ -492,7 +492,7 @@
     <div class="grid-2">
         <div class="card">
             <div class="section-header">
-                <span class="section-title">Submitted Feedback</span>
+                <span class="section-title">Submitted Session Reports</span>
             </div>
             <div class="space-y">
                 {% for feedback in feedback_entries %}
@@ -522,7 +522,7 @@
                 {% empty %}
                 <div class="empty-state">
                     <i class="fa-regular fa-file-lines"></i>
-                    <p>No coach feedback has been uploaded for this session yet.</p>
+                    <p>No coach session report has been uploaded for this session yet.</p>
                 </div>
                 {% endfor %}
             </div>
@@ -535,7 +535,7 @@
             <div class="space-y">
                 <div class="card-inset">
                     <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Where to press</p>
-                    <p class="workflow-panel-copy" style="font-size:14px;color:var(--text);">The roster table above is the working area. Coaches should use the last column and press <span class="fw-7">Write Feedback</span> for each player.</p>
+                    <p class="workflow-panel-copy" style="font-size:14px;color:var(--text);">The roster table above is the working area. Coaches should use the last column and press <span class="fw-7">Write Report</span> for each player.</p>
                 </div>
                 <div class="card-inset">
                     <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">What to add</p>
@@ -543,7 +543,7 @@
                 </div>
                 <div class="card-inset">
                     <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">When it appears</p>
-                    <p class="workflow-panel-copy" style="font-size:14px;color:var(--text);">Once submitted, the feedback appears in this session record, the member profile, and any later progress report that references recent session feedback.</p>
+                    <p class="workflow-panel-copy" style="font-size:14px;color:var(--text);">Once submitted, the report appears in this session record, the member profile, and any later progress report that references recent session reports.</p>
                 </div>
             </div>
         </div>

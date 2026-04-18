@@ -20,7 +20,7 @@ from django.views.generic import CreateView, DetailView, ListView, TemplateView,
 from accounts.mixins import AdminOrCoachRequiredMixin, AdminRequiredMixin, HeadcountOrAboveRequiredMixin
 from accounts.notifications import notify_users
 from accounts.utils import ROLE_ADMIN, ROLE_COACH, ROLE_HEADCOUNT, ROLE_PARENT, has_role
-from members.models import Member
+from members.models import DEFAULT_SKILLS, Member, ProgressReport
 from sessions.ai_planner import PlannerAssistantError, generate_ai_planner_reply
 from sessions.forms import (
     SessionFeedbackForm,
@@ -112,10 +112,10 @@ def build_session_feedback_rows(training_session, records=None):
                 "feedback": feedback,
                 "needs_feedback": needs_feedback,
                 "feedback_status_label": (
-                    "Submitted" if feedback else ("Needs feedback" if feedback_is_open else "Opens on session date")
+                    "Report submitted" if feedback else ("Needs report" if feedback_is_open else "Opens on session date")
                 ),
                 "feedback_status_tone": "success" if feedback else ("warning" if feedback_is_open else "neutral"),
-                "action_label": "Edit Feedback" if feedback else "Write Feedback",
+                "action_label": "Edit Report" if feedback else "Write Report",
             }
         )
     return sorted(rows, key=lambda row: (0 if row["needs_feedback"] else 1, row["record"].member.full_name.lower()))
@@ -158,6 +158,36 @@ def build_feedback_form_navigation(training_session, member):
         "feedback_pending_count": max(total_students - completed_count, 0),
         "current_member_position": current_position,
         "next_feedback_member": get_next_pending_feedback_member(training_session, current_member_id=member.id),
+    }
+
+
+def build_session_feedback_form_context(member, training_session, current_feedback=None):
+    previous_reports = list(
+        ProgressReport.objects.filter(member=member)
+        .select_related("coach")
+        .order_by("-period_end", "-created_at")[:4]
+    )
+    recent_feedback_entries = SessionFeedback.objects.filter(member=member).select_related("training_session", "coach")
+    if current_feedback and current_feedback.pk:
+        recent_feedback_entries = recent_feedback_entries.exclude(pk=current_feedback.pk)
+    recent_feedback_entries = list(recent_feedback_entries.order_by("-training_session__session_date", "-created_at")[:4])
+    return {
+        "selected_report_member": member,
+        "previous_reports": previous_reports,
+        "recent_feedback_entries": recent_feedback_entries,
+        "session_skill_preview": json.dumps(
+            [
+                {
+                    "label": skill,
+                    "field_name": f"skill_{skill.lower().replace(' ', '_')}",
+                    "value": current_feedback.skill_snapshot.get(skill, 0) * 20
+                    if current_feedback and current_feedback.pk
+                    else 60,
+                }
+                for skill in DEFAULT_SKILLS
+            ]
+        ),
+        "session_report_reference_date": training_session.session_date,
     }
 
 
@@ -246,15 +276,15 @@ def notify_feedback_ready(feedback_entry):
     coach_name = feedback_entry.coach.get_full_name() if feedback_entry.coach else "Your coach"
     notify_users(
         [member.parent_user],
-        title="New session feedback available",
-        message=f"{coach_name} uploaded feedback for {member.full_name} after {session.title}.",
+        title="New session report available",
+        message=f"{coach_name} uploaded a session report for {member.full_name} after {session.title}.",
         url=reverse("members:detail", kwargs={"pk": member.pk}),
-        email_subject=f"New feedback for {member.full_name}",
+        email_subject=f"New session report for {member.full_name}",
         email_message=(
-            f"{coach_name} uploaded feedback for {member.full_name}.\n"
+            f"{coach_name} uploaded a session report for {member.full_name}.\n"
             f"Session: {session.title}\n"
             f"Date: {session.session_date:%d %b %Y}\n"
-            "Log in to the dashboard to review the feedback and video proof."
+            "Log in to the dashboard to review the report and video proof."
         ),
     )
 
@@ -762,9 +792,9 @@ class SessionDetailView(LoginRequiredMixin, DetailView):
             {"label": "Unmarked", "value": scheduled_count, "tone": "info"},
         ]
         context["session_progress_summary"] = context["attendance_summary"] + [
-            {"label": "Feedback Done", "value": feedback_completed_count, "tone": "success"},
+            {"label": "Reports Done", "value": feedback_completed_count, "tone": "success"},
             {
-                "label": "Feedback Left",
+                "label": "Reports Left",
                 "value": feedback_pending_count,
                 "tone": "warning" if feedback_is_open else "info",
             },
@@ -1026,6 +1056,17 @@ class SessionFeedbackUpsertView(AdminOrCoachRequiredMixin, View):
 
     def render_page(self, request, training_session, member, form, feedback):
         navigation_context = build_feedback_form_navigation(training_session, member)
+        workspace_context = build_session_feedback_form_context(member, training_session, current_feedback=feedback)
+        workspace_context["session_skill_preview"] = json.dumps(
+            [
+                {
+                    "label": skill,
+                    "field_name": f"skill_{skill.lower().replace(' ', '_')}",
+                    "value": form[f"skill_{skill.lower().replace(' ', '_')}"].value() or 0,
+                }
+                for skill in DEFAULT_SKILLS
+            ]
+        )
         return render(
             request,
             self.template_name,
@@ -1036,13 +1077,14 @@ class SessionFeedbackUpsertView(AdminOrCoachRequiredMixin, View):
                 "feedback": feedback,
                 "is_edit": bool(feedback and feedback.pk),
                 **navigation_context,
+                **workspace_context,
             },
         )
 
     def get(self, request, *args, **kwargs):
         training_session = self.get_training_session()
         if not self.can_manage_feedback(training_session):
-            messages.error(request, "Only admin or the assigned coach can submit feedback for this session.")
+            messages.error(request, "Only admin or the assigned coach can submit the session report for this session.")
             return redirect("sessions:detail", pk=training_session.pk)
         member = self.get_member(training_session)
         feedback = self.get_feedback(training_session, member)
@@ -1052,10 +1094,10 @@ class SessionFeedbackUpsertView(AdminOrCoachRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         training_session = self.get_training_session()
         if not self.can_manage_feedback(training_session):
-            messages.error(request, "Only admin or the assigned coach can submit feedback for this session.")
+            messages.error(request, "Only admin or the assigned coach can submit the session report for this session.")
             return redirect("sessions:detail", pk=training_session.pk)
         if training_session.session_date > timezone.localdate():
-            messages.warning(request, "Feedback can only be uploaded after the session date.")
+            messages.warning(request, "The session report can only be completed after the session date.")
             return redirect("sessions:detail", pk=training_session.pk)
 
         member = self.get_member(training_session)
@@ -1074,9 +1116,9 @@ class SessionFeedbackUpsertView(AdminOrCoachRequiredMixin, View):
                 if next_member:
                     messages.success(
                         request,
-                        f"Feedback saved for {member.full_name}. Opening {next_member.full_name} next.",
+                        f"Session report saved for {member.full_name}. Opening {next_member.full_name} next.",
                     )
                     return redirect("sessions:feedback", session_pk=training_session.pk, member_pk=next_member.pk)
-            messages.success(request, f"Feedback saved for {member.full_name}.")
+            messages.success(request, f"Session report saved for {member.full_name}.")
             return redirect("sessions:detail", pk=training_session.pk)
         return self.render_page(request, training_session, member, form, feedback)

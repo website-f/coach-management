@@ -247,12 +247,32 @@ class SessionFeedbackFlowTests(TestCase):
         self.assertEqual(response.context["next_feedback_member"], self.member_one)
         self.assertContains(response, f"Start With {self.member_one.full_name}")
         self.assertContains(response, "Coach Action List")
+        self.assertContains(response, "Write Report")
 
-    def test_save_and_next_redirects_to_next_pending_student(self):
+    def test_feedback_form_uses_radar_evaluation_workspace(self):
+        response = self.client.get(
+            reverse("sessions:feedback", kwargs={"session_pk": self.session.pk, "member_pk": self.member_one.pk})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Session Report Form")
+        self.assertContains(response, "evaluationRadarChart")
+        self.assertContains(response, "report-slider-input")
+        self.assertContains(response, "Save Session Report")
+
+    def test_save_and_next_redirects_to_next_pending_student_and_saves_skill_snapshot(self):
         response = self.client.post(
             reverse("sessions:feedback", kwargs={"session_pk": self.session.pk, "member_pk": self.member_one.pk}),
             {
                 "feedback_text": "Sharper footwork today and better patience in rallies.",
+                "skill_service": "70",
+                "note_service": "Cleaner contact and better control under pressure.",
+                "skill_lobbing": "60",
+                "skill_smashing": "75",
+                "skill_drop_shot": "55",
+                "skill_netting": "65",
+                "skill_footwork": "80",
+                "skill_defense": "50",
                 "save_and_next": "1",
             },
         )
@@ -261,7 +281,10 @@ class SessionFeedbackFlowTests(TestCase):
             response,
             reverse("sessions:feedback", kwargs={"session_pk": self.session.pk, "member_pk": self.member_two.pk}),
         )
-        self.assertEqual(SessionFeedback.objects.filter(training_session=self.session).count(), 1)
+        report = SessionFeedback.objects.get(training_session=self.session, member=self.member_one)
+        self.assertAlmostEqual(report.skill_snapshot["Service"], 3.5)
+        self.assertAlmostEqual(report.skill_snapshot["Footwork"], 4.0)
+        self.assertEqual(report.skill_notes["Service"], "Cleaner contact and better control under pressure.")
 
     def test_future_session_detail_shows_feedback_lock_message(self):
         future_session = TrainingSession.objects.create(
@@ -279,5 +302,5 @@ class SessionFeedbackFlowTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.context["feedback_is_open"])
-        self.assertContains(response, "Feedback Opens On")
+        self.assertContains(response, "Report Opens On")
         self.assertContains(response, "Available On")

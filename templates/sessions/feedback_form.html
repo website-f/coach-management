@@ -1,361 +1,524 @@
 {% extends "base.html" %}
 
-{% block title %}{% if is_edit %}Update Feedback{% else %}Write Feedback{% endif %} | NYO Admin Dashboard{% endblock %}
-{% block page_heading %}{% if is_edit %}Update Feedback{% else %}Write Feedback{% endif %}{% endblock %}
+{% block title %}{% if is_edit %}Edit Session Report{% else %}New Session Report{% endif %} | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}{% if is_edit %}Edit Session Report{% else %}Create Session Report{% endif %}{% endblock %}
 
-{% block extra_head %}
+{% block content %}
 <style>
-    .feedback-form-shell {
-        max-width: 1120px;
-        margin: 0 auto;
+    .evaluation-shell {
         display: grid;
-        gap: 16px;
+        gap: 20px;
     }
-    .feedback-form-hero {
-        padding: 0;
-        overflow: hidden;
-    }
-    .feedback-form-hero-body {
-        display: grid;
-        grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr);
-    }
-    .feedback-form-hero-main {
-        padding: 24px;
-        background:
-            radial-gradient(circle at top left, rgba(34, 197, 94, 0.15), transparent 34%),
-            linear-gradient(145deg, rgba(79, 110, 247, 0.12), rgba(79, 110, 247, 0.04) 55%, transparent 100%);
-    }
-    .feedback-form-hero-side {
-        padding: 24px;
-        border-left: 1px solid var(--border);
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
-    }
-    .feedback-form-eyebrow {
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-bottom: 12px;
-    }
-    .feedback-form-title {
-        font-size: 32px;
-        line-height: 1.1;
-        letter-spacing: -0.04em;
-        margin-top: 12px;
-        max-width: 13ch;
-    }
-    .feedback-form-copy {
-        margin-top: 12px;
-        max-width: 720px;
-        color: var(--text-2);
-        font-size: 14px;
-        line-height: 1.75;
-    }
-    .feedback-meta-row {
+    .evaluation-intro {
         display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        align-items: flex-start;
         flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 16px;
     }
-    .feedback-meta-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid var(--border2);
-        color: var(--text-2);
-        font-size: 12.5px;
-        font-weight: 600;
-    }
-    [data-theme="light"] .feedback-meta-chip {
-        background: rgba(79, 110, 247, 0.06);
-    }
-    .feedback-progress-card {
-        margin-top: 18px;
-        padding: 14px 16px;
-        border-radius: 16px;
-        border: 1px solid var(--border);
-        background: rgba(255, 255, 255, 0.03);
-    }
-    [data-theme="light"] .feedback-progress-card {
-        background: rgba(79, 110, 247, 0.05);
-    }
-    .feedback-progress-meter {
-        height: 10px;
-        border-radius: 999px;
-        overflow: hidden;
-        background: var(--surface2);
-        border: 1px solid var(--border);
-        margin-top: 10px;
-    }
-    .feedback-progress-meter span {
-        display: block;
-        height: 100%;
-        background: linear-gradient(90deg, var(--accent), #22c55e);
-    }
-    .feedback-form-grid {
+    .evaluation-layout {
         display: grid;
-        grid-template-columns: minmax(0, 1.45fr) minmax(280px, 1fr);
-        gap: 16px;
+        gap: 20px;
+        grid-template-columns: minmax(0, 1.2fr) minmax(340px, 0.9fr);
         align-items: start;
     }
-    .feedback-side-stack {
+    .evaluation-panel {
+        border: 1px solid var(--border);
+        border-radius: 26px;
+        background: var(--surface);
+        padding: 24px;
+    }
+    .evaluation-panel h3 {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 6px;
+    }
+    .evaluation-panel-copy {
+        color: var(--muted);
+        line-height: 1.8;
+        margin-bottom: 18px;
+    }
+    .evaluation-divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--border2), transparent);
+        margin: 20px 0;
+    }
+    .evaluation-top-grid {
         display: grid;
         gap: 16px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-    .feedback-section-copy {
-        margin-top: 6px;
+    .evaluation-top-grid .full {
+        grid-column: 1 / -1;
+    }
+    .evaluation-data-card {
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: var(--surface2);
+        padding: 16px;
+    }
+    .evaluation-data-card span {
+        display: block;
         color: var(--muted);
-        font-size: 13px;
-        line-height: 1.7;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 8px;
     }
-    .feedback-helper {
+    .evaluation-data-card strong {
+        display: block;
+        color: var(--text);
+        font-size: 18px;
+        line-height: 1.3;
+    }
+    .evaluation-data-card small {
+        display: block;
         margin-top: 8px;
         color: var(--muted);
-        font-size: 12.5px;
         line-height: 1.7;
     }
-    .feedback-current-file {
+    .evaluation-sliders {
+        display: grid;
+        gap: 18px;
+    }
+    .evaluation-slider-card {
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        background: linear-gradient(180deg, rgba(79,110,247,0.05), rgba(79,110,247,0.015));
+        padding: 16px 18px;
+    }
+    .evaluation-slider-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: baseline;
+        margin-bottom: 12px;
+    }
+    .evaluation-slider-head strong {
+        color: var(--text);
+        font-size: 15px;
+    }
+    .evaluation-slider-score {
+        color: #16a34a;
+        font-weight: 800;
+        font-size: 14px;
+    }
+    .report-slider-input {
+        width: 100%;
+        accent-color: #243c8a;
+        padding: 0;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+    }
+    .report-slider-input:focus {
+        box-shadow: none !important;
+    }
+    .evaluation-slider-note {
+        margin-top: 12px;
+    }
+    .evaluation-chart-card {
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        background: linear-gradient(180deg, rgba(34,197,94,0.06), rgba(79,110,247,0.02));
+        padding: 20px;
+    }
+    .evaluation-chart-wrap {
+        min-height: 360px;
+        position: relative;
+    }
+    .evaluation-score-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 16px;
+    }
+    .evaluation-score-chip {
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: var(--surface);
+        padding: 14px 16px;
+    }
+    .evaluation-score-chip span {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 8px;
+    }
+    .evaluation-score-chip strong {
+        display: block;
+        color: var(--text);
+        font-size: 28px;
+        line-height: 1;
+        letter-spacing: -0.04em;
+    }
+    .evaluation-feed {
+        display: grid;
+        gap: 14px;
+    }
+    .evaluation-feed-item {
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: var(--surface2);
+        padding: 16px;
+    }
+    .evaluation-feed-item strong {
+        display: block;
+        color: var(--text);
+        margin-bottom: 6px;
+    }
+    .evaluation-feed-item small {
+        display: block;
+        color: var(--muted);
+        line-height: 1.7;
+    }
+    .evaluation-feed-item p {
+        margin-top: 10px;
+        color: var(--text);
+        line-height: 1.8;
+    }
+    .evaluation-feed-item video {
+        width: 100%;
+        margin-top: 12px;
+        border-radius: 14px;
+        background: #000;
+    }
+    .evaluation-brief-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .evaluation-brief-grid .full {
+        grid-column: 1 / -1;
+    }
+    .evaluation-empty {
+        border: 1px dashed var(--border2);
+        border-radius: 18px;
+        padding: 18px;
+        color: var(--muted);
+        background: var(--surface2);
+        text-align: center;
+        line-height: 1.8;
+    }
+    .current-proof {
+        margin-top: 10px;
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        margin-top: 10px;
-        padding: 10px 12px;
-        border-radius: 12px;
-        background: var(--surface2);
-        border: 1px solid var(--border);
         color: var(--accent);
         text-decoration: none;
         font-weight: 600;
     }
-    .feedback-checklist {
-        display: grid;
-        gap: 12px;
-    }
-    .feedback-checklist-item {
-        display: grid;
-        grid-template-columns: auto 1fr;
-        gap: 12px;
-        padding: 12px;
-        border-radius: 14px;
-        border: 1px solid var(--border);
-        background: var(--surface2);
-    }
-    .feedback-checklist-number {
-        width: 30px;
-        height: 30px;
-        border-radius: 999px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--accent-bg);
-        color: var(--accent);
-        font-size: 12px;
-        font-weight: 700;
-    }
-    .feedback-checklist-item strong {
-        display: block;
-        margin-bottom: 4px;
-        color: var(--text);
-        font-size: 13.5px;
-    }
-    .feedback-next-card {
-        padding: 14px 16px;
-        border-radius: 16px;
-        border: 1px solid var(--border);
-        background: var(--surface2);
-    }
-    .feedback-cta-row {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-        gap: 12px;
-        margin-top: 8px;
-    }
-    @media (max-width: 980px) {
-        .feedback-form-hero-body,
-        .feedback-form-grid {
+    @media (max-width: 1100px) {
+        .evaluation-layout,
+        .evaluation-brief-grid,
+        .evaluation-score-grid {
             grid-template-columns: 1fr;
         }
-        .feedback-form-hero-side {
-            border-left: none;
-            border-top: 1px solid var(--border);
+    }
+    @media (max-width: 720px) {
+        .evaluation-panel,
+        .evaluation-chart-card {
+            padding: 18px;
+            border-radius: 22px;
         }
-        .feedback-form-title {
-            font-size: 28px;
-            max-width: none;
+        .evaluation-top-grid {
+            grid-template-columns: 1fr;
+        }
+        .evaluation-chart-wrap {
+            min-height: 300px;
         }
     }
 </style>
-{% endblock %}
 
-{% block content %}
-<div class="feedback-form-shell">
-    <div class="card feedback-form-hero">
-        <div class="feedback-form-hero-body">
-            <div class="feedback-form-hero-main">
-                <p class="feedback-form-eyebrow">Post-session coaching form</p>
-                <div style="display:flex;flex-wrap:wrap;gap:10px;">
-                    {% if is_edit %}
-                    <span class="badge badge-info">Updating Existing Feedback</span>
-                    {% else %}
-                    <span class="badge badge-warning">New Student Feedback</span>
-                    {% endif %}
-                    {% if current_member_position and feedback_total_count %}
-                    <span class="badge badge-neutral">Student {{ current_member_position }} of {{ feedback_total_count }}</span>
-                    {% endif %}
-                </div>
-
-                <h2 class="feedback-form-title">
-                    {% if is_edit %}
-                    Update feedback for {{ member.full_name }}
-                    {% else %}
-                    Write feedback for {{ member.full_name }}
-                    {% endif %}
+<div class="evaluation-shell">
+    <div class="card">
+        <div class="evaluation-intro">
+            <div style="max-width:760px;">
+                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;">After-Session Report</p>
+                <h2 style="font-size:28px;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1.1;">
+                    {% if is_edit %}Refine this ended-session report with clearer scores, better notes, and stronger proof.{% else %}Assess the student the same way as the progress report: drag the skill scores, review the live radar, and finish the session report before moving on.{% endif %}
                 </h2>
-
-                <p class="feedback-form-copy">
-                    This form saves the coach recap for this student inside the session record. After saving, the note and
-                    optional video become part of the student's recent session feedback history.
+                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">
+                    This report is for the session that already ended. Rate the student's skills, add coaching notes, write a short session summary, and attach video proof when it helps.
                 </p>
-
-                <div class="feedback-meta-row">
-                    <span class="feedback-meta-chip"><i class="fa-solid fa-dumbbell"></i>{{ training_session.title }}</span>
-                    <span class="feedback-meta-chip"><i class="fa-regular fa-calendar"></i>{{ training_session.session_date|date:"d M Y" }}</span>
-                    <span class="feedback-meta-chip"><i class="fa-regular fa-clock"></i>{{ training_session.start_time|time:"H:i" }} - {{ training_session.end_time|time:"H:i" }}</span>
-                </div>
-
-                <div class="feedback-progress-card">
-                    <div class="flex-between">
-                        <span class="text-sm text-muted">Session completion</span>
-                        <span class="text-sm fw-6">{{ feedback_completed_count }}/{{ feedback_total_count }} submitted so far</span>
-                    </div>
-                    <div class="feedback-progress-meter">
-                        <span style="width:{% if feedback_total_count %}{% widthratio feedback_completed_count feedback_total_count 100 %}{% else %}0{% endif %}%;"></span>
-                    </div>
-                    <p class="feedback-helper">
-                        {% if next_feedback_member %}
-                        After this save, the next suggested player is <span class="fw-7">{{ next_feedback_member.full_name }}</span>.
-                        {% else %}
-                        This is the last pending player in the current queue.
-                        {% endif %}
-                    </p>
-                </div>
             </div>
-
-            <div class="feedback-form-hero-side">
-                <p class="feedback-form-eyebrow">What to do</p>
-                <div class="feedback-checklist">
-                    <div class="feedback-checklist-item">
-                        <span class="feedback-checklist-number">1</span>
-                        <div>
-                            <strong>Describe what happened in the session</strong>
-                            <p class="text-sm text-muted">Mention performance, discipline, strongest point, and the clearest next focus.</p>
-                        </div>
-                    </div>
-                    <div class="feedback-checklist-item">
-                        <span class="feedback-checklist-number">2</span>
-                        <div>
-                            <strong>Add video only if it helps</strong>
-                            <p class="text-sm text-muted">Upload a rally clip, movement proof, or technique example when the parent should see it.</p>
-                        </div>
-                    </div>
-                    <div class="feedback-checklist-item">
-                        <span class="feedback-checklist-number">3</span>
-                        <div>
-                            <strong>Save and continue</strong>
-                            <p class="text-sm text-muted">Use the green button if you want to jump straight to the next student without returning to the roster.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <a href="{% url 'sessions:detail' training_session.pk %}" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Back to session</a>
         </div>
     </div>
 
-    <div class="feedback-form-grid">
-        <div class="card">
-            <div class="section-header">
-                <div>
-                    <span class="section-title">Coach Note</span>
-                    <p class="feedback-section-copy">This is the main recap the coach is publishing for the student.</p>
+    <form method="post" enctype="multipart/form-data" class="evaluation-layout" novalidate>
+        {% csrf_token %}
+
+        <section class="evaluation-panel">
+            <h3>Session Report Form</h3>
+            <p class="evaluation-panel-copy">Review the student and session details, then score each skill the same way the progress report works.</p>
+
+            <div class="evaluation-top-grid">
+                <div class="evaluation-data-card">
+                    <span>Student</span>
+                    <strong>{{ member.full_name }}</strong>
+                    <small>{% if member.assigned_coach %}Assigned coach {{ member.assigned_coach }}{% else %}No assigned coach on file{% endif %}</small>
+                </div>
+                <div class="evaluation-data-card">
+                    <span>Session</span>
+                    <strong>{{ training_session.title }}</strong>
+                    <small>{{ training_session.session_date|date:"d M Y" }} | {{ training_session.start_time|time:"H:i" }} - {{ training_session.end_time|time:"H:i" }}</small>
+                </div>
+                <div class="evaluation-data-card">
+                    <span>Queue Position</span>
+                    <strong>{% if current_member_position %}Student {{ current_member_position }} of {{ feedback_total_count }}{% else %}-{% endif %}</strong>
+                    <small>{{ feedback_completed_count }} reports completed | {{ feedback_pending_count }} still pending</small>
+                </div>
+                <div class="evaluation-data-card">
+                    <span>Next After Save</span>
+                    <strong>{% if next_feedback_member %}{{ next_feedback_member.full_name }}{% else %}Return to session{% endif %}</strong>
+                    <small>{% if next_feedback_member %}Use the green button to jump to the next student immediately.{% else %}This is the last pending report in the queue.{% endif %}</small>
                 </div>
             </div>
 
-            <form method="post" enctype="multipart/form-data" class="space-y">
-                {% csrf_token %}
+            <div class="evaluation-divider"></div>
 
-                <div class="form-group">
-                    <label for="{{ form.feedback_text.id_for_label }}">Written feedback</label>
-                    {{ form.feedback_text }}
-                    <p class="feedback-helper">Write the short recap parents should understand quickly: what was strong, what needs work, and what to focus on next.</p>
-                    {% if form.feedback_text.errors %}<p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ form.feedback_text.errors|join:", " }}</p>{% endif %}
+            <h3>Skill Ratings</h3>
+            <p class="evaluation-panel-copy">Use the sliders to grade each skill out of 100. The radar chart updates live on the right exactly like the progress report flow.</p>
+
+            <div class="evaluation-sliders">
+                {% for row in form.skill_field_rows %}
+                <div class="evaluation-slider-card">
+                    <div class="evaluation-slider-head">
+                        <strong>{{ row.label }}</strong>
+                        <span class="evaluation-slider-score" data-slider-output-for="{{ row.rating_name }}">
+                            {{ row.rating_field.value|default:0 }}/100
+                        </span>
+                    </div>
+                    {{ row.rating_field }}
+                    {% if row.rating_field.errors %}<p class="text-sm" style="color:var(--danger);margin-top:8px;">{{ row.rating_field.errors|join:", " }}</p>{% endif %}
+                    <div class="evaluation-slider-note form-group">
+                        <label for="{{ row.note_field.id_for_label }}">Improvement note</label>
+                        {{ row.note_field }}
+                        {% if row.note_field.errors %}<p class="text-sm" style="color:var(--danger);">{{ row.note_field.errors|join:", " }}</p>{% endif %}
+                    </div>
                 </div>
+                {% endfor %}
+            </div>
 
-                <div class="form-group">
-                    <label for="{{ form.video_proof.id_for_label }}">Optional video proof</label>
+            <div class="evaluation-divider"></div>
+
+            <h3>Session Summary & Proof</h3>
+            <p class="evaluation-panel-copy">Finish the ended-session report with one concise summary and optional proof video.</p>
+
+            <div class="evaluation-brief-grid">
+                <div class="form-group full">
+                    <label for="{{ form.feedback_text.id_for_label }}">{{ form.feedback_text.label }}</label>
+                    {{ form.feedback_text }}
+                    {% if form.feedback_text.help_text %}<p class="text-sm text-muted">{{ form.feedback_text.help_text }}</p>{% endif %}
+                    {% if form.feedback_text.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.feedback_text.errors|join:", " }}</p>{% endif %}
+                </div>
+                <div class="form-group full">
+                    <label for="{{ form.video_proof.id_for_label }}">Video proof</label>
                     {{ form.video_proof }}
-                    <p class="feedback-helper">Upload only when it adds useful proof or coaching context for this session.</p>
+                    {% if form.video_proof.help_text %}<p class="text-sm text-muted">{{ form.video_proof.help_text }}</p>{% endif %}
                     {% if feedback and feedback.video_proof %}
-                    <a href="{{ feedback.video_proof.url }}" target="_blank" class="feedback-current-file">
+                    <a href="{{ feedback.video_proof.url }}" target="_blank" class="current-proof">
                         <i class="fa-solid fa-video"></i> Open current uploaded video
                     </a>
                     {% endif %}
-                    {% if form.video_proof.errors %}<p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ form.video_proof.errors|join:", " }}</p>{% endif %}
-                </div>
-
-                <div class="feedback-cta-row">
-                    <a href="{% url 'sessions:detail' training_session.pk %}" class="btn btn-ghost">
-                        <i class="fa-solid fa-arrow-left"></i> Back To Session
-                    </a>
-                    {% if next_feedback_member %}
-                    <button type="submit" name="save_and_next" value="1" class="btn btn-success">
-                        <i class="fa-solid fa-forward-step"></i> Save And Open {{ next_feedback_member.full_name }}
-                    </button>
-                    {% endif %}
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fa-solid fa-save"></i> {% if is_edit %}Save Feedback{% else %}Publish Feedback{% endif %}
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <div class="feedback-side-stack">
-            <div class="card">
-                <div class="section-header">
-                    <span class="section-title">Quick Reminder</span>
-                </div>
-                <div class="space-y">
-                    <div class="card-inset">
-                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Where this goes</p>
-                        <p style="font-size:14px;color:var(--text);line-height:1.7;">This submission appears back on the session page and becomes part of the student's recent session feedback history.</p>
-                    </div>
-                    <div class="card-inset">
-                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Good coaching note</p>
-                        <p style="font-size:14px;color:var(--text);line-height:1.7;">Keep it concrete: one strength, one technical issue, one next drill or habit to focus on.</p>
-                    </div>
+                    {% if form.video_proof.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.video_proof.errors|join:", " }}</p>{% endif %}
                 </div>
             </div>
 
-            <div class="card">
-                <div class="section-header">
-                    <span class="section-title">Next In Queue</span>
-                </div>
+            {% if form.non_field_errors %}
+            <div class="card" style="margin-top:18px;border-color:rgba(239,68,68,.35);">
+                <p class="text-sm" style="color:var(--danger);">{{ form.non_field_errors|join:", " }}</p>
+            </div>
+            {% endif %}
+
+            <div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:24px;">
+                <a href="{% url 'sessions:detail' training_session.pk %}" class="btn btn-ghost">Cancel</a>
                 {% if next_feedback_member %}
-                <div class="feedback-next-card">
-                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Suggested next player</p>
-                    <p style="font-size:16px;font-weight:700;color:var(--text);">{{ next_feedback_member.full_name }}</p>
-                    <p class="feedback-helper" style="margin-top:8px;">Use the green save button to jump there immediately after this student is done.</p>
+                <button type="submit" name="save_and_next" value="1" class="btn btn-success">
+                    <i class="fa-solid fa-forward-step"></i> Save And Open {{ next_feedback_member.full_name }}
+                </button>
+                {% endif %}
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Session Report</button>
+            </div>
+        </section>
+
+        <section style="display:grid;gap:20px;">
+            <article class="evaluation-chart-card">
+                <h3>Skill Visualization</h3>
+                <p class="evaluation-panel-copy">Live radar view of the current scoring for this ended-session report.</p>
+                <div class="evaluation-chart-wrap">
+                    <canvas id="evaluationRadarChart"></canvas>
+                </div>
+                <div class="evaluation-score-grid">
+                    <div class="evaluation-score-chip">
+                        <span>Student</span>
+                        <strong>{{ member.full_name }}</strong>
+                    </div>
+                    <div class="evaluation-score-chip">
+                        <span>Program</span>
+                        <strong>{{ member.program_enrolled|default:member.syllabus_root|default:"-" }}</strong>
+                    </div>
+                    <div class="evaluation-score-chip">
+                        <span>Session Date</span>
+                        <strong>{{ training_session.session_date|date:"d M" }}</strong>
+                    </div>
+                </div>
+            </article>
+
+            <article class="evaluation-panel">
+                <h3>Previous Progress Reports</h3>
+                <p class="evaluation-panel-copy">Use the latest report history to keep this ended-session report aligned with the player's broader development plan.</p>
+                {% if previous_reports %}
+                <div class="evaluation-feed">
+                    {% for previous in previous_reports %}
+                    <div class="evaluation-feed-item">
+                        <strong>{{ previous.period_label }}</strong>
+                        <small>{{ previous.get_overall_status_display }} | Coach {{ previous.coach|default:"Coaching team" }}</small>
+                        <p>{{ previous.report_brief|default:previous.coach_reflection|default:"No summary was written in that cycle." }}</p>
+                        {% if previous.improvement_plan %}
+                        <small style="margin-top:10px;"><strong style="display:inline;color:var(--text);">Improvement:</strong> {{ previous.improvement_plan|truncatechars:180 }}</small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
                 </div>
                 {% else %}
-                <div class="feedback-next-card">
-                    <p style="font-size:14px;color:var(--text);line-height:1.7;">No further pending students are queued after this one. Saving will return you to the session detail page.</p>
+                <div class="evaluation-empty">
+                    No earlier progress reports were found for this student yet.
                 </div>
                 {% endif %}
-            </div>
-        </div>
-    </div>
+            </article>
+
+            <article class="evaluation-panel">
+                <h3>Earlier Session Reports</h3>
+                <p class="evaluation-panel-copy">These are the most recent ended-session reports already saved for this student.</p>
+                {% if recent_feedback_entries %}
+                <div class="evaluation-feed">
+                    {% for prior_feedback in recent_feedback_entries %}
+                    <div class="evaluation-feed-item">
+                        <strong>{{ prior_feedback.training_session.title }}</strong>
+                        <small>{{ prior_feedback.training_session.session_date|date:"d M Y" }} | Coach {{ prior_feedback.coach|default:"Coaching team" }}</small>
+                        <p>{{ prior_feedback.feedback_text|truncatechars:220 }}</p>
+                        {% if prior_feedback.video_proof %}
+                        <video controls preload="none" playsinline>
+                            <source src="{{ prior_feedback.video_proof.url }}">
+                        </video>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="evaluation-empty">
+                    No earlier session reports are available for this student yet.
+                </div>
+                {% endif %}
+            </article>
+        </section>
+    </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const radarCanvas = document.getElementById('evaluationRadarChart');
+        const sliderInputs = Array.from(document.querySelectorAll('.report-slider-input'));
+        const sliderOutputs = document.querySelectorAll('[data-slider-output-for]');
+        const seedSkills = JSON.parse('{{ session_skill_preview|escapejs }}');
+        let radarChart = null;
+
+        function getSkillRows() {
+            return seedSkills.map(function(row) {
+                const field = document.querySelector('[name="' + row.field_name + '"]');
+                return {
+                    label: row.label,
+                    value: field ? Number(field.value || 0) : Number(row.value || 0),
+                    fieldName: row.field_name
+                };
+            });
+        }
+
+        function updateSliderOutputs() {
+            sliderOutputs.forEach(function(output) {
+                const fieldName = output.dataset.sliderOutputFor;
+                const field = document.querySelector('[name="' + fieldName + '"]');
+                output.textContent = (field ? field.value : 0) + '/100';
+            });
+        }
+
+        async function renderRadarChart() {
+            if (!radarCanvas) return;
+            await window.ensureChartJs();
+            const skills = getSkillRows();
+            const chartData = {
+                labels: skills.map(function(row) { return row.label; }),
+                datasets: [{
+                    label: 'Skill score',
+                    data: skills.map(function(row) { return row.value; }),
+                    backgroundColor: 'rgba(52, 211, 153, 0.28)',
+                    borderColor: '#10b981',
+                    pointBackgroundColor: '#10b981',
+                    pointBorderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            };
+
+            if (radarChart) {
+                radarChart.data = chartData;
+                radarChart.update();
+                return;
+            }
+
+            radarChart = new Chart(radarCanvas, {
+                type: 'radar',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#8a8a9a',
+                                font: { family: 'Inter', size: 12 }
+                            }
+                        }
+                    },
+                    scales: {
+                        r: {
+                            min: 0,
+                            max: 100,
+                            ticks: { display: false, stepSize: 20 },
+                            angleLines: { color: 'rgba(148, 163, 184, 0.22)' },
+                            grid: { color: 'rgba(148, 163, 184, 0.22)' },
+                            pointLabels: {
+                                color: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#f0f0f4',
+                                font: { family: 'Inter', size: 12 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        updateSliderOutputs();
+        if (radarCanvas) {
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(renderRadarChart, { timeout: 1200 });
+            } else {
+                setTimeout(renderRadarChart, 0);
+            }
+        }
+
+        sliderInputs.forEach(function(input) {
+            input.addEventListener('input', function() {
+                updateSliderOutputs();
+                renderRadarChart();
+            });
+        });
+    });
+</script>
 {% endblock %}
