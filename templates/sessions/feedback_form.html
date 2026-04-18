@@ -1,154 +1,95 @@
 {% extends "base.html" %}
 
 {% block title %}{% if is_edit %}Edit Session Report{% else %}New Session Report{% endif %} | NYO Admin Dashboard{% endblock %}
-{% block page_heading %}{% if is_edit %}Edit Session Report{% else %}Create Session Report{% endif %}{% endblock %}
+{% block page_heading %}{% if is_edit %}Edit Session Report{% else %}Session Report{% endif %}{% endblock %}
 
 {% block extra_head %}
 <style>
-    /* ============ SHELL ============ */
-    .rate-shell {
-        display: grid;
-        gap: 18px;
-    }
+    .sr-shell { display: grid; gap: 16px; }
 
-    /* ============ HEADER ============ */
-    .rate-header {
-        position: relative;
-        overflow: hidden;
-        padding: 0;
-        border-radius: 24px;
-    }
-    .rate-header::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background:
-            radial-gradient(circle at 10% 0%, rgba(79, 110, 247, 0.22), transparent 45%),
-            radial-gradient(circle at 95% 100%, rgba(16, 185, 129, 0.15), transparent 50%);
-        pointer-events: none;
-    }
-    .rate-header::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background-image: radial-gradient(rgba(255,255,255,.035) 1px, transparent 1px);
-        background-size: 22px 22px;
-        mask-image: radial-gradient(ellipse at 50% 50%, #000 55%, transparent 85%);
-        -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 55%, transparent 85%);
-        pointer-events: none;
-    }
-    [data-theme="light"] .rate-header::after {
-        background-image: radial-gradient(rgba(15,23,42,.055) 1px, transparent 1px);
-    }
-    .rate-header-inner {
-        position: relative;
-        z-index: 1;
-        padding: 26px 28px;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 18px;
-        align-items: start;
-    }
-    .rate-eyebrow {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-        color: var(--muted);
-    }
-    .rate-eyebrow-dot {
-        width: 7px;
-        height: 7px;
-        border-radius: 999px;
-        background: var(--accent);
-        box-shadow: 0 0 0 4px rgba(79,110,247,.18);
-        animation: rate-pulse 2.4s ease-in-out infinite;
-    }
-    @keyframes rate-pulse {
-        0%, 100% { box-shadow: 0 0 0 4px rgba(79,110,247,.18); }
-        50% { box-shadow: 0 0 0 8px rgba(79,110,247,.04); }
-    }
-    .rate-title {
-        font-size: 26px;
-        font-weight: 700;
-        letter-spacing: -0.03em;
-        color: var(--text);
-        line-height: 1.15;
-        margin-top: 12px;
-        max-width: 24ch;
-    }
-    .rate-sub {
-        margin-top: 10px;
-        color: var(--muted);
-        font-size: 13.5px;
-        line-height: 1.75;
-        max-width: 720px;
-    }
-    .rate-meta {
+    /* ============ HEADER (compact, minimal) ============ */
+    .sr-head {
         display: flex;
-        gap: 8px;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
         flex-wrap: wrap;
-        margin-top: 16px;
+        padding: 20px 22px;
     }
-    .rate-chip {
+    .sr-kicker {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        padding: 7px 12px;
-        border-radius: 999px;
-        border: 1px solid var(--border2);
-        background: rgba(255,255,255,.04);
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--text);
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--success);
     }
-    [data-theme="light"] .rate-chip { background: rgba(79,110,247,.05); }
-    .rate-chip i { color: var(--accent); }
+    .sr-kicker::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: var(--success);
+        box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
+    }
+    .sr-title {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--text);
+        margin-top: 8px;
+        line-height: 1.2;
+    }
+    .sr-meta {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--muted);
+    }
+    .sr-meta span { display: inline-flex; align-items: center; gap: 6px; }
+    .sr-meta span + span::before { content: "·"; margin-right: 6px; color: var(--border2); }
 
-    /* ============ STEPPER TABS ============ */
-    .stepper {
+    /* ============ STEPPER ============ */
+    .sr-stepper {
         position: sticky;
         top: 0;
         z-index: 10;
-        padding: 14px 16px;
+        padding: 10px;
         background: color-mix(in srgb, var(--surface) 92%, transparent);
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
         border: 1px solid var(--border);
-        border-radius: 18px;
+        border-radius: 16px;
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-        align-items: stretch;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
     }
-    .stepper-item {
+    .sr-step-btn {
         display: grid;
-        grid-template-columns: auto 1fr;
+        grid-template-columns: 28px 1fr;
+        align-items: center;
         gap: 10px;
         padding: 10px 12px;
-        border-radius: 14px;
+        border-radius: 12px;
         border: 1px solid transparent;
         background: transparent;
         text-align: left;
         cursor: pointer;
         color: inherit;
-        transition: border-color var(--transition), background var(--transition);
-        position: relative;
+        transition: border-color .18s ease, background .18s ease;
     }
-    .stepper-item:hover {
-        border-color: var(--border2);
-        background: var(--surface2);
+    .sr-step-btn:hover { background: var(--surface2); }
+    .sr-step-btn.is-active {
+        border-color: rgba(34, 197, 94, 0.35);
+        background: rgba(34, 197, 94, 0.08);
     }
-    .stepper-item.is-active {
-        border-color: rgba(79,110,247,.35);
-        background: rgba(79,110,247,.08);
-    }
-    .stepper-dot {
-        width: 34px;
-        height: 34px;
+    .sr-step-dot {
+        width: 28px;
+        height: 28px;
         border-radius: 999px;
         display: inline-flex;
         align-items: center;
@@ -157,221 +98,145 @@
         border: 1.5px solid var(--border2);
         color: var(--muted);
         font-weight: 700;
-        font-size: 13px;
-        flex-shrink: 0;
-        transition: all var(--transition);
+        font-size: 12px;
+        transition: all .18s ease;
     }
-    .stepper-item.is-active .stepper-dot {
-        background: var(--accent);
-        border-color: var(--accent);
+    .sr-step-btn.is-active .sr-step-dot {
+        background: var(--success);
+        border-color: var(--success);
         color: #fff;
-        box-shadow: 0 0 0 5px rgba(79,110,247,.15);
     }
-    .stepper-item.is-done .stepper-dot {
+    .sr-step-btn.is-done .sr-step-dot {
         background: rgba(34,197,94,.15);
         border-color: rgba(34,197,94,.5);
         color: var(--success);
     }
-    .stepper-label {
+    .sr-step-label {
         display: block;
-        font-size: 10.5px;
+        font-size: 10px;
         letter-spacing: 0.1em;
         text-transform: uppercase;
         color: var(--muted);
         font-weight: 700;
     }
-    .stepper-title {
+    .sr-step-title {
         display: block;
         color: var(--text);
         font-weight: 700;
-        font-size: 14px;
-        margin-top: 2px;
+        font-size: 13.5px;
+        margin-top: 1px;
     }
-    .stepper-progress-bar {
+    .sr-progress {
         grid-column: 1 / -1;
-        height: 3px;
+        height: 2px;
         border-radius: 999px;
         background: var(--surface2);
         overflow: hidden;
     }
-    .stepper-progress-fill {
+    .sr-progress-fill {
         display: block;
         height: 100%;
         border-radius: inherit;
-        background: linear-gradient(90deg, var(--accent), #22c55e);
-        transition: width .45s cubic-bezier(.22,.61,.36,1);
+        background: linear-gradient(90deg, #22c55e, #4f6ef7);
+        transition: width .4s cubic-bezier(.22,.61,.36,1);
     }
 
     /* ============ LAYOUT ============ */
-    .rate-layout {
+    .sr-layout {
         display: grid;
-        gap: 18px;
-        grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.85fr);
+        gap: 16px;
+        grid-template-columns: minmax(0, 1.3fr) minmax(300px, 0.9fr);
         align-items: start;
     }
-    .rate-main {
+    .sr-main { display: grid; gap: 14px; }
+    .sr-side {
         display: grid;
-        gap: 16px;
-    }
-    .rate-side {
-        display: grid;
-        gap: 16px;
+        gap: 14px;
         position: sticky;
-        top: 90px;
+        top: 84px;
     }
-    .rate-panel {
+    .sr-panel {
         border: 1px solid var(--border);
-        border-radius: 20px;
+        border-radius: 18px;
         background: var(--surface);
-        padding: 22px;
+        padding: 20px;
     }
-    .rate-panel h3 {
-        font-size: 16px;
+    .sr-panel h3 {
+        font-size: 15px;
         font-weight: 700;
         color: var(--text);
-        margin-bottom: 6px;
+        margin: 0 0 4px;
     }
-    .panel-copy {
+    .sr-panel-copy {
         color: var(--muted);
-        line-height: 1.75;
-        font-size: 13.5px;
-        margin-bottom: 16px;
+        font-size: 12.5px;
+        line-height: 1.6;
+        margin: 0 0 14px;
     }
-    .rate-step { display: none; }
-    .rate-step.is-active {
+    .sr-step-panel { display: none; }
+    .sr-step-panel.is-active {
         display: block;
-        animation: step-in .35s cubic-bezier(.22,.61,.36,1);
+        animation: fade-up .3s cubic-bezier(.22,.61,.36,1);
     }
-    @keyframes step-in {
-        from { opacity: 0; transform: translateY(6px); }
+    @keyframes fade-up {
+        from { opacity: 0; transform: translateY(4px); }
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* ============ STUDENT CARDS ============ */
-    .rate-context-grid {
+    /* ============ RATING ROW (side-by-side slider + note) ============ */
+    .rate-list {
         display: grid;
-        gap: 12px;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        margin-bottom: 18px;
+        gap: 10px;
     }
-    .rate-context-card {
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        background: var(--surface2);
-        padding: 14px 16px;
-    }
-    .rate-context-card span {
-        display: block;
-        color: var(--muted);
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        margin-bottom: 6px;
-    }
-    .rate-context-card strong {
-        display: block;
-        color: var(--text);
-        font-size: 16px;
-        line-height: 1.3;
-    }
-    .rate-context-card small {
-        display: block;
-        margin-top: 6px;
-        color: var(--muted);
-        font-size: 12px;
-        line-height: 1.6;
-    }
-
-    /* ============ SLIDER CARDS ============ */
-    .skill-grid {
+    .rate-row {
         display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(220px, 1fr);
         gap: 14px;
-    }
-    .skill-card {
-        position: relative;
+        padding: 12px 14px;
+        border-radius: 14px;
         border: 1px solid var(--border);
-        border-radius: 18px;
-        padding: 16px 18px;
-        background:
-            linear-gradient(180deg, rgba(79,110,247,.04), rgba(79,110,247,.01)),
-            var(--surface);
-        overflow: hidden;
-        transition: border-color var(--transition), transform var(--transition);
+        background: var(--surface);
+        transition: border-color .2s ease;
     }
-    .skill-card:hover {
-        border-color: rgba(79,110,247,.3);
-        transform: translateY(-1px);
-    }
-    .skill-card::before {
-        content: "";
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 3px;
-        background: linear-gradient(180deg, var(--accent), transparent);
-        opacity: .55;
-    }
-    .skill-head {
+    .rate-row:hover { border-color: rgba(34, 197, 94, 0.28); }
+    .rate-row-left { min-width: 0; }
+    .rate-row-right { min-width: 0; }
+
+    .rate-head {
         display: flex;
         justify-content: space-between;
         align-items: center;
         gap: 10px;
-        margin-bottom: 14px;
-        flex-wrap: wrap;
+        margin-bottom: 8px;
     }
-    .skill-head-left {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    .skill-icon {
-        width: 32px;
-        height: 32px;
-        border-radius: 10px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(79,110,247,.12);
-        color: var(--accent);
-        font-size: 13px;
-    }
-    .skill-name {
+    .rate-name {
         color: var(--text);
-        font-size: 14.5px;
+        font-size: 13.5px;
         font-weight: 700;
     }
-    .skill-score {
+    .rate-score {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        padding: 6px 12px;
+        gap: 6px;
+        padding: 3px 10px;
         border-radius: 999px;
         background: var(--surface2);
         border: 1px solid var(--border);
         color: var(--text);
         font-weight: 700;
-        font-size: 13px;
+        font-size: 12px;
         font-variant-numeric: tabular-nums;
+        white-space: nowrap;
     }
-    .skill-score.tone-low { color: var(--danger); border-color: rgba(239,68,68,.25); background: rgba(239,68,68,.06); }
-    .skill-score.tone-mid { color: var(--warning); border-color: rgba(245,158,11,.25); background: rgba(245,158,11,.06); }
-    .skill-score.tone-good { color: var(--success); border-color: rgba(34,197,94,.25); background: rgba(34,197,94,.06); }
-    .skill-tone-label {
-        font-size: 10.5px;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-    }
+    .rate-score.tone-low { color: var(--danger); border-color: rgba(239,68,68,.25); background: rgba(239,68,68,.06); }
+    .rate-score.tone-mid { color: var(--warning); border-color: rgba(245,158,11,.25); background: rgba(245,158,11,.06); }
+    .rate-score.tone-good { color: var(--success); border-color: rgba(34,197,94,.25); background: rgba(34,197,94,.06); }
 
     /* slider */
-    .slider-wrap {
-        position: relative;
-        padding: 8px 0 4px;
-    }
+    .slider-wrap { position: relative; padding: 2px 0; }
     .slider-track {
         position: relative;
-        height: 8px;
+        height: 6px;
         border-radius: 999px;
         background: var(--surface2);
         border: 1px solid var(--border);
@@ -384,15 +249,6 @@
         background: linear-gradient(90deg, #ef4444 0%, #f59e0b 45%, #22c55e 90%);
         transition: width .2s cubic-bezier(.22,.61,.36,1);
     }
-    .slider-marks {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 6px;
-        color: var(--muted);
-        font-size: 10.5px;
-        font-weight: 600;
-        letter-spacing: 0.05em;
-    }
     input.report-slider-input[type="range"] {
         width: 100%;
         appearance: none;
@@ -401,259 +257,178 @@
         border: none;
         box-shadow: none;
         padding: 0;
-        margin: -14px 0 -10px;
+        margin: -13px 0 -11px;
         position: relative;
         z-index: 2;
-        height: 36px;
+        height: 32px;
         cursor: grab;
     }
     input.report-slider-input[type="range"]:active { cursor: grabbing; }
     input.report-slider-input[type="range"]:focus { outline: none; box-shadow: none !important; }
-    input.report-slider-input[type="range"]::-webkit-slider-runnable-track {
-        height: 36px;
-        background: transparent;
-    }
-    input.report-slider-input[type="range"]::-moz-range-track {
-        height: 36px;
-        background: transparent;
-        border: none;
-    }
+    input.report-slider-input[type="range"]::-webkit-slider-runnable-track { height: 32px; background: transparent; }
+    input.report-slider-input[type="range"]::-moz-range-track { height: 32px; background: transparent; border: none; }
     input.report-slider-input[type="range"]::-webkit-slider-thumb {
         -webkit-appearance: none;
-        width: 22px;
-        height: 22px;
+        width: 18px;
+        height: 18px;
         border-radius: 999px;
         background: #fff;
-        border: 3px solid var(--accent);
-        box-shadow: 0 4px 14px -4px rgba(79,110,247,.55), 0 0 0 4px rgba(79,110,247,.1);
+        border: 3px solid var(--success);
+        box-shadow: 0 3px 10px -3px rgba(34,197,94,.55), 0 0 0 3px rgba(34,197,94,.1);
         margin-top: 7px;
         transition: transform .15s ease;
         cursor: grab;
     }
     input.report-slider-input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.15); }
     input.report-slider-input[type="range"]::-moz-range-thumb {
-        width: 22px;
-        height: 22px;
+        width: 18px;
+        height: 18px;
         border-radius: 999px;
         background: #fff;
-        border: 3px solid var(--accent);
-        box-shadow: 0 4px 14px -4px rgba(79,110,247,.55), 0 0 0 4px rgba(79,110,247,.1);
+        border: 3px solid var(--success);
+        box-shadow: 0 3px 10px -3px rgba(34,197,94,.55), 0 0 0 3px rgba(34,197,94,.1);
         cursor: grab;
     }
-    [data-theme="light"] input.report-slider-input[type="range"]::-webkit-slider-thumb { background: #fff; }
-
-    .quick-rating-row {
+    .quick-set-row {
         display: flex;
+        gap: 4px;
+        margin-top: 8px;
         flex-wrap: wrap;
-        gap: 6px;
-        margin-top: 12px;
     }
-    .quick-rating {
+    .quick-set {
         appearance: none;
         -webkit-appearance: none;
         border: 1px solid var(--border2);
-        background: var(--surface2);
+        background: transparent;
         color: var(--muted);
-        padding: 4px 10px;
+        padding: 2px 8px;
         border-radius: 999px;
-        font-size: 11px;
+        font-size: 10.5px;
         font-weight: 700;
         cursor: pointer;
-        transition: all var(--transition);
+        transition: all .15s ease;
     }
-    .quick-rating:hover {
-        border-color: var(--accent);
-        color: var(--accent);
-    }
+    .quick-set:hover { border-color: var(--success); color: var(--success); }
 
-    /* ============ NOTE CARDS ============ */
-    .note-grid {
-        display: grid;
-        gap: 14px;
+    /* note side */
+    .rate-note-field textarea {
+        min-height: 60px !important;
+        padding: 10px 12px;
+        font-size: 13px;
+        line-height: 1.55;
     }
-    .note-card {
-        border: 1px solid var(--border);
-        border-radius: 18px;
-        background: var(--surface);
-        padding: 16px 18px;
-    }
-    .note-card .form-group label {
-        font-weight: 600;
-        color: var(--text);
+    .rate-note-label {
+        font-size: 10.5px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
         margin-bottom: 6px;
+        font-weight: 700;
     }
-    .note-card textarea { min-height: 70px; }
 
     /* ============ SUMMARY STEP ============ */
-    .summary-grid {
-        display: grid;
-        gap: 14px;
-        grid-template-columns: 1fr;
-    }
+    .summary-grid { display: grid; gap: 14px; }
     .current-proof {
-        margin-top: 10px;
+        margin-top: 8px;
         display: inline-flex;
         align-items: center;
         gap: 8px;
         color: var(--accent);
         text-decoration: none;
         font-weight: 600;
+        font-size: 13px;
     }
 
-    /* ============ RADAR SIDE PANEL ============ */
+    /* ============ RADAR / HISTORY (side) ============ */
     .radar-card {
-        border: 1px solid var(--border);
-        border-radius: 20px;
-        padding: 20px;
-        background:
-            linear-gradient(180deg, rgba(34,197,94,.06), rgba(79,110,247,.02)),
-            var(--surface);
-        position: relative;
-        overflow: hidden;
+        border: 1px solid rgba(34, 197, 94, 0.25);
+        border-radius: 18px;
+        padding: 18px;
+        background: linear-gradient(180deg, rgba(34,197,94,.05), transparent);
     }
-    .radar-card::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background-image: radial-gradient(rgba(255,255,255,.03) 1px, transparent 1px);
-        background-size: 18px 18px;
-        pointer-events: none;
-        opacity: .6;
-    }
-    [data-theme="light"] .radar-card::before {
-        background-image: radial-gradient(rgba(15,23,42,.05) 1px, transparent 1px);
-    }
-    .radar-card > * { position: relative; z-index: 1; }
-    .radar-wrap {
-        min-height: 300px;
-        position: relative;
-    }
-    .radar-average {
+    .radar-wrap { min-height: 260px; position: relative; }
+    .radar-stats {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-        margin-top: 14px;
+        gap: 8px;
+        margin-top: 12px;
     }
     .radar-stat {
         text-align: center;
-        padding: 10px;
-        border-radius: 14px;
+        padding: 8px;
+        border-radius: 12px;
         border: 1px solid var(--border);
         background: var(--surface2);
     }
     .radar-stat span {
         display: block;
         color: var(--muted);
-        font-size: 10.5px;
+        font-size: 10px;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        margin-bottom: 4px;
+        margin-bottom: 3px;
     }
     .radar-stat strong {
         display: block;
         color: var(--text);
-        font-size: 20px;
+        font-size: 16px;
         letter-spacing: -0.02em;
         font-variant-numeric: tabular-nums;
     }
-
-    /* ============ PREVIOUS / HISTORY ============ */
-    .history-feed {
-        display: grid;
-        gap: 12px;
-    }
+    .history-feed { display: grid; gap: 8px; }
     .history-item {
         border: 1px solid var(--border);
-        border-radius: 16px;
-        background: var(--surface2);
-        padding: 14px 16px;
-    }
-    .history-item strong {
-        display: block;
-        color: var(--text);
-        margin-bottom: 4px;
-        font-size: 13.5px;
-    }
-    .history-item small {
-        display: block;
-        color: var(--muted);
-        line-height: 1.6;
-        font-size: 12px;
-    }
-    .history-item p {
-        margin-top: 10px;
-        color: var(--text);
-        line-height: 1.75;
-        font-size: 13px;
-    }
-    .history-item video {
-        width: 100%;
-        margin-top: 10px;
         border-radius: 12px;
-        background: #000;
+        background: var(--surface2);
+        padding: 10px 12px;
     }
+    .history-item strong { display: block; color: var(--text); font-size: 12.5px; margin-bottom: 2px; }
+    .history-item small { display: block; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .history-item p { margin-top: 6px; color: var(--text); font-size: 12px; line-height: 1.6; }
     .history-empty {
         border: 1px dashed var(--border2);
-        border-radius: 14px;
-        padding: 14px;
+        border-radius: 12px;
+        padding: 12px;
         color: var(--muted);
-        background: var(--surface2);
         text-align: center;
-        font-size: 12.5px;
-        line-height: 1.7;
+        font-size: 12px;
     }
 
-    /* ============ NAV BUTTONS ============ */
-    .rate-nav {
+    /* ============ NAV ============ */
+    .sr-nav {
         display: flex;
         justify-content: space-between;
         gap: 10px;
         flex-wrap: wrap;
-        margin-top: 20px;
-        padding-top: 18px;
+        margin-top: 16px;
+        padding-top: 14px;
         border-top: 1px solid var(--border);
     }
-    .rate-nav-right {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
+    .sr-nav-right { display: flex; gap: 8px; flex-wrap: wrap; }
 
     /* ============ RESPONSIVE ============ */
     @media (max-width: 1100px) {
-        .rate-layout { grid-template-columns: 1fr; }
-        .rate-side { position: static; }
+        .sr-layout { grid-template-columns: 1fr; }
+        .sr-side { position: static; }
     }
-    @media (max-width: 720px) {
-        .rate-header-inner {
-            grid-template-columns: 1fr;
-            padding: 20px;
-        }
-        .rate-title { font-size: 22px; }
-        .stepper {
-            grid-template-columns: repeat(3, 1fr);
-            padding: 10px;
-            gap: 6px;
-        }
-        .stepper-item { padding: 8px; }
-        .stepper-title { font-size: 12px; }
-        .stepper-label { font-size: 9.5px; }
-        .rate-panel { padding: 18px; border-radius: 18px; }
-        .rate-context-grid { grid-template-columns: 1fr; }
-        .skill-head { flex-direction: column; align-items: flex-start; gap: 8px; }
-        .skill-score { align-self: flex-start; }
-        .radar-average { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    @media (max-width: 760px) {
+        .rate-row { grid-template-columns: 1fr; }
+        .sr-head { padding: 16px; }
+        .sr-title { font-size: 19px; }
+        .sr-panel { padding: 16px; border-radius: 16px; }
+        .sr-step-title { font-size: 12px; }
+        .sr-step-label { font-size: 9px; }
     }
-    @media (max-width: 480px) {
-        .stepper-title { display: none; }
-        .stepper-item { grid-template-columns: 1fr; justify-items: center; }
-        .stepper-dot { margin: 0 auto; }
-        .stepper-label { text-align: center; }
-        .radar-average { grid-template-columns: 1fr; }
+    @media (max-width: 420px) {
+        .sr-step-title { display: none; }
+        .sr-step-btn { grid-template-columns: 1fr; justify-items: center; }
+        .sr-step-dot { margin: 0 auto; }
+        .sr-step-label { text-align: center; }
+        .radar-stats { grid-template-columns: 1fr 1fr 1fr; }
+        .radar-stat strong { font-size: 13px; }
     }
     @media (prefers-reduced-motion: reduce) {
-        .rate-eyebrow-dot, .rate-step.is-active,
-        .slider-fill, .stepper-progress-fill {
+        .slider-fill, .sr-progress-fill, .sr-step-panel.is-active {
             animation: none !important;
             transition: none !important;
         }
@@ -662,28 +437,21 @@
 {% endblock %}
 
 {% block content %}
-<div class="rate-shell">
+<div class="sr-shell">
 
     <!-- ============ HEADER ============ -->
-    <div class="card rate-header">
-        <div class="rate-header-inner">
+    <div class="card">
+        <div class="sr-head">
             <div>
-                <p class="rate-eyebrow">
-                    <span class="rate-eyebrow-dot"></span>
-                    After-Session Report
-                </p>
-                <h2 class="rate-title">
-                    {% if is_edit %}Refine the scoring for {{ member.full_name }}.{% else %}Rate {{ member.full_name }} in three short steps.{% endif %}
+                <span class="sr-kicker">Session Report</span>
+                <h2 class="sr-title">
+                    {% if is_edit %}Update {{ member.full_name }}{% else %}Rate {{ member.full_name }}{% endif %}
                 </h2>
-                <p class="rate-sub">
-                    Slide the skill scores, add coaching notes, then write a session summary with an optional video proof. The radar updates live on the right so you see the shape of the rating instantly.
-                </p>
-                <div class="rate-meta">
-                    <span class="rate-chip"><i class="fa-regular fa-user"></i>{{ member.full_name }}</span>
-                    <span class="rate-chip"><i class="fa-regular fa-calendar"></i>{{ training_session.session_date|date:"d M Y" }}</span>
-                    <span class="rate-chip"><i class="fa-regular fa-clock"></i>{{ training_session.start_time|time:"H:i" }} - {{ training_session.end_time|time:"H:i" }}</span>
+                <div class="sr-meta">
+                    <span><i class="fa-regular fa-calendar"></i>{{ training_session.session_date|date:"d M Y" }}</span>
+                    <span><i class="fa-regular fa-clock"></i>{{ training_session.start_time|time:"H:i" }}–{{ training_session.end_time|time:"H:i" }}</span>
                     {% if current_member_position %}
-                    <span class="rate-chip"><i class="fa-solid fa-list-ol"></i>Student {{ current_member_position }} / {{ feedback_total_count }}</span>
+                    <span><i class="fa-solid fa-list-ol"></i>{{ current_member_position }}/{{ feedback_total_count }}</span>
                     {% endif %}
                 </div>
             </div>
@@ -694,130 +462,88 @@
     </div>
 
     <!-- ============ STEPPER ============ -->
-    <div class="stepper" role="tablist" id="rateStepper">
-        <button type="button" class="stepper-item is-active" data-step="1" role="tab">
-            <span class="stepper-dot">1</span>
+    <div class="sr-stepper" role="tablist" id="srStepper">
+        <button type="button" class="sr-step-btn is-active" data-step="1" role="tab">
+            <span class="sr-step-dot">1</span>
             <span>
-                <span class="stepper-label">Step 1</span>
-                <span class="stepper-title">Rate Skills</span>
+                <span class="sr-step-label">Step 1</span>
+                <span class="sr-step-title">Rate &amp; Note</span>
             </span>
         </button>
-        <button type="button" class="stepper-item" data-step="2" role="tab">
-            <span class="stepper-dot">2</span>
+        <button type="button" class="sr-step-btn" data-step="2" role="tab">
+            <span class="sr-step-dot">2</span>
             <span>
-                <span class="stepper-label">Step 2</span>
-                <span class="stepper-title">Coaching Notes</span>
+                <span class="sr-step-label">Step 2</span>
+                <span class="sr-step-title">Summary &amp; Video</span>
             </span>
         </button>
-        <button type="button" class="stepper-item" data-step="3" role="tab">
-            <span class="stepper-dot">3</span>
-            <span>
-                <span class="stepper-label">Step 3</span>
-                <span class="stepper-title">Summary &amp; Video</span>
-            </span>
-        </button>
-        <div class="stepper-progress-bar"><span class="stepper-progress-fill" id="stepperProgress" style="width:33%;"></span></div>
+        <div class="sr-progress"><span class="sr-progress-fill" id="srProgress" style="width:50%;"></span></div>
     </div>
 
     <!-- ============ FORM ============ -->
-    <form method="post" enctype="multipart/form-data" class="rate-layout" id="rateForm" novalidate>
+    <form method="post" enctype="multipart/form-data" class="sr-layout" id="srForm" novalidate>
         {% csrf_token %}
 
-        <!-- MAIN -->
-        <section class="rate-main">
+        <section class="sr-main">
 
-            <!-- STEP 1: RATE SKILLS -->
-            <div class="rate-panel rate-step is-active" data-step-panel="1">
-                <h3>Skill Ratings</h3>
-                <p class="panel-copy">Drag each slider from 0 to 100. The radar on the right updates live. The tone label on the pill changes as the score moves.</p>
+            <!-- STEP 1: RATE & NOTE -->
+            <div class="sr-panel sr-step-panel is-active" data-step-panel="1">
+                <h3>Rate &amp; Note</h3>
+                <p class="sr-panel-copy">Slide to score. Add a short note on the right if needed.</p>
 
-                <div class="rate-context-grid">
-                    <div class="rate-context-card">
-                        <span>Student</span>
-                        <strong>{{ member.full_name }}</strong>
-                        <small>{% if member.assigned_coach %}Assigned coach {{ member.assigned_coach }}{% else %}No assigned coach on file{% endif %}</small>
-                    </div>
-                    <div class="rate-context-card">
-                        <span>Queue</span>
-                        <strong>{% if current_member_position %}Student {{ current_member_position }} of {{ feedback_total_count }}{% else %}-{% endif %}</strong>
-                        <small>{{ feedback_completed_count }} done | {{ feedback_pending_count }} pending</small>
-                    </div>
-                </div>
-
-                <div class="skill-grid">
+                <div class="rate-list">
                     {% for row in form.skill_field_rows %}
-                    <div class="skill-card" data-skill="{{ row.rating_name }}">
-                        <div class="skill-head">
-                            <div class="skill-head-left">
-                                <span class="skill-icon"><i class="fa-solid fa-bullseye"></i></span>
-                                <span class="skill-name">{{ row.label }}</span>
+                    <div class="rate-row" data-skill="{{ row.rating_name }}">
+                        <div class="rate-row-left">
+                            <div class="rate-head">
+                                <span class="rate-name">{{ row.label }}</span>
+                                <span class="rate-score" data-slider-output-for="{{ row.rating_name }}">
+                                    <span data-slider-value-for="{{ row.rating_name }}">{{ row.rating_field.value|default:0 }}</span>/100
+                                </span>
                             </div>
-                            <span class="skill-score" data-slider-output-for="{{ row.rating_name }}">
-                                <span class="skill-tone-label" data-slider-tone-for="{{ row.rating_name }}">Good</span>
-                                <span data-slider-value-for="{{ row.rating_name }}">{{ row.rating_field.value|default:0 }}</span>/100
-                            </span>
+                            <div class="slider-wrap">
+                                <div class="slider-track">
+                                    <span class="slider-fill" data-slider-fill-for="{{ row.rating_name }}" style="width:{{ row.rating_field.value|default:0 }}%;"></span>
+                                </div>
+                                {{ row.rating_field }}
+                            </div>
+                            <div class="quick-set-row">
+                                <button type="button" class="quick-set" data-quick-set="{{ row.rating_name }}" data-value="25">25</button>
+                                <button type="button" class="quick-set" data-quick-set="{{ row.rating_name }}" data-value="50">50</button>
+                                <button type="button" class="quick-set" data-quick-set="{{ row.rating_name }}" data-value="75">75</button>
+                                <button type="button" class="quick-set" data-quick-set="{{ row.rating_name }}" data-value="90">90</button>
+                            </div>
+                            {% if row.rating_field.errors %}<p class="text-sm" style="color:var(--danger);margin-top:6px;">{{ row.rating_field.errors|join:", " }}</p>{% endif %}
                         </div>
-                        <div class="slider-wrap">
-                            <div class="slider-track">
-                                <span class="slider-fill" data-slider-fill-for="{{ row.rating_name }}" style="width:{{ row.rating_field.value|default:0 }}%;"></span>
+                        <div class="rate-row-right">
+                            <div class="rate-note-field form-group">
+                                <label class="rate-note-label" for="{{ row.note_field.id_for_label }}">Note</label>
+                                {{ row.note_field }}
+                                {% if row.note_field.errors %}<p class="text-sm" style="color:var(--danger);">{{ row.note_field.errors|join:", " }}</p>{% endif %}
                             </div>
-                            {{ row.rating_field }}
-                            <div class="slider-marks">
-                                <span>0</span><span>25</span><span>50</span><span>75</span><span>100</span>
-                            </div>
-                        </div>
-                        {% if row.rating_field.errors %}<p class="text-sm" style="color:var(--danger);margin-top:8px;">{{ row.rating_field.errors|join:", " }}</p>{% endif %}
-                        <div class="quick-rating-row">
-                            <button type="button" class="quick-rating" data-quick-set="{{ row.rating_name }}" data-value="25">25</button>
-                            <button type="button" class="quick-rating" data-quick-set="{{ row.rating_name }}" data-value="50">50</button>
-                            <button type="button" class="quick-rating" data-quick-set="{{ row.rating_name }}" data-value="75">75</button>
-                            <button type="button" class="quick-rating" data-quick-set="{{ row.rating_name }}" data-value="90">90</button>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
             </div>
 
-            <!-- STEP 2: NOTES -->
-            <div class="rate-panel rate-step" data-step-panel="2">
-                <h3>Coaching Notes</h3>
-                <p class="panel-copy">Optional. Short, specific notes show up in the student's progression history so drills can be built from them.</p>
-
-                <div class="note-grid">
-                    {% for row in form.skill_field_rows %}
-                    <div class="note-card">
-                        <div class="form-group">
-                            <label for="{{ row.note_field.id_for_label }}">
-                                <span class="skill-icon" style="width:24px;height:24px;border-radius:7px;font-size:11px;display:inline-flex;vertical-align:-6px;margin-right:6px;"><i class="fa-solid fa-pen"></i></span>
-                                {{ row.label }} note
-                            </label>
-                            {{ row.note_field }}
-                            {% if row.note_field.errors %}<p class="text-sm" style="color:var(--danger);">{{ row.note_field.errors|join:", " }}</p>{% endif %}
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <!-- STEP 3: SUMMARY & VIDEO -->
-            <div class="rate-panel rate-step" data-step-panel="3">
-                <h3>Session Summary &amp; Video Proof</h3>
-                <p class="panel-copy">Finish the report with one concise session summary and attach a proof clip if it helps explain the scoring.</p>
+            <!-- STEP 2: SUMMARY & VIDEO -->
+            <div class="sr-panel sr-step-panel" data-step-panel="2">
+                <h3>Summary &amp; Video</h3>
+                <p class="sr-panel-copy">One line summary. Video is optional.</p>
 
                 <div class="summary-grid">
                     <div class="form-group full">
-                        <label for="{{ form.feedback_text.id_for_label }}">{{ form.feedback_text.label }}</label>
+                        <label for="{{ form.feedback_text.id_for_label }}">Session summary</label>
                         {{ form.feedback_text }}
-                        {% if form.feedback_text.help_text %}<p class="text-sm text-muted">{{ form.feedback_text.help_text }}</p>{% endif %}
                         {% if form.feedback_text.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.feedback_text.errors|join:", " }}</p>{% endif %}
                     </div>
                     <div class="form-group full">
                         <label for="{{ form.video_proof.id_for_label }}">Video proof</label>
                         {{ form.video_proof }}
-                        {% if form.video_proof.help_text %}<p class="text-sm text-muted">{{ form.video_proof.help_text }}</p>{% endif %}
                         {% if feedback and feedback.video_proof %}
                         <a href="{{ feedback.video_proof.url }}" target="_blank" class="current-proof">
-                            <i class="fa-solid fa-video"></i> Open current uploaded video
+                            <i class="fa-solid fa-video"></i> Current video
                         </a>
                         {% endif %}
                         {% if form.video_proof.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.video_proof.errors|join:", " }}</p>{% endif %}
@@ -825,91 +551,73 @@
                 </div>
 
                 {% if form.non_field_errors %}
-                <div style="margin-top:16px;padding:12px 14px;border-radius:14px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.06);">
+                <div style="margin-top:12px;padding:10px 12px;border-radius:12px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.06);">
                     <p class="text-sm" style="color:var(--danger);">{{ form.non_field_errors|join:", " }}</p>
                 </div>
                 {% endif %}
             </div>
 
             <!-- NAV -->
-            <div class="rate-nav">
+            <div class="sr-nav">
                 <button type="button" class="btn btn-ghost" id="prevStepBtn" disabled>
-                    <i class="fa-solid fa-arrow-left"></i> Previous
+                    <i class="fa-solid fa-arrow-left"></i> Back
                 </button>
-                <div class="rate-nav-right">
+                <div class="sr-nav-right">
                     <a href="{% url 'sessions:detail' training_session.pk %}" class="btn btn-ghost">Cancel</a>
                     <button type="button" class="btn btn-primary" id="nextStepBtn">
                         Next <i class="fa-solid fa-arrow-right"></i>
                     </button>
                     {% if next_feedback_member %}
                     <button type="submit" name="save_and_next" value="1" class="btn btn-success" id="saveNextBtn" style="display:none;">
-                        <i class="fa-solid fa-forward-step"></i> Save &amp; Open {{ next_feedback_member.full_name }}
+                        <i class="fa-solid fa-forward-step"></i> Save &amp; Next
                     </button>
                     {% endif %}
                     <button type="submit" class="btn btn-primary" id="saveBtn" style="display:none;">
-                        <i class="fa-solid fa-floppy-disk"></i> Save Session Report
+                        <i class="fa-solid fa-floppy-disk"></i> Save Report
                     </button>
                 </div>
             </div>
         </section>
 
         <!-- SIDE -->
-        <aside class="rate-side">
+        <aside class="sr-side">
             <article class="radar-card">
-                <h3 style="margin-bottom:4px;">Live Spider Graph</h3>
-                <p class="panel-copy">Visual of the current scoring for this report.</p>
+                <h3 style="font-size:14px;font-weight:700;color:var(--text);margin:0 0 4px;">Live Spider</h3>
+                <p class="sr-panel-copy">Updates as you slide.</p>
                 <div class="radar-wrap">
                     <canvas id="evaluationRadarChart"></canvas>
                 </div>
-                <div class="radar-average">
+                <div class="radar-stats">
                     <div class="radar-stat">
-                        <span>Average</span>
+                        <span>Avg</span>
                         <strong id="radarAverage">0</strong>
                     </div>
                     <div class="radar-stat">
-                        <span>Strongest</span>
-                        <strong id="radarStrongest" style="font-size:13px;line-height:1.3;">-</strong>
+                        <span>Top</span>
+                        <strong id="radarStrongest" style="font-size:12px;line-height:1.3;">-</strong>
                     </div>
                     <div class="radar-stat">
-                        <span>Weakest</span>
-                        <strong id="radarWeakest" style="font-size:13px;line-height:1.3;">-</strong>
+                        <span>Low</span>
+                        <strong id="radarWeakest" style="font-size:12px;line-height:1.3;">-</strong>
                     </div>
                 </div>
             </article>
 
-            <article class="rate-panel">
-                <h3>Previous Progress Reports</h3>
-                <p class="panel-copy">Reference from earlier cycles.</p>
-                {% if previous_reports %}
-                <div class="history-feed">
-                    {% for previous in previous_reports %}
-                    <div class="history-item">
-                        <strong>{{ previous.period_label }}</strong>
-                        <small>{{ previous.get_overall_status_display }} | Coach {{ previous.coach|default:"Coaching team" }}</small>
-                        <p>{{ previous.report_brief|default:previous.coach_reflection|default:"No summary written in that cycle."|truncatechars:200 }}</p>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <div class="history-empty">No earlier progress reports yet.</div>
-                {% endif %}
-            </article>
-
-            <article class="rate-panel">
-                <h3>Earlier Session Reports</h3>
-                <p class="panel-copy">Most recent ended-session reports for this student.</p>
+            <article class="sr-panel">
+                <h3>Past Sessions</h3>
+                <p class="sr-panel-copy">Recent reports for this student.</p>
                 {% if recent_feedback_entries %}
                 <div class="history-feed">
-                    {% for prior_feedback in recent_feedback_entries %}
+                    {% for prior_feedback in recent_feedback_entries|slice:":3" %}
                     <div class="history-item">
                         <strong>{{ prior_feedback.training_session.title }}</strong>
-                        <small>{{ prior_feedback.training_session.session_date|date:"d M Y" }} | Coach {{ prior_feedback.coach|default:"Coaching team" }}</small>
-                        <p>{{ prior_feedback.feedback_text|truncatechars:200 }}</p>
+                        <small>{{ prior_feedback.training_session.session_date|date:"d M Y" }}</small>
+                        <p>{{ prior_feedback.feedback_text|truncatechars:140 }}</p>
                     </div>
                     {% endfor %}
                 </div>
                 {% else %}
-                <div class="history-empty">No earlier session reports yet.</div>
+                <div class="history-empty">No earlier session reports.</div>
                 {% endif %}
             </article>
         </aside>
@@ -920,10 +628,10 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // ============ STEPPER ============
-        const steps = document.querySelectorAll('.stepper-item');
+        // STEPPER
+        const steps = document.querySelectorAll('.sr-step-btn');
         const panels = document.querySelectorAll('[data-step-panel]');
-        const progress = document.getElementById('stepperProgress');
+        const progress = document.getElementById('srProgress');
         const prevBtn = document.getElementById('prevStepBtn');
         const nextBtn = document.getElementById('nextStepBtn');
         const saveBtn = document.getElementById('saveBtn');
@@ -951,29 +659,26 @@
         }
 
         steps.forEach(function(step) {
-            step.addEventListener('click', function() {
-                showStep(Number(step.dataset.step));
-            });
+            step.addEventListener('click', function() { showStep(Number(step.dataset.step)); });
         });
         prevBtn.addEventListener('click', function() { showStep(current - 1); });
         nextBtn.addEventListener('click', function() { showStep(current + 1); });
 
-        // If form has errors, jump to the step that contains them.
-        const errorField = document.querySelector('.rate-step p[style*="--danger"]');
-        if (errorField) {
-            const panel = errorField.closest('[data-step-panel]');
+        const errField = document.querySelector('.sr-step-panel p[style*="--danger"]');
+        if (errField) {
+            const panel = errField.closest('[data-step-panel]');
             if (panel) showStep(Number(panel.dataset.stepPanel));
         }
 
-        // ============ SLIDERS ============
+        // SLIDERS + RADAR
         const sliderInputs = Array.from(document.querySelectorAll('.report-slider-input'));
         const seedSkills = JSON.parse('{{ session_skill_preview|escapejs }}');
         let radarChart = null;
 
         function getTone(value) {
-            if (value < 40) return { key: 'low', label: 'Needs Work' };
-            if (value < 70) return { key: 'mid', label: 'Developing' };
-            return { key: 'good', label: 'Strong' };
+            if (value < 40) return 'low';
+            if (value < 70) return 'mid';
+            return 'good';
         }
 
         function updateSliderVisual(input) {
@@ -981,15 +686,12 @@
             const value = Number(input.value || 0);
             const fill = document.querySelector('[data-slider-fill-for="' + name + '"]');
             const valueNode = document.querySelector('[data-slider-value-for="' + name + '"]');
-            const toneNode = document.querySelector('[data-slider-tone-for="' + name + '"]');
             const chip = document.querySelector('[data-slider-output-for="' + name + '"]');
             if (fill) fill.style.width = value + '%';
             if (valueNode) valueNode.textContent = value;
-            const tone = getTone(value);
-            if (toneNode) toneNode.textContent = tone.label;
             if (chip) {
                 chip.classList.remove('tone-low', 'tone-mid', 'tone-good');
-                chip.classList.add('tone-' + tone.key);
+                chip.classList.add('tone-' + getTone(value));
             }
         }
 
@@ -998,8 +700,7 @@
                 const field = document.querySelector('[name="' + row.field_name + '"]');
                 return {
                     label: row.label,
-                    value: field ? Number(field.value || 0) : Number(row.value || 0),
-                    fieldName: row.field_name
+                    value: field ? Number(field.value || 0) : Number(row.value || 0)
                 };
             });
         }
@@ -1017,53 +718,49 @@
             if (weakNode) weakNode.textContent = sorted[sorted.length - 1].label;
         }
 
-        async function renderRadarChart() {
+        async function renderRadar() {
             const canvas = document.getElementById('evaluationRadarChart');
             if (!canvas) return;
             await window.ensureChartJs();
             const skills = getSkillRows();
             updateRadarStats(skills);
-            const chartData = {
+            const data = {
                 labels: skills.map(function(r) { return r.label; }),
                 datasets: [{
-                    label: 'Skill score',
+                    label: 'Skill',
                     data: skills.map(function(r) { return r.value; }),
-                    backgroundColor: 'rgba(79, 110, 247, 0.22)',
-                    borderColor: '#4f6ef7',
-                    pointBackgroundColor: '#4f6ef7',
+                    backgroundColor: 'rgba(34, 197, 94, 0.22)',
+                    borderColor: '#22c55e',
+                    pointBackgroundColor: '#22c55e',
                     pointBorderColor: '#ffffff',
-                    pointHoverBackgroundColor: '#ffffff',
-                    pointHoverBorderColor: '#4f6ef7',
                     borderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6
+                    pointRadius: 3,
+                    pointHoverRadius: 5
                 }]
             };
             if (radarChart) {
-                radarChart.data = chartData;
+                radarChart.data = data;
                 radarChart.update();
                 return;
             }
             radarChart = new Chart(canvas, {
                 type: 'radar',
-                data: chartData,
+                data: data,
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    animation: { duration: 400 },
-                    plugins: {
-                        legend: { display: false }
-                    },
+                    animation: { duration: 300 },
+                    plugins: { legend: { display: false } },
                     scales: {
                         r: {
                             min: 0,
                             max: 100,
-                            ticks: { display: false, stepSize: 20 },
+                            ticks: { display: false, stepSize: 25 },
                             angleLines: { color: 'rgba(148, 163, 184, 0.22)' },
                             grid: { color: 'rgba(148, 163, 184, 0.22)' },
                             pointLabels: {
                                 color: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#f0f0f4',
-                                font: { family: 'Inter', size: 11 }
+                                font: { family: 'Inter', size: 10 }
                             }
                         }
                     }
@@ -1071,24 +768,21 @@
             });
         }
 
-        // init slider visuals
         sliderInputs.forEach(function(input) { updateSliderVisual(input); });
 
-        // init radar chart (idle to keep TTI fast)
         if ('requestIdleCallback' in window) {
-            requestIdleCallback(renderRadarChart, { timeout: 1200 });
+            requestIdleCallback(renderRadar, { timeout: 1200 });
         } else {
-            setTimeout(renderRadarChart, 0);
+            setTimeout(renderRadar, 0);
         }
 
         sliderInputs.forEach(function(input) {
             input.addEventListener('input', function() {
                 updateSliderVisual(input);
-                renderRadarChart();
+                renderRadar();
             });
         });
 
-        // quick-rating pills
         document.querySelectorAll('[data-quick-set]').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 const fieldName = btn.dataset.quickSet;
@@ -1097,7 +791,7 @@
                 if (!field) return;
                 field.value = value;
                 updateSliderVisual(field);
-                renderRadarChart();
+                renderRadar();
             });
         });
     });

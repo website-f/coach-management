@@ -484,29 +484,6 @@
         border-color: rgba(79, 110, 247, 0.28);
     }
 
-    /* ============ STAT CARDS ============ */
-    .session-workspace .stat-card {
-        position: relative;
-        overflow: hidden;
-        transition: transform var(--transition), border-color var(--transition);
-    }
-    .session-workspace .stat-card:hover {
-        transform: translateY(-2px);
-        border-color: rgba(79, 110, 247, 0.28);
-    }
-    .session-workspace .stat-card::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background-image: radial-gradient(rgba(255,255,255,.03) 1px, transparent 1px);
-        background-size: 14px 14px;
-        pointer-events: none;
-        opacity: .5;
-    }
-    [data-theme="light"] .session-workspace .stat-card::before {
-        background-image: radial-gradient(rgba(0,0,0,.04) 1px, transparent 1px);
-    }
-
     /* ============ REVEAL ANIMATION ============ */
     .reveal {
         opacity: 0;
@@ -717,33 +694,8 @@
         </div>
     </div>
 
-    <!-- ============ STAT CARDS ============ -->
-    <div class="stat-cards reveal delay-1">
-        {% for item in session_progress_summary %}
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div>
-                    <p class="stat-label">{{ item.label }}</p>
-                    <p class="stat-value">{{ item.value }}</p>
-                </div>
-                <div class="stat-icon">
-                    {% if item.tone == 'success' %}
-                    <i class="fa-solid fa-circle-check"></i>
-                    {% elif item.tone == 'warning' %}
-                    <i class="fa-solid fa-clock"></i>
-                    {% elif item.tone == 'danger' %}
-                    <i class="fa-solid fa-circle-xmark"></i>
-                    {% else %}
-                    <i class="fa-solid fa-clipboard-check"></i>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-
     <!-- ============ ROSTER ============ -->
-    <div class="card reveal delay-2">
+    <div class="card reveal delay-1">
         <div class="section-header roster-head">
             <div>
                 <span class="section-title">Coach Action List</span>
@@ -856,7 +808,7 @@
     </div>
 
     <!-- ============ FEEDBACK FEED + HELP ============ -->
-    <div class="grid-2 reveal delay-3">
+    <div class="grid-2 reveal delay-2">
         <div class="card">
             <div class="section-header">
                 <span class="section-title">Submitted Session Reports</span>

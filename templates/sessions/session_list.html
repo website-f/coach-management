@@ -158,12 +158,20 @@
     .session-tab-panel.is-active {
         display: block;
     }
+    .btn-open-session {
+        padding: 12px 20px;
+        font-size: 14.5px;
+        font-weight: 700;
+        border-radius: 14px;
+        box-shadow: 0 10px 24px -10px rgba(79, 110, 247, 0.55);
+    }
     .coach-checklist {
         display: grid;
         gap: 12px;
         margin-top: 18px;
     }
     .coach-checklist-item {
+        position: relative;
         display: flex;
         align-items: flex-start;
         gap: 12px;
@@ -172,11 +180,37 @@
         border: 1px solid var(--border);
         background: var(--surface2);
         cursor: pointer;
+        transition: border-color .2s ease, background .2s ease, transform .2s ease;
+    }
+    .coach-checklist-item:hover {
+        border-color: rgba(79,110,247,0.28);
+    }
+    .coach-checklist-item.is-checked {
+        border-color: rgba(34, 197, 94, 0.45);
+        background: linear-gradient(90deg, rgba(34, 197, 94, 0.12), rgba(34, 197, 94, 0.04));
+    }
+    .coach-checklist-item.is-checked::before {
+        content: "";
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 3px;
+        border-radius: 18px 0 0 18px;
+        background: linear-gradient(180deg, #22c55e, rgba(34,197,94,0));
+    }
+    .coach-checklist-item.is-checked .coach-checklist-copy strong {
+        color: var(--muted);
+        text-decoration: line-through;
+        text-decoration-color: rgba(34, 197, 94, 0.5);
+        text-decoration-thickness: 2px;
+    }
+    .coach-checklist-item.is-checked .coach-checklist-copy p {
+        opacity: 0.65;
     }
     .coach-checklist-item input {
         margin-top: 3px;
         width: 18px;
         height: 18px;
+        accent-color: #22c55e;
     }
     .coach-checklist-copy {
         min-width: 0;
@@ -389,13 +423,10 @@
 
                 {% if show_checklist_view %}
                     {% if selected_focus_session %}
-                    <a href="{% url 'sessions:detail' selected_focus_session.pk %}" class="btn btn-ghost">
+                    <a href="{% url 'sessions:detail' selected_focus_session.pk %}" class="btn btn-primary btn-open-session">
                         <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Session
                     </a>
                     {% endif %}
-                    <a href="{% url 'sessions:list' %}?{{ view_query_base }}&view=calendar" class="btn btn-primary">
-                        <i class="fa-solid fa-calendar-days"></i> Open Calendar
-                    </a>
                 {% else %}
                 <a href="?month={{ prev_month }}{% if selected_coach %}&coach={{ selected_coach }}{% endif %}{% if selected_member %}&member={{ selected_member }}{% endif %}{% if checklist_enabled %}&view=calendar{% endif %}" class="btn btn-ghost">
                     <i class="fa-solid fa-chevron-left"></i> Previous
@@ -753,6 +784,14 @@
                 tabs.forEach(function(t) { t.classList.toggle('is-active', t === tab); });
                 panels.forEach(function(p) { p.classList.toggle('is-active', p.dataset.panel === target); });
             });
+        });
+
+        document.querySelectorAll('.coach-checklist-item input[type="checkbox"]').forEach(function(cb) {
+            const item = cb.closest('.coach-checklist-item');
+            if (!item) return;
+            const sync = function() { item.classList.toggle('is-checked', cb.checked); };
+            cb.addEventListener('change', sync);
+            sync();
         });
     });
 </script>
