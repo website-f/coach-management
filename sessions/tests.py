@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -7,7 +9,7 @@ from accounts.models import UserProfile
 from finance.models import BillingConfiguration, PaymentPlan
 from members.models import Member
 from sessions.forms import TrainingSessionForm
-from sessions.models import SyllabusRoot, TrainingSession
+from sessions.models import SessionFeedback, SyllabusRoot, TrainingSession
 from sessions.services import ensure_default_syllabus
 
 
@@ -179,3 +181,103 @@ class CoachSessionChecklistPageTests(TestCase):
         self.assertTrue(response.context["show_calendar_view"])
         self.assertContains(response, "Loading calendar...")
         self.assertContains(response, "index.global.min.js")
+
+
+class SessionFeedbackFlowTests(TestCase):
+    def create_user(self, username, role):
+        user = User.objects.create_user(username=username, password="testpass123")
+        user.profile.role = role
+        user.profile.save()
+        return user
+
+    def setUp(self):
+        ensure_default_syllabus()
+        self.coach = self.create_user("coach_feedback", UserProfile.ROLE_COACH)
+        self.client.force_login(self.coach)
+        syllabus_root = SyllabusRoot.get_default()
+        self.member_one = Member.objects.create(
+            full_name="Alya Focus",
+            date_of_birth="2014-05-12",
+            contact_number="0102003001",
+            email="alya-focus@example.com",
+            emergency_contact_name="Parent One",
+            emergency_contact_phone="0102003001",
+            status=Member.STATUS_ACTIVE,
+            payment_plan=PaymentPlan.get_default(),
+            assigned_coach=self.coach,
+            syllabus_root=syllabus_root,
+        )
+        self.member_two = Member.objects.create(
+            full_name="Zayan Finish",
+            date_of_birth="2013-04-08",
+            contact_number="0102003002",
+            email="zayan-finish@example.com",
+            emergency_contact_name="Parent Two",
+            emergency_contact_phone="0102003002",
+            status=Member.STATUS_ACTIVE,
+            payment_plan=PaymentPlan.get_default(),
+            assigned_coach=self.coach,
+            syllabus_root=syllabus_root,
+        )
+        self.session = TrainingSession.objects.create(
+            title="Coach Feedback Session",
+            session_date=timezone.localdate(),
+            start_time="09:00",
+            end_time="10:30",
+            court="Court 4",
+            coach=self.coach,
+            syllabus_root=syllabus_root,
+        )
+        self.session.attendance_records.create(member=self.member_one)
+        self.session.attendance_records.create(member=self.member_two)
+
+    def test_session_detail_highlights_first_pending_feedback_action(self):
+        SessionFeedback.objects.create(
+            training_session=self.session,
+            member=self.member_two,
+            coach=self.coach,
+            feedback_text="Strong match focus and better recovery to base.",
+        )
+
+        response = self.client.get(reverse("sessions:detail", kwargs={"pk": self.session.pk}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["feedback_is_open"])
+        self.assertEqual(response.context["feedback_pending_count"], 1)
+        self.assertEqual(response.context["next_feedback_member"], self.member_one)
+        self.assertContains(response, f"Start With {self.member_one.full_name}")
+        self.assertContains(response, "Coach Action List")
+
+    def test_save_and_next_redirects_to_next_pending_student(self):
+        response = self.client.post(
+            reverse("sessions:feedback", kwargs={"session_pk": self.session.pk, "member_pk": self.member_one.pk}),
+            {
+                "feedback_text": "Sharper footwork today and better patience in rallies.",
+                "save_and_next": "1",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("sessions:feedback", kwargs={"session_pk": self.session.pk, "member_pk": self.member_two.pk}),
+        )
+        self.assertEqual(SessionFeedback.objects.filter(training_session=self.session).count(), 1)
+
+    def test_future_session_detail_shows_feedback_lock_message(self):
+        future_session = TrainingSession.objects.create(
+            title="Future Coach Feedback Session",
+            session_date=timezone.localdate() + timedelta(days=2),
+            start_time="11:00",
+            end_time="12:30",
+            court="Court 5",
+            coach=self.coach,
+            syllabus_root=self.session.syllabus_root,
+        )
+        future_session.attendance_records.create(member=self.member_one)
+
+        response = self.client.get(reverse("sessions:detail", kwargs={"pk": future_session.pk}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["feedback_is_open"])
+        self.assertContains(response, "Feedback Opens On")
+        self.assertContains(response, "Available On")

@@ -1,52 +1,361 @@
 {% extends "base.html" %}
 
-{% block title %}{% if is_edit %}Update Feedback{% else %}Add Feedback{% endif %} | NYO Admin Dashboard{% endblock %}
-{% block page_heading %}{% if is_edit %}Update Feedback{% else %}Add Feedback{% endif %}{% endblock %}
+{% block title %}{% if is_edit %}Update Feedback{% else %}Write Feedback{% endif %} | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}{% if is_edit %}Update Feedback{% else %}Write Feedback{% endif %}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .feedback-form-shell {
+        max-width: 1120px;
+        margin: 0 auto;
+        display: grid;
+        gap: 16px;
+    }
+    .feedback-form-hero {
+        padding: 0;
+        overflow: hidden;
+    }
+    .feedback-form-hero-body {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr);
+    }
+    .feedback-form-hero-main {
+        padding: 24px;
+        background:
+            radial-gradient(circle at top left, rgba(34, 197, 94, 0.15), transparent 34%),
+            linear-gradient(145deg, rgba(79, 110, 247, 0.12), rgba(79, 110, 247, 0.04) 55%, transparent 100%);
+    }
+    .feedback-form-hero-side {
+        padding: 24px;
+        border-left: 1px solid var(--border);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+    }
+    .feedback-form-eyebrow {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 12px;
+    }
+    .feedback-form-title {
+        font-size: 32px;
+        line-height: 1.1;
+        letter-spacing: -0.04em;
+        margin-top: 12px;
+        max-width: 13ch;
+    }
+    .feedback-form-copy {
+        margin-top: 12px;
+        max-width: 720px;
+        color: var(--text-2);
+        font-size: 14px;
+        line-height: 1.75;
+    }
+    .feedback-meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 16px;
+    }
+    .feedback-meta-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--border2);
+        color: var(--text-2);
+        font-size: 12.5px;
+        font-weight: 600;
+    }
+    [data-theme="light"] .feedback-meta-chip {
+        background: rgba(79, 110, 247, 0.06);
+    }
+    .feedback-progress-card {
+        margin-top: 18px;
+        padding: 14px 16px;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+    }
+    [data-theme="light"] .feedback-progress-card {
+        background: rgba(79, 110, 247, 0.05);
+    }
+    .feedback-progress-meter {
+        height: 10px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        margin-top: 10px;
+    }
+    .feedback-progress-meter span {
+        display: block;
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent), #22c55e);
+    }
+    .feedback-form-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.45fr) minmax(280px, 1fr);
+        gap: 16px;
+        align-items: start;
+    }
+    .feedback-side-stack {
+        display: grid;
+        gap: 16px;
+    }
+    .feedback-section-copy {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+    }
+    .feedback-helper {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 12.5px;
+        line-height: 1.7;
+    }
+    .feedback-current-file {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .feedback-checklist {
+        display: grid;
+        gap: 12px;
+    }
+    .feedback-checklist-item {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+    }
+    .feedback-checklist-number {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--accent-bg);
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 700;
+    }
+    .feedback-checklist-item strong {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--text);
+        font-size: 13.5px;
+    }
+    .feedback-next-card {
+        padding: 14px 16px;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+    }
+    .feedback-cta-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 8px;
+    }
+    @media (max-width: 980px) {
+        .feedback-form-hero-body,
+        .feedback-form-grid {
+            grid-template-columns: 1fr;
+        }
+        .feedback-form-hero-side {
+            border-left: none;
+            border-top: 1px solid var(--border);
+        }
+        .feedback-form-title {
+            font-size: 28px;
+            max-width: none;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="form-centered">
-    <div class="card" style="max-width:880px;">
-        <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px;">
-            <div>
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Post-session coaching</p>
-                <h2 style="font-size:28px;font-weight:700;color:var(--text);">{{ member.full_name }}</h2>
-                <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;">
-                    {{ training_session.title }} · {{ training_session.session_date }} · {{ training_session.start_time|time:"H:i" }} - {{ training_session.end_time|time:"H:i" }}
+<div class="feedback-form-shell">
+    <div class="card feedback-form-hero">
+        <div class="feedback-form-hero-body">
+            <div class="feedback-form-hero-main">
+                <p class="feedback-form-eyebrow">Post-session coaching form</p>
+                <div style="display:flex;flex-wrap:wrap;gap:10px;">
+                    {% if is_edit %}
+                    <span class="badge badge-info">Updating Existing Feedback</span>
+                    {% else %}
+                    <span class="badge badge-warning">New Student Feedback</span>
+                    {% endif %}
+                    {% if current_member_position and feedback_total_count %}
+                    <span class="badge badge-neutral">Student {{ current_member_position }} of {{ feedback_total_count }}</span>
+                    {% endif %}
+                </div>
+
+                <h2 class="feedback-form-title">
+                    {% if is_edit %}
+                    Update feedback for {{ member.full_name }}
+                    {% else %}
+                    Write feedback for {{ member.full_name }}
+                    {% endif %}
+                </h2>
+
+                <p class="feedback-form-copy">
+                    This form saves the coach recap for this student inside the session record. After saving, the note and
+                    optional video become part of the student's recent session feedback history.
                 </p>
+
+                <div class="feedback-meta-row">
+                    <span class="feedback-meta-chip"><i class="fa-solid fa-dumbbell"></i>{{ training_session.title }}</span>
+                    <span class="feedback-meta-chip"><i class="fa-regular fa-calendar"></i>{{ training_session.session_date|date:"d M Y" }}</span>
+                    <span class="feedback-meta-chip"><i class="fa-regular fa-clock"></i>{{ training_session.start_time|time:"H:i" }} - {{ training_session.end_time|time:"H:i" }}</span>
+                </div>
+
+                <div class="feedback-progress-card">
+                    <div class="flex-between">
+                        <span class="text-sm text-muted">Session completion</span>
+                        <span class="text-sm fw-6">{{ feedback_completed_count }}/{{ feedback_total_count }} submitted so far</span>
+                    </div>
+                    <div class="feedback-progress-meter">
+                        <span style="width:{% if feedback_total_count %}{% widthratio feedback_completed_count feedback_total_count 100 %}{% else %}0{% endif %}%;"></span>
+                    </div>
+                    <p class="feedback-helper">
+                        {% if next_feedback_member %}
+                        After this save, the next suggested player is <span class="fw-7">{{ next_feedback_member.full_name }}</span>.
+                        {% else %}
+                        This is the last pending player in the current queue.
+                        {% endif %}
+                    </p>
+                </div>
             </div>
-            <a href="{% url 'sessions:detail' training_session.pk %}" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Back to session</a>
+
+            <div class="feedback-form-hero-side">
+                <p class="feedback-form-eyebrow">What to do</p>
+                <div class="feedback-checklist">
+                    <div class="feedback-checklist-item">
+                        <span class="feedback-checklist-number">1</span>
+                        <div>
+                            <strong>Describe what happened in the session</strong>
+                            <p class="text-sm text-muted">Mention performance, discipline, strongest point, and the clearest next focus.</p>
+                        </div>
+                    </div>
+                    <div class="feedback-checklist-item">
+                        <span class="feedback-checklist-number">2</span>
+                        <div>
+                            <strong>Add video only if it helps</strong>
+                            <p class="text-sm text-muted">Upload a rally clip, movement proof, or technique example when the parent should see it.</p>
+                        </div>
+                    </div>
+                    <div class="feedback-checklist-item">
+                        <span class="feedback-checklist-number">3</span>
+                        <div>
+                            <strong>Save and continue</strong>
+                            <p class="text-sm text-muted">Use the green button if you want to jump straight to the next student without returning to the roster.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="feedback-form-grid">
+        <div class="card">
+            <div class="section-header">
+                <div>
+                    <span class="section-title">Coach Note</span>
+                    <p class="feedback-section-copy">This is the main recap the coach is publishing for the student.</p>
+                </div>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" class="space-y">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="{{ form.feedback_text.id_for_label }}">Written feedback</label>
+                    {{ form.feedback_text }}
+                    <p class="feedback-helper">Write the short recap parents should understand quickly: what was strong, what needs work, and what to focus on next.</p>
+                    {% if form.feedback_text.errors %}<p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ form.feedback_text.errors|join:", " }}</p>{% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.video_proof.id_for_label }}">Optional video proof</label>
+                    {{ form.video_proof }}
+                    <p class="feedback-helper">Upload only when it adds useful proof or coaching context for this session.</p>
+                    {% if feedback and feedback.video_proof %}
+                    <a href="{{ feedback.video_proof.url }}" target="_blank" class="feedback-current-file">
+                        <i class="fa-solid fa-video"></i> Open current uploaded video
+                    </a>
+                    {% endif %}
+                    {% if form.video_proof.errors %}<p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ form.video_proof.errors|join:", " }}</p>{% endif %}
+                </div>
+
+                <div class="feedback-cta-row">
+                    <a href="{% url 'sessions:detail' training_session.pk %}" class="btn btn-ghost">
+                        <i class="fa-solid fa-arrow-left"></i> Back To Session
+                    </a>
+                    {% if next_feedback_member %}
+                    <button type="submit" name="save_and_next" value="1" class="btn btn-success">
+                        <i class="fa-solid fa-forward-step"></i> Save And Open {{ next_feedback_member.full_name }}
+                    </button>
+                    {% endif %}
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-save"></i> {% if is_edit %}Save Feedback{% else %}Publish Feedback{% endif %}
+                    </button>
+                </div>
+            </form>
         </div>
 
-        <form method="post" enctype="multipart/form-data" class="space-y">
-            {% csrf_token %}
-
-            <div class="form-group">
-                <label for="{{ form.feedback_text.id_for_label }}">{{ form.feedback_text.label }}</label>
-                {{ form.feedback_text }}
-                <p class="text-sm text-muted" style="margin-top:6px;">Summarize performance, discipline, strengths, and what the student should focus on next.</p>
-                {% if form.feedback_text.errors %}<p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ form.feedback_text.errors|join:", " }}</p>{% endif %}
+        <div class="feedback-side-stack">
+            <div class="card">
+                <div class="section-header">
+                    <span class="section-title">Quick Reminder</span>
+                </div>
+                <div class="space-y">
+                    <div class="card-inset">
+                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Where this goes</p>
+                        <p style="font-size:14px;color:var(--text);line-height:1.7;">This submission appears back on the session page and becomes part of the student's recent session feedback history.</p>
+                    </div>
+                    <div class="card-inset">
+                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Good coaching note</p>
+                        <p style="font-size:14px;color:var(--text);line-height:1.7;">Keep it concrete: one strength, one technical issue, one next drill or habit to focus on.</p>
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="{{ form.video_proof.id_for_label }}">{{ form.video_proof.label }}</label>
-                {{ form.video_proof }}
-                <p class="text-sm text-muted" style="margin-top:6px;">Upload an optional rally clip, training video, or form review as proof for the session feedback.</p>
-                {% if feedback and feedback.video_proof %}
-                <p class="text-sm" style="margin-top:8px;">
-                    Current file:
-                    <a href="{{ feedback.video_proof.url }}" target="_blank" style="color:var(--accent);font-weight:600;">Open uploaded video</a>
-                </p>
+            <div class="card">
+                <div class="section-header">
+                    <span class="section-title">Next In Queue</span>
+                </div>
+                {% if next_feedback_member %}
+                <div class="feedback-next-card">
+                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Suggested next player</p>
+                    <p style="font-size:16px;font-weight:700;color:var(--text);">{{ next_feedback_member.full_name }}</p>
+                    <p class="feedback-helper" style="margin-top:8px;">Use the green save button to jump there immediately after this student is done.</p>
+                </div>
+                {% else %}
+                <div class="feedback-next-card">
+                    <p style="font-size:14px;color:var(--text);line-height:1.7;">No further pending students are queued after this one. Saving will return you to the session detail page.</p>
+                </div>
                 {% endif %}
-                {% if form.video_proof.errors %}<p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ form.video_proof.errors|join:", " }}</p>{% endif %}
             </div>
-
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-                <a href="{% url 'sessions:detail' training_session.pk %}" class="btn btn-ghost" style="border-radius:99px;justify-content:center;padding:12px;">Cancel</a>
-                <button type="submit" class="btn btn-primary" style="border-radius:99px;justify-content:center;padding:12px;">
-                    <i class="fa-solid fa-save"></i> {% if is_edit %}Save Feedback{% else %}Publish Feedback{% endif %}
-                </button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 {% endblock %}

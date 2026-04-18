@@ -80,6 +80,87 @@ def visible_members_for_session_filters(user):
     return queryset
 
 
+def session_feedback_is_open(training_session):
+    return training_session.session_date <= timezone.localdate()
+
+
+def ordered_session_records(training_session):
+    return list(
+        training_session.attendance_records.select_related(
+            "member",
+            "member__payment_plan",
+            "member__assigned_coach",
+            "member__parent_user",
+        ).order_by("member__full_name")
+    )
+
+
+def build_session_feedback_rows(training_session, records=None):
+    records = records if records is not None else ordered_session_records(training_session)
+    feedback_is_open = session_feedback_is_open(training_session)
+    feedback_map = {
+        feedback.member_id: feedback
+        for feedback in training_session.feedback_entries.select_related("member", "coach")
+    }
+    rows = []
+    for record in records:
+        feedback = feedback_map.get(record.member_id)
+        needs_feedback = feedback is None
+        rows.append(
+            {
+                "record": record,
+                "feedback": feedback,
+                "needs_feedback": needs_feedback,
+                "feedback_status_label": (
+                    "Submitted" if feedback else ("Needs feedback" if feedback_is_open else "Opens on session date")
+                ),
+                "feedback_status_tone": "success" if feedback else ("warning" if feedback_is_open else "neutral"),
+                "action_label": "Edit Feedback" if feedback else "Write Feedback",
+            }
+        )
+    return sorted(rows, key=lambda row: (0 if row["needs_feedback"] else 1, row["record"].member.full_name.lower()))
+
+
+def get_next_pending_feedback_member(training_session, current_member_id=None):
+    records = list(training_session.attendance_records.select_related("member").order_by("member__full_name"))
+    if not records:
+        return None
+
+    feedback_member_ids = set(training_session.feedback_entries.values_list("member_id", flat=True))
+    pending_ids = [record.member_id for record in records if record.member_id not in feedback_member_ids]
+    if not pending_ids:
+        return None
+
+    if current_member_id is None:
+        next_member_id = pending_ids[0]
+    else:
+        positions = {record.member_id: index for index, record in enumerate(records)}
+        current_position = positions.get(current_member_id, -1)
+        after_current = [member_id for member_id in pending_ids if positions[member_id] > current_position]
+        next_member_id = after_current[0] if after_current else pending_ids[0]
+        if next_member_id == current_member_id:
+            return None
+
+    for record in records:
+        if record.member_id == next_member_id:
+            return record.member
+    return None
+
+
+def build_feedback_form_navigation(training_session, member):
+    records = list(training_session.attendance_records.select_related("member").order_by("member__full_name"))
+    total_students = len(records)
+    completed_count = training_session.feedback_entries.count()
+    current_position = next((index for index, record in enumerate(records, start=1) if record.member_id == member.id), None)
+    return {
+        "feedback_total_count": total_students,
+        "feedback_completed_count": completed_count,
+        "feedback_pending_count": max(total_students - completed_count, 0),
+        "current_member_position": current_position,
+        "next_feedback_member": get_next_pending_feedback_member(training_session, current_member_id=member.id),
+    }
+
+
 def resolve_month_anchor(raw_value):
     if raw_value:
         try:
@@ -655,18 +736,8 @@ class SessionDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        records = list(
-            self.object.attendance_records.select_related(
-                "member",
-                "member__payment_plan",
-                "member__assigned_coach",
-                "member__parent_user",
-            ).order_by("member__full_name")
-        )
-        feedback_map = {
-            feedback.member_id: feedback
-            for feedback in self.object.feedback_entries.select_related("member", "coach")
-        }
+        records = ordered_session_records(self.object)
+        feedback_rows = build_session_feedback_rows(self.object, records=records)
         present_count = sum(1 for record in records if record.status == AttendanceRecord.STATUS_PRESENT)
         late_count = sum(1 for record in records if record.status == AttendanceRecord.STATUS_LATE)
         absent_count = sum(1 for record in records if record.status == AttendanceRecord.STATUS_ABSENT)
@@ -674,6 +745,11 @@ class SessionDetailView(LoginRequiredMixin, DetailView):
         can_feedback = has_role(self.request.user, ROLE_ADMIN) or (
             has_role(self.request.user, ROLE_COACH) and self.object.coach_id == self.request.user.id
         )
+        feedback_is_open = session_feedback_is_open(self.object)
+        feedback_total_count = len(feedback_rows)
+        feedback_completed_count = sum(1 for row in feedback_rows if not row["needs_feedback"])
+        feedback_pending_rows = [row for row in feedback_rows if row["needs_feedback"]]
+        feedback_pending_count = len(feedback_pending_rows)
         context["can_plan"] = has_role(self.request.user, ROLE_ADMIN)
         context["can_mark_attendance"] = has_role(
             self.request.user, ROLE_ADMIN, ROLE_COACH, ROLE_HEADCOUNT
@@ -685,14 +761,25 @@ class SessionDetailView(LoginRequiredMixin, DetailView):
             {"label": "Absent", "value": absent_count, "tone": "danger"},
             {"label": "Unmarked", "value": scheduled_count, "tone": "info"},
         ]
-        context["attendance_rows"] = records
-        context["feedback_rows"] = [
+        context["session_progress_summary"] = context["attendance_summary"] + [
+            {"label": "Feedback Done", "value": feedback_completed_count, "tone": "success"},
             {
-                "record": record,
-                "feedback": feedback_map.get(record.member_id),
-            }
-            for record in records
+                "label": "Feedback Left",
+                "value": feedback_pending_count,
+                "tone": "warning" if feedback_is_open else "info",
+            },
         ]
+        context["attendance_rows"] = records
+        context["feedback_rows"] = feedback_rows
+        context["feedback_is_open"] = feedback_is_open
+        context["feedback_total_count"] = feedback_total_count
+        context["feedback_completed_count"] = feedback_completed_count
+        context["feedback_pending_count"] = feedback_pending_count
+        context["feedback_pending_rows"] = feedback_pending_rows
+        context["feedback_completion_percent"] = (
+            round((feedback_completed_count / feedback_total_count) * 100) if feedback_total_count else 0
+        )
+        context["next_feedback_member"] = feedback_pending_rows[0]["record"].member if feedback_pending_rows else None
         context["feedback_entries"] = self.object.feedback_entries.select_related("member", "coach").order_by(
             "member__full_name"
         )
@@ -938,6 +1025,7 @@ class SessionFeedbackUpsertView(AdminOrCoachRequiredMixin, View):
         )
 
     def render_page(self, request, training_session, member, form, feedback):
+        navigation_context = build_feedback_form_navigation(training_session, member)
         return render(
             request,
             self.template_name,
@@ -947,6 +1035,7 @@ class SessionFeedbackUpsertView(AdminOrCoachRequiredMixin, View):
                 "form": form,
                 "feedback": feedback,
                 "is_edit": bool(feedback and feedback.pk),
+                **navigation_context,
             },
         )
 
@@ -980,6 +1069,14 @@ class SessionFeedbackUpsertView(AdminOrCoachRequiredMixin, View):
             feedback_entry.save()
             compress_session_feedback_video(feedback_entry)
             notify_feedback_ready(feedback_entry)
+            if request.POST.get("save_and_next"):
+                next_member = get_next_pending_feedback_member(training_session, current_member_id=member.id)
+                if next_member:
+                    messages.success(
+                        request,
+                        f"Feedback saved for {member.full_name}. Opening {next_member.full_name} next.",
+                    )
+                    return redirect("sessions:feedback", session_pk=training_session.pk, member_pk=next_member.pk)
             messages.success(request, f"Feedback saved for {member.full_name}.")
             return redirect("sessions:detail", pk=training_session.pk)
         return self.render_page(request, training_session, member, form, feedback)
