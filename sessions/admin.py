@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from sessions.models import AttendanceRecord, SessionPlannerEntry, SyllabusStandard, SyllabusTemplate, TrainingSession, WeeklySyllabus
+from sessions.models import AttendanceRecord, SessionChecklistReport, SessionPlannerEntry, SyllabusStandard, SyllabusTemplate, TrainingSession, WeeklySyllabus
 
 
 class AttendanceInline(admin.TabularInline):
@@ -48,5 +48,12 @@ class SessionPlannerEntryAdmin(admin.ModelAdmin):
     list_display = ("training_session", "title", "source", "model_name", "saved_by", "created_at")
     list_filter = ("source", "created_at")
     search_fields = ("title", "user_prompt", "assistant_response", "training_session__title")
+
+@admin.register(SessionChecklistReport)
+class SessionChecklistReportAdmin(admin.ModelAdmin):
+    list_display = ("training_session", "coach", "updated_at")
+    list_filter = ("coach", "updated_at")
+    search_fields = ("training_session__title", "feedback_text")
+
 
 # Register your models here.

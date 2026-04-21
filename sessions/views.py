@@ -20,7 +20,7 @@ from django.views.generic import CreateView, DetailView, ListView, TemplateView,
 from accounts.mixins import AdminOrCoachRequiredMixin, AdminRequiredMixin, HeadcountOrAboveRequiredMixin
 from accounts.notifications import notify_users
 from accounts.utils import ROLE_ADMIN, ROLE_COACH, ROLE_HEADCOUNT, ROLE_PARENT, has_role
-from members.models import DEFAULT_SKILLS, Member, ProgressReport
+from members.models import Member, ProgressReport
 from sessions.ai_planner import PlannerAssistantError, generate_ai_planner_reply
 from sessions.forms import (
     SessionFeedbackForm,
@@ -32,6 +32,7 @@ from sessions.forms import (
 )
 from sessions.models import (
     AttendanceRecord,
+    SessionChecklistReport,
     SessionFeedback,
     SessionPlannerEntry,
     SyllabusRoot,
@@ -175,18 +176,6 @@ def build_session_feedback_form_context(member, training_session, current_feedba
         "selected_report_member": member,
         "previous_reports": previous_reports,
         "recent_feedback_entries": recent_feedback_entries,
-        "session_skill_preview": json.dumps(
-            [
-                {
-                    "label": skill,
-                    "field_name": f"skill_{skill.lower().replace(' ', '_')}",
-                    "value": current_feedback.skill_snapshot.get(skill, 0) * 20
-                    if current_feedback and current_feedback.pk
-                    else 60,
-                }
-                for skill in DEFAULT_SKILLS
-            ]
-        ),
         "session_report_reference_date": training_session.session_date,
     }
 
@@ -687,6 +676,11 @@ class SessionListView(LoginRequiredMixin, ListView):
         focus_session = self.get_focus_session(sessions) if checklist_enabled else None
         checklist_plan = None
         focus_session_status_label = ""
+        existing_checklist_report = None
+        if focus_session and checklist_enabled:
+            existing_checklist_report = SessionChecklistReport.objects.filter(
+                training_session=focus_session, coach=self.request.user
+            ).first()
         if focus_session and checklist_enabled:
             ensure_default_syllabus()
             checklist_plan = build_session_plan(focus_session)
@@ -697,14 +691,47 @@ class SessionListView(LoginRequiredMixin, ListView):
             else:
                 focus_session_status_label = "Recent session"
 
+        is_parent_user = has_role(self.request.user, ROLE_PARENT)
+        parent_attendance_by_session = {}
+        parent_package_target = 4
+        parent_done_count = 0
+        parent_scheduled_count = 0
+        if is_parent_user:
+            parent_records = AttendanceRecord.objects.filter(
+                member__parent_user=self.request.user,
+                training_session__session_date__range=(month_start, month_end),
+            ).select_related("training_session", "member")
+            for record in parent_records:
+                parent_attendance_by_session[record.training_session_id] = record
+                if record.status in (AttendanceRecord.STATUS_PRESENT, AttendanceRecord.STATUS_LATE):
+                    parent_done_count += 1
+                parent_scheduled_count += 1
+            # infer package target from first linked child's package sessions
+            first_child = Member.objects.filter(parent_user=self.request.user).first()
+            if first_child:
+                parent_package_target = first_child.package_sessions or 4
+
         calendar_events = []
         for training_session in sessions:
             is_past = training_session.session_date < today
-            attendee_count = getattr(training_session, "attendee_count", 0)
-            tone = "#94a3b8" if is_past else "#f5a623" if has_role(self.request.user, ROLE_ADMIN) else "#22c55e"
+            parent_record = parent_attendance_by_session.get(training_session.pk) if is_parent_user else None
+            done_by_parent = parent_record and parent_record.status in (
+                AttendanceRecord.STATUS_PRESENT, AttendanceRecord.STATUS_LATE
+            )
+            if is_parent_user and done_by_parent:
+                tone = "#16a34a"
+            elif is_parent_user and parent_record and parent_record.status == AttendanceRecord.STATUS_ABSENT:
+                tone = "#ef4444"
+            elif is_past:
+                tone = "#94a3b8"
+            elif has_role(self.request.user, ROLE_ADMIN):
+                tone = "#f5a623"
+            else:
+                tone = "#22c55e"
+            title_prefix = "✓ " if done_by_parent else ""
             calendar_events.append(
                 {
-                    "title": f"{training_session.start_time.strftime('%H:%M')} {training_session.title}",
+                    "title": f"{title_prefix}{training_session.start_time.strftime('%H:%M')} {training_session.title}",
                     "start": training_session.session_date.isoformat(),
                     "url": reverse("sessions:detail", kwargs={"pk": training_session.pk}),
                     "backgroundColor": tone,
@@ -726,6 +753,15 @@ class SessionListView(LoginRequiredMixin, ListView):
                 "selected_month": month_anchor.strftime("%Y-%m"),
                 "selected_coach": self.request.GET.get("coach", "").strip(),
                 "selected_member": self.request.GET.get("member", "").strip(),
+                "is_parent_user": is_parent_user,
+                "parent_package_target": parent_package_target,
+                "parent_done_count": parent_done_count,
+                "parent_scheduled_count": parent_scheduled_count,
+                "parent_attendance_map": parent_attendance_by_session,
+                "parent_progress_percent": (
+                    min(round((parent_done_count / parent_package_target) * 100), 100)
+                    if parent_package_target else 0
+                ),
                 "month_total_sessions": len(sessions),
                 "month_total_players": sum(getattr(session, "attendee_count", 0) for session in sessions),
                 "month_pending_attendance": sum(
@@ -742,6 +778,10 @@ class SessionListView(LoginRequiredMixin, ListView):
                 "focus_session_status_label": focus_session_status_label,
                 "checklist_plan": checklist_plan,
                 "checklist_items": checklist_plan["blocks"] if checklist_plan else [],
+                "existing_checklist_report": existing_checklist_report,
+                "existing_checklist_checked": (existing_checklist_report.checked_items if existing_checklist_report else []),
+                "existing_checklist_feedback": (existing_checklist_report.feedback_text if existing_checklist_report else ""),
+                "can_submit_checklist": bool(focus_session and can_manage_session_plan(self.request.user, focus_session)),
                 "view_query_base": "&".join(
                     part
                     for part in [
@@ -948,6 +988,118 @@ class SessionPlanSaveView(AdminOrCoachRequiredMixin, View):
         )
 
 
+class ParentRescheduleView(LoginRequiredMixin, View):
+    MAX_RESCHEDULES = 2
+
+    def post(self, request, *args, **kwargs):
+        if not has_role(request.user, ROLE_PARENT):
+            messages.error(request, "Only parent accounts can reschedule sessions.")
+            return redirect("sessions:list")
+        record = get_object_or_404(
+            AttendanceRecord.objects.select_related("training_session", "member"),
+            pk=kwargs["pk"],
+            member__parent_user=request.user,
+        )
+        if record.reschedule_count >= self.MAX_RESCHEDULES:
+            messages.error(request, "You have used both reschedule slots for this session.")
+            return redirect("sessions:list")
+        if record.status != AttendanceRecord.STATUS_SCHEDULED:
+            messages.error(request, "Only upcoming sessions can be rescheduled.")
+            return redirect("sessions:list")
+        new_date_raw = (request.POST.get("new_date") or "").strip()
+        try:
+            new_date = date.fromisoformat(new_date_raw)
+        except ValueError:
+            messages.error(request, "Pick a valid new date.")
+            return redirect("sessions:list")
+        if new_date <= timezone.localdate():
+            messages.error(request, "Choose a future date for the reschedule.")
+            return redirect("sessions:list")
+
+        month_start = new_date.replace(day=1)
+        _, last_day = calendar.monthrange(new_date.year, new_date.month)
+        month_end = new_date.replace(day=last_day)
+        month_count = AttendanceRecord.objects.filter(
+            member=record.member,
+            training_session__session_date__range=(month_start, month_end),
+        ).exclude(pk=record.pk).count()
+        package_target = record.member.package_sessions or 4
+        if month_count + 1 > package_target:
+            messages.error(
+                request,
+                f"{record.member.full_name}'s package only allows {package_target} sessions per month.",
+            )
+            return redirect("sessions:list")
+
+        if not record.original_session_date:
+            record.original_session_date = record.training_session.session_date
+
+        source_session = record.training_session
+        new_session, _ = TrainingSession.objects.get_or_create(
+            title=source_session.title,
+            session_date=new_date,
+            start_time=source_session.start_time,
+            end_time=source_session.end_time,
+            court=source_session.court,
+            defaults={
+                "coach": source_session.coach,
+                "syllabus_root": source_session.syllabus_root,
+                "notes": source_session.notes,
+                "created_by": request.user,
+            },
+        )
+        record.training_session = new_session
+        record.reschedule_count = record.reschedule_count + 1
+        record.save()
+        messages.success(
+            request,
+            f"Rescheduled to {new_date:%d %b %Y}. {self.MAX_RESCHEDULES - record.reschedule_count} reschedule slot(s) left.",
+        )
+        return redirect("sessions:list")
+
+
+class SessionChecklistSaveView(AdminOrCoachRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        training_session = get_object_or_404(
+            visible_sessions_for_user(request.user), pk=kwargs["pk"]
+        )
+        if not can_manage_session_plan(request.user, training_session):
+            messages.error(request, "Only admin or the assigned coach can submit this checklist report.")
+            return redirect("sessions:list")
+        checked_items = request.POST.getlist("checked_items")
+        feedback_text = (request.POST.get("feedback_text") or "").strip()
+        report, _ = SessionChecklistReport.objects.update_or_create(
+            training_session=training_session,
+            coach=request.user,
+            defaults={"checked_items": checked_items, "feedback_text": feedback_text},
+        )
+        messages.success(request, "Session checklist saved. Admins can review it in the audit log.")
+        return redirect(f"{reverse('sessions:list')}?view=checklist&focus={training_session.pk}")
+
+
+class SessionChecklistAuditView(AdminRequiredMixin, ListView):
+    template_name = "sessions/checklist_audit.html"
+    context_object_name = "checklist_reports"
+    paginate_by = 25
+
+    def get_queryset(self):
+        queryset = SessionChecklistReport.objects.select_related(
+            "training_session", "coach"
+        ).order_by("-updated_at")
+        coach = self.request.GET.get("coach", "").strip()
+        if coach:
+            queryset = queryset.filter(coach_id=coach)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["coaches"] = User.objects.filter(profile__role=ROLE_COACH).order_by(
+            "first_name", "username"
+        )
+        context["selected_coach"] = self.request.GET.get("coach", "").strip()
+        return context
+
+
 class SessionCreateView(AdminRequiredMixin, CreateView):
     model = TrainingSession
     form_class = TrainingSessionForm
@@ -1057,16 +1209,6 @@ class SessionFeedbackUpsertView(AdminOrCoachRequiredMixin, View):
     def render_page(self, request, training_session, member, form, feedback):
         navigation_context = build_feedback_form_navigation(training_session, member)
         workspace_context = build_session_feedback_form_context(member, training_session, current_feedback=feedback)
-        workspace_context["session_skill_preview"] = json.dumps(
-            [
-                {
-                    "label": skill,
-                    "field_name": f"skill_{skill.lower().replace(' ', '_')}",
-                    "value": form[f"skill_{skill.lower().replace(' ', '_')}"].value() or 0,
-                }
-                for skill in DEFAULT_SKILLS
-            ]
-        )
         return render(
             request,
             self.template_name,

@@ -1,14 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}{% if is_edit %}Edit Session Report{% else %}New Session Report{% endif %} | NYO Admin Dashboard{% endblock %}
-{% block page_heading %}{% if is_edit %}Edit Session Report{% else %}Session Report{% endif %}{% endblock %}
+{% block title %}{% if is_edit %}Edit Session Feedback{% else %}Session Feedback{% endif %} | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}{% if is_edit %}Edit Session Feedback{% else %}Session Feedback{% endif %}{% endblock %}
 
 {% block extra_head %}
 <style>
-    .sr-shell { display: grid; gap: 16px; }
-
-    /* ============ HEADER (compact, minimal) ============ */
-    .sr-head {
+    .fb-shell { display: grid; gap: 16px; max-width: 820px; margin: 0 auto; }
+    .fb-head {
         display: flex;
         justify-content: space-between;
         gap: 16px;
@@ -16,7 +14,7 @@
         flex-wrap: wrap;
         padding: 20px 22px;
     }
-    .sr-kicker {
+    .fb-kicker {
         display: inline-flex;
         align-items: center;
         gap: 8px;
@@ -26,23 +24,14 @@
         text-transform: uppercase;
         color: var(--success);
     }
-    .sr-kicker::before {
-        content: "";
-        width: 6px;
-        height: 6px;
-        border-radius: 999px;
-        background: var(--success);
-        box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
-    }
-    .sr-title {
+    .fb-title {
         font-size: 22px;
         font-weight: 700;
         letter-spacing: -0.02em;
         color: var(--text);
-        margin-top: 8px;
-        line-height: 1.2;
+        margin-top: 6px;
     }
-    .sr-meta {
+    .fb-meta {
         display: flex;
         gap: 6px;
         flex-wrap: wrap;
@@ -50,404 +39,71 @@
         font-size: 12px;
         color: var(--muted);
     }
-    .sr-meta span { display: inline-flex; align-items: center; gap: 6px; }
-    .sr-meta span + span::before { content: "·"; margin-right: 6px; color: var(--border2); }
-
-    /* ============ STEPPER ============ */
-    .sr-stepper {
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        padding: 10px;
-        background: color-mix(in srgb, var(--surface) 92%, transparent);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 8px;
-    }
-    .sr-step-btn {
-        display: grid;
-        grid-template-columns: 28px 1fr;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 12px;
+    .fb-meta span + span::before { content: "·"; margin: 0 6px; color: var(--border2); }
+    .fb-note {
+        padding: 12px 14px;
         border-radius: 12px;
-        border: 1px solid transparent;
-        background: transparent;
-        text-align: left;
-        cursor: pointer;
-        color: inherit;
-        transition: border-color .18s ease, background .18s ease;
-    }
-    .sr-step-btn:hover { background: var(--surface2); }
-    .sr-step-btn.is-active {
-        border-color: rgba(34, 197, 94, 0.35);
-        background: rgba(34, 197, 94, 0.08);
-    }
-    .sr-step-dot {
-        width: 28px;
-        height: 28px;
-        border-radius: 999px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+        border: 1px dashed var(--border2);
         background: var(--surface2);
-        border: 1.5px solid var(--border2);
         color: var(--muted);
-        font-weight: 700;
-        font-size: 12px;
-        transition: all .18s ease;
+        font-size: 13px;
+        line-height: 1.7;
     }
-    .sr-step-btn.is-active .sr-step-dot {
-        background: var(--success);
-        border-color: var(--success);
-        color: #fff;
-    }
-    .sr-step-btn.is-done .sr-step-dot {
-        background: rgba(34,197,94,.15);
-        border-color: rgba(34,197,94,.5);
-        color: var(--success);
-    }
-    .sr-step-label {
-        display: block;
-        font-size: 10px;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--muted);
-        font-weight: 700;
-    }
-    .sr-step-title {
-        display: block;
-        color: var(--text);
-        font-weight: 700;
-        font-size: 13.5px;
-        margin-top: 1px;
-    }
-    .sr-progress {
-        grid-column: 1 / -1;
-        height: 2px;
-        border-radius: 999px;
-        background: var(--surface2);
-        overflow: hidden;
-    }
-    .sr-progress-fill {
-        display: block;
-        height: 100%;
-        border-radius: inherit;
-        background: linear-gradient(90deg, #22c55e, #4f6ef7);
-        transition: width .4s cubic-bezier(.22,.61,.36,1);
-    }
-
-    /* ============ LAYOUT ============ */
-    .sr-layout {
-        display: grid;
-        gap: 16px;
-        grid-template-columns: minmax(0, 1.3fr) minmax(300px, 0.9fr);
-        align-items: start;
-    }
-    .sr-main { display: grid; gap: 14px; }
-    .sr-side {
-        display: grid;
-        gap: 14px;
-        position: sticky;
-        top: 84px;
-    }
-    .sr-panel {
+    .fb-panel {
         border: 1px solid var(--border);
         border-radius: 18px;
         background: var(--surface);
-        padding: 20px;
+        padding: 22px;
     }
-    .sr-panel h3 {
+    .fb-panel h3 {
         font-size: 15px;
         font-weight: 700;
         color: var(--text);
-        margin: 0 0 4px;
+        margin: 0 0 6px;
     }
-    .sr-panel-copy {
-        color: var(--muted);
-        font-size: 12.5px;
-        line-height: 1.6;
-        margin: 0 0 14px;
-    }
-    .sr-step-panel { display: none; }
-    .sr-step-panel.is-active {
-        display: block;
-        animation: fade-up .3s cubic-bezier(.22,.61,.36,1);
-    }
-    @keyframes fade-up {
-        from { opacity: 0; transform: translateY(4px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ============ RATING ROW (side-by-side slider + note) ============ */
-    .rate-list {
-        display: grid;
-        gap: 10px;
-    }
-    .rate-row {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(220px, 1fr);
-        gap: 14px;
-        padding: 12px 14px;
+    .fb-textarea {
+        width: 100%;
+        min-height: 180px;
+        padding: 14px 16px;
         border-radius: 14px;
         border: 1px solid var(--border);
-        background: var(--surface);
-        transition: border-color .2s ease;
+        background: var(--surface2);
+        color: var(--text);
+        font-size: 14px;
+        line-height: 1.7;
+        resize: vertical;
     }
-    .rate-row:hover { border-color: rgba(34, 197, 94, 0.28); }
-    .rate-row-left { min-width: 0; }
-    .rate-row-right { min-width: 0; }
-
-    .rate-head {
+    .fb-actions {
         display: flex;
         justify-content: space-between;
-        align-items: center;
         gap: 10px;
-        margin-bottom: 8px;
-    }
-    .rate-name {
-        color: var(--text);
-        font-size: 13.5px;
-        font-weight: 700;
-    }
-    .rate-score {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 3px 10px;
-        border-radius: 999px;
-        background: var(--surface2);
-        border: 1px solid var(--border);
-        color: var(--text);
-        font-weight: 700;
-        font-size: 12px;
-        font-variant-numeric: tabular-nums;
-        white-space: nowrap;
-    }
-    .rate-score.tone-low { color: var(--danger); border-color: rgba(239,68,68,.25); background: rgba(239,68,68,.06); }
-    .rate-score.tone-mid { color: var(--warning); border-color: rgba(245,158,11,.25); background: rgba(245,158,11,.06); }
-    .rate-score.tone-good { color: var(--success); border-color: rgba(34,197,94,.25); background: rgba(34,197,94,.06); }
-
-    /* slider */
-    .slider-wrap { position: relative; padding: 2px 0; }
-    .slider-track {
-        position: relative;
-        height: 6px;
-        border-radius: 999px;
-        background: var(--surface2);
-        border: 1px solid var(--border);
-        overflow: hidden;
-    }
-    .slider-fill {
-        position: absolute;
-        left: 0; top: 0; bottom: 0;
-        border-radius: inherit;
-        background: linear-gradient(90deg, #ef4444 0%, #f59e0b 45%, #22c55e 90%);
-        transition: width .2s cubic-bezier(.22,.61,.36,1);
-    }
-    input.report-slider-input[type="range"] {
-        width: 100%;
-        appearance: none;
-        -webkit-appearance: none;
-        background: transparent;
-        border: none;
-        box-shadow: none;
-        padding: 0;
-        margin: -13px 0 -11px;
-        position: relative;
-        z-index: 2;
-        height: 32px;
-        cursor: grab;
-    }
-    input.report-slider-input[type="range"]:active { cursor: grabbing; }
-    input.report-slider-input[type="range"]:focus { outline: none; box-shadow: none !important; }
-    input.report-slider-input[type="range"]::-webkit-slider-runnable-track { height: 32px; background: transparent; }
-    input.report-slider-input[type="range"]::-moz-range-track { height: 32px; background: transparent; border: none; }
-    input.report-slider-input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        width: 18px;
-        height: 18px;
-        border-radius: 999px;
-        background: #fff;
-        border: 3px solid var(--success);
-        box-shadow: 0 3px 10px -3px rgba(34,197,94,.55), 0 0 0 3px rgba(34,197,94,.1);
-        margin-top: 7px;
-        transition: transform .15s ease;
-        cursor: grab;
-    }
-    input.report-slider-input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.15); }
-    input.report-slider-input[type="range"]::-moz-range-thumb {
-        width: 18px;
-        height: 18px;
-        border-radius: 999px;
-        background: #fff;
-        border: 3px solid var(--success);
-        box-shadow: 0 3px 10px -3px rgba(34,197,94,.55), 0 0 0 3px rgba(34,197,94,.1);
-        cursor: grab;
-    }
-    .quick-set-row {
-        display: flex;
-        gap: 4px;
-        margin-top: 8px;
         flex-wrap: wrap;
+        margin-top: 18px;
     }
-    .quick-set {
-        appearance: none;
-        -webkit-appearance: none;
-        border: 1px solid var(--border2);
-        background: transparent;
-        color: var(--muted);
-        padding: 2px 8px;
-        border-radius: 999px;
-        font-size: 10.5px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: all .15s ease;
-    }
-    .quick-set:hover { border-color: var(--success); color: var(--success); }
-
-    /* note side */
-    .rate-note-field textarea {
-        min-height: 60px !important;
-        padding: 10px 12px;
-        font-size: 13px;
-        line-height: 1.55;
-    }
-    .rate-note-label {
-        font-size: 10.5px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-bottom: 6px;
-        font-weight: 700;
-    }
-
-    /* ============ SUMMARY STEP ============ */
-    .summary-grid { display: grid; gap: 14px; }
+    .fb-actions-right { display: flex; gap: 8px; flex-wrap: wrap; }
     .current-proof {
-        margin-top: 8px;
         display: inline-flex;
         align-items: center;
         gap: 8px;
+        margin-top: 8px;
         color: var(--accent);
         text-decoration: none;
         font-weight: 600;
         font-size: 13px;
     }
-
-    /* ============ RADAR / HISTORY (side) ============ */
-    .radar-card {
-        border: 1px solid rgba(34, 197, 94, 0.25);
-        border-radius: 18px;
-        padding: 18px;
-        background: linear-gradient(180deg, rgba(34,197,94,.05), transparent);
-    }
-    .radar-wrap { min-height: 260px; position: relative; }
-    .radar-stats {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin-top: 12px;
-    }
-    .radar-stat {
-        text-align: center;
-        padding: 8px;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        background: var(--surface2);
-    }
-    .radar-stat span {
-        display: block;
-        color: var(--muted);
-        font-size: 10px;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        margin-bottom: 3px;
-    }
-    .radar-stat strong {
-        display: block;
-        color: var(--text);
-        font-size: 16px;
-        letter-spacing: -0.02em;
-        font-variant-numeric: tabular-nums;
-    }
-    .history-feed { display: grid; gap: 8px; }
-    .history-item {
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        background: var(--surface2);
-        padding: 10px 12px;
-    }
-    .history-item strong { display: block; color: var(--text); font-size: 12.5px; margin-bottom: 2px; }
-    .history-item small { display: block; color: var(--muted); font-size: 11px; line-height: 1.5; }
-    .history-item p { margin-top: 6px; color: var(--text); font-size: 12px; line-height: 1.6; }
-    .history-empty {
-        border: 1px dashed var(--border2);
-        border-radius: 12px;
-        padding: 12px;
-        color: var(--muted);
-        text-align: center;
-        font-size: 12px;
-    }
-
-    /* ============ NAV ============ */
-    .sr-nav {
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-top: 16px;
-        padding-top: 14px;
-        border-top: 1px solid var(--border);
-    }
-    .sr-nav-right { display: flex; gap: 8px; flex-wrap: wrap; }
-
-    /* ============ RESPONSIVE ============ */
-    @media (max-width: 1100px) {
-        .sr-layout { grid-template-columns: 1fr; }
-        .sr-side { position: static; }
-    }
-    @media (max-width: 760px) {
-        .rate-row { grid-template-columns: 1fr; }
-        .sr-head { padding: 16px; }
-        .sr-title { font-size: 19px; }
-        .sr-panel { padding: 16px; border-radius: 16px; }
-        .sr-step-title { font-size: 12px; }
-        .sr-step-label { font-size: 9px; }
-    }
-    @media (max-width: 420px) {
-        .sr-step-title { display: none; }
-        .sr-step-btn { grid-template-columns: 1fr; justify-items: center; }
-        .sr-step-dot { margin: 0 auto; }
-        .sr-step-label { text-align: center; }
-        .radar-stats { grid-template-columns: 1fr 1fr 1fr; }
-        .radar-stat strong { font-size: 13px; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-        .slider-fill, .sr-progress-fill, .sr-step-panel.is-active {
-            animation: none !important;
-            transition: none !important;
-        }
-    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="sr-shell">
-
-    <!-- ============ HEADER ============ -->
+<div class="fb-shell">
     <div class="card">
-        <div class="sr-head">
+        <div class="fb-head">
             <div>
-                <span class="sr-kicker">Session Report</span>
-                <h2 class="sr-title">
-                    {% if is_edit %}Update {{ member.full_name }}{% else %}Rate {{ member.full_name }}{% endif %}
+                <span class="fb-kicker">Session Feedback</span>
+                <h2 class="fb-title">
+                    {% if is_edit %}Update feedback for {{ member.full_name }}{% else %}Feedback for {{ member.full_name }}{% endif %}
                 </h2>
-                <div class="sr-meta">
+                <div class="fb-meta">
                     <span><i class="fa-regular fa-calendar"></i>{{ training_session.session_date|date:"d M Y" }}</span>
                     <span><i class="fa-regular fa-clock"></i>{{ training_session.start_time|time:"H:i" }}–{{ training_session.end_time|time:"H:i" }}</span>
                     {% if current_member_position %}
@@ -461,339 +117,65 @@
         </div>
     </div>
 
-    <!-- ============ STEPPER ============ -->
-    <div class="sr-stepper" role="tablist" id="srStepper">
-        <button type="button" class="sr-step-btn is-active" data-step="1" role="tab">
-            <span class="sr-step-dot">1</span>
-            <span>
-                <span class="sr-step-label">Step 1</span>
-                <span class="sr-step-title">Rate &amp; Note</span>
-            </span>
-        </button>
-        <button type="button" class="sr-step-btn" data-step="2" role="tab">
-            <span class="sr-step-dot">2</span>
-            <span>
-                <span class="sr-step-label">Step 2</span>
-                <span class="sr-step-title">Summary &amp; Video</span>
-            </span>
-        </button>
-        <div class="sr-progress"><span class="sr-progress-fill" id="srProgress" style="width:50%;"></span></div>
-    </div>
-
-    <!-- ============ FORM ============ -->
-    <form method="post" enctype="multipart/form-data" class="sr-layout" id="srForm" novalidate>
+    <form method="post" enctype="multipart/form-data" novalidate>
         {% csrf_token %}
 
-        <section class="sr-main">
+        <div class="fb-panel">
+            <h3>Session feedback</h3>
+            <p class="fb-note" style="margin-bottom:14px;">Skill grading only runs once every six months inside the progress report. After each session you only write what the student needs to hear next. Keep it clear and specific.</p>
 
-            <!-- STEP 1: RATE & NOTE -->
-            <div class="sr-panel sr-step-panel is-active" data-step-panel="1">
-                <h3>Rate &amp; Note</h3>
-                <p class="sr-panel-copy">Slide to score. Add a short note on the right if needed.</p>
-
-                <div class="rate-list">
-                    {% for row in form.skill_field_rows %}
-                    <div class="rate-row" data-skill="{{ row.rating_name }}">
-                        <div class="rate-row-left">
-                            <div class="rate-head">
-                                <span class="rate-name">{{ row.label }}</span>
-                                <span class="rate-score" data-slider-output-for="{{ row.rating_name }}">
-                                    <span data-slider-value-for="{{ row.rating_name }}">{{ row.rating_field.value|default:0 }}</span>/100
-                                </span>
-                            </div>
-                            <div class="slider-wrap">
-                                <div class="slider-track">
-                                    <span class="slider-fill" data-slider-fill-for="{{ row.rating_name }}" style="width:{{ row.rating_field.value|default:0 }}%;"></span>
-                                </div>
-                                {{ row.rating_field }}
-                            </div>
-                            <div class="quick-set-row">
-                                <button type="button" class="quick-set" data-quick-set="{{ row.rating_name }}" data-value="25">25</button>
-                                <button type="button" class="quick-set" data-quick-set="{{ row.rating_name }}" data-value="50">50</button>
-                                <button type="button" class="quick-set" data-quick-set="{{ row.rating_name }}" data-value="75">75</button>
-                                <button type="button" class="quick-set" data-quick-set="{{ row.rating_name }}" data-value="90">90</button>
-                            </div>
-                            {% if row.rating_field.errors %}<p class="text-sm" style="color:var(--danger);margin-top:6px;">{{ row.rating_field.errors|join:", " }}</p>{% endif %}
-                        </div>
-                        <div class="rate-row-right">
-                            <div class="rate-note-field form-group">
-                                <label class="rate-note-label" for="{{ row.note_field.id_for_label }}">Note</label>
-                                {{ row.note_field }}
-                                {% if row.note_field.errors %}<p class="text-sm" style="color:var(--danger);">{{ row.note_field.errors|join:", " }}</p>{% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
+            <div class="form-group full">
+                <label for="{{ form.feedback_text.id_for_label }}" style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;">Write feedback</label>
+                <textarea name="{{ form.feedback_text.html_name }}" id="{{ form.feedback_text.id_for_label }}" class="fb-textarea" placeholder="Strongest point today, the biggest issue, and the next focus.">{{ form.feedback_text.value|default:"" }}</textarea>
+                {% if form.feedback_text.errors %}<p class="text-sm" style="color:var(--danger);margin-top:6px;">{{ form.feedback_text.errors|join:", " }}</p>{% endif %}
             </div>
 
-            <!-- STEP 2: SUMMARY & VIDEO -->
-            <div class="sr-panel sr-step-panel" data-step-panel="2">
-                <h3>Summary &amp; Video</h3>
-                <p class="sr-panel-copy">One line summary. Video is optional.</p>
-
-                <div class="summary-grid">
-                    <div class="form-group full">
-                        <label for="{{ form.feedback_text.id_for_label }}">Session summary</label>
-                        {{ form.feedback_text }}
-                        {% if form.feedback_text.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.feedback_text.errors|join:", " }}</p>{% endif %}
-                    </div>
-                    <div class="form-group full">
-                        <label for="{{ form.video_proof.id_for_label }}">Video proof</label>
-                        {{ form.video_proof }}
-                        {% if feedback and feedback.video_proof %}
-                        <a href="{{ feedback.video_proof.url }}" target="_blank" class="current-proof">
-                            <i class="fa-solid fa-video"></i> Current video
-                        </a>
-                        {% endif %}
-                        {% if form.video_proof.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.video_proof.errors|join:", " }}</p>{% endif %}
-                    </div>
-                </div>
-
-                {% if form.non_field_errors %}
-                <div style="margin-top:12px;padding:10px 12px;border-radius:12px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.06);">
-                    <p class="text-sm" style="color:var(--danger);">{{ form.non_field_errors|join:", " }}</p>
-                </div>
+            <div class="form-group full" style="margin-top:18px;">
+                <label for="{{ form.video_proof.id_for_label }}" style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;">Video proof (optional)</label>
+                {{ form.video_proof }}
+                {% if feedback and feedback.video_proof %}
+                <a href="{{ feedback.video_proof.url }}" target="_blank" class="current-proof">
+                    <i class="fa-solid fa-video"></i> Current video
+                </a>
                 {% endif %}
+                {% if form.video_proof.errors %}<p class="text-sm" style="color:var(--danger);margin-top:6px;">{{ form.video_proof.errors|join:", " }}</p>{% endif %}
             </div>
 
-            <!-- NAV -->
-            <div class="sr-nav">
-                <button type="button" class="btn btn-ghost" id="prevStepBtn" disabled>
-                    <i class="fa-solid fa-arrow-left"></i> Back
+            {% if form.non_field_errors %}
+            <div style="margin-top:14px;padding:10px 12px;border-radius:12px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.06);">
+                <p class="text-sm" style="color:var(--danger);">{{ form.non_field_errors|join:", " }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="fb-actions">
+            <a href="{% url 'sessions:detail' training_session.pk %}" class="btn btn-ghost">Cancel</a>
+            <div class="fb-actions-right">
+                {% if next_feedback_member %}
+                <button type="submit" name="save_and_next" value="1" class="btn btn-success">
+                    <i class="fa-solid fa-forward-step"></i> Save &amp; Next
                 </button>
-                <div class="sr-nav-right">
-                    <a href="{% url 'sessions:detail' training_session.pk %}" class="btn btn-ghost">Cancel</a>
-                    <button type="button" class="btn btn-primary" id="nextStepBtn">
-                        Next <i class="fa-solid fa-arrow-right"></i>
-                    </button>
-                    {% if next_feedback_member %}
-                    <button type="submit" name="save_and_next" value="1" class="btn btn-success" id="saveNextBtn" style="display:none;">
-                        <i class="fa-solid fa-forward-step"></i> Save &amp; Next
-                    </button>
-                    {% endif %}
-                    <button type="submit" class="btn btn-primary" id="saveBtn" style="display:none;">
-                        <i class="fa-solid fa-floppy-disk"></i> Save Report
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- SIDE -->
-        <aside class="sr-side">
-            <article class="radar-card">
-                <h3 style="font-size:14px;font-weight:700;color:var(--text);margin:0 0 4px;">Live Spider</h3>
-                <p class="sr-panel-copy">Updates as you slide.</p>
-                <div class="radar-wrap">
-                    <canvas id="evaluationRadarChart"></canvas>
-                </div>
-                <div class="radar-stats">
-                    <div class="radar-stat">
-                        <span>Avg</span>
-                        <strong id="radarAverage">0</strong>
-                    </div>
-                    <div class="radar-stat">
-                        <span>Top</span>
-                        <strong id="radarStrongest" style="font-size:12px;line-height:1.3;">-</strong>
-                    </div>
-                    <div class="radar-stat">
-                        <span>Low</span>
-                        <strong id="radarWeakest" style="font-size:12px;line-height:1.3;">-</strong>
-                    </div>
-                </div>
-            </article>
-
-            <article class="sr-panel">
-                <h3>Past Sessions</h3>
-                <p class="sr-panel-copy">Recent reports for this student.</p>
-                {% if recent_feedback_entries %}
-                <div class="history-feed">
-                    {% for prior_feedback in recent_feedback_entries|slice:":3" %}
-                    <div class="history-item">
-                        <strong>{{ prior_feedback.training_session.title }}</strong>
-                        <small>{{ prior_feedback.training_session.session_date|date:"d M Y" }}</small>
-                        <p>{{ prior_feedback.feedback_text|truncatechars:140 }}</p>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <div class="history-empty">No earlier session reports.</div>
                 {% endif %}
-            </article>
-        </aside>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Feedback
+                </button>
+            </div>
+        </div>
     </form>
+
+    {% if recent_feedback_entries %}
+    <div class="fb-panel">
+        <h3>Recent feedback for {{ member.full_name }}</h3>
+        <div style="display:grid;gap:10px;margin-top:10px;">
+            {% for prior in recent_feedback_entries|slice:":3" %}
+            <div style="border:1px solid var(--border);border-radius:12px;background:var(--surface2);padding:12px 14px;">
+                <strong style="font-size:13px;color:var(--text);">{{ prior.training_session.title }}</strong>
+                <small style="display:block;color:var(--muted);font-size:11.5px;margin-top:2px;">{{ prior.training_session.session_date|date:"d M Y" }}</small>
+                <p style="margin-top:6px;color:var(--text);font-size:13px;line-height:1.7;">{{ prior.feedback_text|truncatechars:240 }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // STEPPER
-        const steps = document.querySelectorAll('.sr-step-btn');
-        const panels = document.querySelectorAll('[data-step-panel]');
-        const progress = document.getElementById('srProgress');
-        const prevBtn = document.getElementById('prevStepBtn');
-        const nextBtn = document.getElementById('nextStepBtn');
-        const saveBtn = document.getElementById('saveBtn');
-        const saveNextBtn = document.getElementById('saveNextBtn');
-        const totalSteps = steps.length;
-        let current = 1;
-
-        function showStep(n) {
-            current = Math.max(1, Math.min(totalSteps, n));
-            steps.forEach(function(step) {
-                const s = Number(step.dataset.step);
-                step.classList.toggle('is-active', s === current);
-                step.classList.toggle('is-done', s < current);
-            });
-            panels.forEach(function(panel) {
-                panel.classList.toggle('is-active', Number(panel.dataset.stepPanel) === current);
-            });
-            progress.style.width = ((current / totalSteps) * 100) + '%';
-            prevBtn.disabled = current === 1;
-            const isLast = current === totalSteps;
-            nextBtn.style.display = isLast ? 'none' : '';
-            if (saveBtn) saveBtn.style.display = isLast ? '' : 'none';
-            if (saveNextBtn) saveNextBtn.style.display = isLast ? '' : 'none';
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        steps.forEach(function(step) {
-            step.addEventListener('click', function() { showStep(Number(step.dataset.step)); });
-        });
-        prevBtn.addEventListener('click', function() { showStep(current - 1); });
-        nextBtn.addEventListener('click', function() { showStep(current + 1); });
-
-        const errField = document.querySelector('.sr-step-panel p[style*="--danger"]');
-        if (errField) {
-            const panel = errField.closest('[data-step-panel]');
-            if (panel) showStep(Number(panel.dataset.stepPanel));
-        }
-
-        // SLIDERS + RADAR
-        const sliderInputs = Array.from(document.querySelectorAll('.report-slider-input'));
-        const seedSkills = JSON.parse('{{ session_skill_preview|escapejs }}');
-        let radarChart = null;
-
-        function getTone(value) {
-            if (value < 40) return 'low';
-            if (value < 70) return 'mid';
-            return 'good';
-        }
-
-        function updateSliderVisual(input) {
-            const name = input.name;
-            const value = Number(input.value || 0);
-            const fill = document.querySelector('[data-slider-fill-for="' + name + '"]');
-            const valueNode = document.querySelector('[data-slider-value-for="' + name + '"]');
-            const chip = document.querySelector('[data-slider-output-for="' + name + '"]');
-            if (fill) fill.style.width = value + '%';
-            if (valueNode) valueNode.textContent = value;
-            if (chip) {
-                chip.classList.remove('tone-low', 'tone-mid', 'tone-good');
-                chip.classList.add('tone-' + getTone(value));
-            }
-        }
-
-        function getSkillRows() {
-            return seedSkills.map(function(row) {
-                const field = document.querySelector('[name="' + row.field_name + '"]');
-                return {
-                    label: row.label,
-                    value: field ? Number(field.value || 0) : Number(row.value || 0)
-                };
-            });
-        }
-
-        function updateRadarStats(skills) {
-            if (!skills.length) return;
-            const total = skills.reduce(function(acc, r) { return acc + r.value; }, 0);
-            const avg = Math.round(total / skills.length);
-            const sorted = skills.slice().sort(function(a, b) { return b.value - a.value; });
-            const avgNode = document.getElementById('radarAverage');
-            const strongNode = document.getElementById('radarStrongest');
-            const weakNode = document.getElementById('radarWeakest');
-            if (avgNode) avgNode.textContent = avg;
-            if (strongNode) strongNode.textContent = sorted[0].label;
-            if (weakNode) weakNode.textContent = sorted[sorted.length - 1].label;
-        }
-
-        async function renderRadar() {
-            const canvas = document.getElementById('evaluationRadarChart');
-            if (!canvas) return;
-            await window.ensureChartJs();
-            const skills = getSkillRows();
-            updateRadarStats(skills);
-            const data = {
-                labels: skills.map(function(r) { return r.label; }),
-                datasets: [{
-                    label: 'Skill',
-                    data: skills.map(function(r) { return r.value; }),
-                    backgroundColor: 'rgba(34, 197, 94, 0.22)',
-                    borderColor: '#22c55e',
-                    pointBackgroundColor: '#22c55e',
-                    pointBorderColor: '#ffffff',
-                    borderWidth: 2,
-                    pointRadius: 3,
-                    pointHoverRadius: 5
-                }]
-            };
-            if (radarChart) {
-                radarChart.data = data;
-                radarChart.update();
-                return;
-            }
-            radarChart = new Chart(canvas, {
-                type: 'radar',
-                data: data,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: { duration: 300 },
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        r: {
-                            min: 0,
-                            max: 100,
-                            ticks: { display: false, stepSize: 25 },
-                            angleLines: { color: 'rgba(148, 163, 184, 0.22)' },
-                            grid: { color: 'rgba(148, 163, 184, 0.22)' },
-                            pointLabels: {
-                                color: getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#f0f0f4',
-                                font: { family: 'Inter', size: 10 }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        sliderInputs.forEach(function(input) { updateSliderVisual(input); });
-
-        if ('requestIdleCallback' in window) {
-            requestIdleCallback(renderRadar, { timeout: 1200 });
-        } else {
-            setTimeout(renderRadar, 0);
-        }
-
-        sliderInputs.forEach(function(input) {
-            input.addEventListener('input', function() {
-                updateSliderVisual(input);
-                renderRadar();
-            });
-        });
-
-        document.querySelectorAll('[data-quick-set]').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                const fieldName = btn.dataset.quickSet;
-                const value = btn.dataset.value;
-                const field = document.querySelector('[name="' + fieldName + '"]');
-                if (!field) return;
-                field.value = value;
-                updateSliderVisual(field);
-                renderRadar();
-            });
-        });
-    });
-</script>
 {% endblock %}

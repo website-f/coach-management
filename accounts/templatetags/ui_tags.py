@@ -82,6 +82,16 @@ def nav_active_contains(context, needle):
 
 
 @register.filter
+def dictkey(mapping, key):
+    if mapping is None:
+        return None
+    try:
+        return mapping.get(key)
+    except AttributeError:
+        return None
+
+
+@register.filter
 def status_badge(value):
     key = str(value).replace("_", " ").lower()
     return STATUS_BADGE_CLASSES.get(key, "badge-neutral")

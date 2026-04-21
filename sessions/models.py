@@ -288,6 +288,8 @@ class AttendanceRecord(models.Model):
         related_name="attendance_markings",
     )
     marked_at = models.DateTimeField(null=True, blank=True)
+    reschedule_count = models.PositiveSmallIntegerField(default=0)
+    original_session_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -336,6 +338,37 @@ class SessionFeedback(models.Model):
 
     def __str__(self):
         return f"{self.member.full_name} feedback for {self.training_session.title}"
+
+
+class SessionChecklistReport(models.Model):
+    training_session = models.ForeignKey(
+        TrainingSession,
+        on_delete=models.CASCADE,
+        related_name="checklist_reports",
+    )
+    coach = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="session_checklist_reports",
+    )
+    checked_items = models.JSONField(default=list, blank=True)
+    feedback_text = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["training_session", "coach"],
+                name="unique_checklist_report_per_session_coach",
+            )
+        ]
+
+    def __str__(self):
+        return f"Checklist report for {self.training_session.title}"
 
 
 class SessionPlannerEntry(models.Model):

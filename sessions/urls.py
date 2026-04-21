@@ -2,6 +2,9 @@ from django.urls import path
 
 from sessions.views import (
     AttendanceUpdateView,
+    ParentRescheduleView,
+    SessionChecklistAuditView,
+    SessionChecklistSaveView,
     SessionCreateView,
     SessionPlanAssistantView,
     SessionDetailView,
@@ -25,6 +28,9 @@ app_name = "sessions"
 
 urlpatterns = [
     path("", SessionListView.as_view(), name="list"),
+    path("checklist-audit/", SessionChecklistAuditView.as_view(), name="checklist_audit"),
+    path("parent/attendance/<int:pk>/reschedule/", ParentRescheduleView.as_view(), name="parent_reschedule"),
+    path("<int:pk>/checklist-save/", SessionChecklistSaveView.as_view(), name="checklist_save"),
     path("syllabus/", SyllabusListView.as_view(), name="syllabus"),
     path("syllabus/root/create/", SyllabusRootCreateView.as_view(), name="syllabus_root_create"),
     path("syllabus/root/<int:pk>/edit/", SyllabusRootUpdateView.as_view(), name="syllabus_root_edit"),

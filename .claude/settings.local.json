@@ -3,7 +3,9 @@
     "allow": [
       "Bash(python manage.py check:*)",
       "Bash(python:*)",
-      "Bash(find /c/Users/admin/Desktop/coach-management/templates -name \"base.html\" -exec head -50 {} \\\\;)"
+      "Bash(find /c/Users/admin/Desktop/coach-management/templates -name \"base.html\" -exec head -50 {} \\\\;)",
+      "Bash(DJANGO_SETTINGS_MODULE=nyo_dashboard.settings python -c \"import django; django.setup\\(\\); from django.template.loader import get_template; [get_template\\(n\\) for n in ['sessions/session_list.html','sessions/feedback_form.html','sessions/checklist_audit.html','sessions/session_detail.html']]; print\\('templates ok'\\)\")",
+      "Bash(DJANGO_SETTINGS_MODULE=nyo_dashboard.settings python -c \"import django; django.setup\\(\\); from django.template.loader import get_template; [get_template\\(n\\) for n in ['sessions/session_list.html','members/report_detail.html']]; print\\('templates ok'\\)\")"
     ]
   }
 }

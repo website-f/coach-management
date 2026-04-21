@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load ui_tags %}
 
 {% block title %}{% if show_checklist_view %}Coach Session Checklist | NYO Admin Dashboard{% else %}Sessions | NYO Admin Dashboard{% endif %}{% endblock %}
 {% block page_heading %}{% if show_checklist_view %}Session Checklist{% else %}Session Calendar{% endif %}{% endblock %}
@@ -125,7 +126,7 @@
         border: 1px solid var(--border);
         background: var(--surface2);
         width: fit-content;
-        margin: 0 auto 20px;
+        margin: 28px auto 22px;
         flex-wrap: wrap;
         justify-content: center;
     }
@@ -422,11 +423,6 @@
                 {% endif %}
 
                 {% if show_checklist_view %}
-                    {% if selected_focus_session %}
-                    <a href="{% url 'sessions:detail' selected_focus_session.pk %}" class="btn btn-primary btn-open-session">
-                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Session
-                    </a>
-                    {% endif %}
                 {% else %}
                 <a href="?month={{ prev_month }}{% if selected_coach %}&coach={{ selected_coach }}{% endif %}{% if selected_member %}&member={{ selected_member }}{% endif %}{% if checklist_enabled %}&view=calendar{% endif %}" class="btn btn-ghost">
                     <i class="fa-solid fa-chevron-left"></i> Previous
@@ -462,28 +458,47 @@
                 <div class="card">
                     <div class="section-header">
                         <span class="section-title">Training Checklist</span>
-                        {% if current_role == 'coach' or current_role == 'admin' %}
+                        {% if can_submit_checklist %}
                         <a href="{% url 'sessions:plan' selected_focus_session.pk %}" class="section-link">Open planner</a>
                         {% endif %}
                     </div>
                     <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">{{ selected_focus_session.title }}</p>
                     <h3 style="font-size:22px;font-weight:700;color:var(--text);margin-top:8px;">{{ checklist_plan.plan_title }}</h3>
                     <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">{{ checklist_plan.summary }}</p>
+                    {% if existing_checklist_report %}
+                    <p class="text-xs text-muted" style="margin-top:10px;">Last saved {{ existing_checklist_report.updated_at|date:"d M Y H:i" }} by {{ existing_checklist_report.coach|default:"Coach" }}.</p>
+                    {% endif %}
 
-                    <div class="coach-checklist">
-                        {% for item in checklist_items %}
-                        <label class="coach-checklist-item" for="coachChecklist{{ forloop.counter }}">
-                            <input type="checkbox" id="coachChecklist{{ forloop.counter }}">
-                            <div class="coach-checklist-copy">
-                                <div class="coach-checklist-title-row">
-                                    <strong style="font-size:16px;color:var(--text);">{{ item.title }}</strong>
-                                    <span class="badge badge-info">{{ item.duration }}</span>
+                    <form method="post" action="{% url 'sessions:checklist_save' selected_focus_session.pk %}">
+                        {% csrf_token %}
+                        <div class="coach-checklist">
+                            {% for item in checklist_items %}
+                            <label class="coach-checklist-item" for="coachChecklist{{ forloop.counter }}">
+                                <input type="checkbox" name="checked_items" value="{{ item.title }}" id="coachChecklist{{ forloop.counter }}" {% if item.title in existing_checklist_checked %}checked{% endif %} {% if not can_submit_checklist %}disabled{% endif %}>
+                                <div class="coach-checklist-copy">
+                                    <div class="coach-checklist-title-row">
+                                        <strong style="font-size:16px;color:var(--text);">{{ item.title }}</strong>
+                                        <span class="badge badge-info">{{ item.duration }}</span>
+                                    </div>
+                                    <p>{{ item.detail }}</p>
                                 </div>
-                                <p>{{ item.detail }}</p>
-                            </div>
-                        </label>
-                        {% endfor %}
-                    </div>
+                            </label>
+                            {% endfor %}
+                        </div>
+
+                        <div class="form-group" style="margin-top:20px;">
+                            <label for="checklistFeedback" style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;">Session feedback</label>
+                            <textarea id="checklistFeedback" name="feedback_text" rows="5" placeholder="How did the session actually run? What needs adjusting next time? Admin will audit this."
+                                {% if not can_submit_checklist %}disabled{% endif %}
+                                style="width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;line-height:1.6;resize:vertical;">{{ existing_checklist_feedback }}</textarea>
+                        </div>
+
+                        {% if can_submit_checklist %}
+                        <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+                            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Checklist &amp; Feedback</button>
+                        </div>
+                        {% endif %}
+                    </form>
                 </div>
             </div>
 
@@ -606,6 +621,22 @@
     {% endif %}
 
     {% if show_calendar_view %}
+    {% if is_parent_user %}
+    <div class="card" style="display:flex;justify-content:space-between;gap:18px;align-items:center;flex-wrap:wrap;">
+        <div style="min-width:220px;">
+            <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;">Package progress this month</p>
+            <h3 style="font-size:28px;font-weight:700;color:var(--text);margin-top:6px;">{{ parent_done_count }}/{{ parent_package_target }} done</h3>
+            <p class="text-sm text-muted" style="margin-top:6px;">Green events are completed sessions. Red are absences.</p>
+        </div>
+        <div style="flex:1;min-width:240px;">
+            <div style="height:12px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);overflow:hidden;">
+                <div style="height:100%;width:{{ parent_progress_percent }}%;background:linear-gradient(90deg,#22c55e,#4ade80);transition:width .5s ease;"></div>
+            </div>
+            <p class="text-xs text-muted" style="margin-top:8px;">You have {{ parent_scheduled_count }} session(s) on the schedule this month. Reschedule limit: 2 per session.</p>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="stat-cards">
         <div class="stat-card">
             <div class="stat-card-top">
@@ -737,6 +768,29 @@
                             {% endif %}
                         </div>
                     </div>
+                    {% if is_parent_user %}
+                        {% with parent_record=parent_attendance_map|dictkey:session.pk %}
+                        {% if parent_record %}
+                        <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                            {% if parent_record.status == 'present' or parent_record.status == 'late' %}
+                            <span class="badge badge-success">Completed</span>
+                            {% elif parent_record.status == 'absent' %}
+                            <span class="badge badge-danger">Missed</span>
+                            {% else %}
+                            <span class="badge badge-info">Scheduled</span>
+                            {% endif %}
+                            <span class="text-xs text-muted">Reschedules used: {{ parent_record.reschedule_count }}/2</span>
+                            {% if parent_record.status == 'scheduled' and parent_record.reschedule_count < 2 %}
+                            <form method="post" action="{% url 'sessions:parent_reschedule' parent_record.pk %}" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                                {% csrf_token %}
+                                <input type="date" name="new_date" required style="padding:6px 10px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;">
+                                <button type="submit" class="btn btn-ghost btn-xs"><i class="fa-solid fa-calendar-day"></i> Reschedule</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+                    {% endif %}
                 </div>
                 {% empty %}
                 <div class="empty-state">

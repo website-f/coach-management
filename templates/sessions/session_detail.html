@@ -570,7 +570,7 @@
 
                 <p class="hero-copy">
                     {% if can_feedback and feedback_is_open and feedback_pending_count %}
-                    Tap any pending student below to open their rating screen. Progress auto-syncs with the student history.
+                    Tap any pending student below to write their session feedback. Progress auto-syncs with the student history.
                     {% elif can_feedback and feedback_is_open %}
                     Use <span class="fw-7">Edit Report</span> any time to refine scoring, notes, or video proof.
                     {% elif can_feedback %}
@@ -674,8 +674,8 @@
                             {% else %}2{% endif %}
                         </span>
                         <div class="check-body">
-                            <strong>Rate every student</strong>
-                            <p>Pending students stay pinned at the top of the roster and are highlighted below.</p>
+                            <strong>Write feedback for every student</strong>
+                            <p>One short written recap per student. Skill grading only happens once every six months in the progress report.</p>
                         </div>
                     </div>
                     <div class="check-item {% if feedback_pending_count == 0 and feedback_total_count %}is-done{% endif %}">
@@ -858,7 +858,7 @@
                 </div>
                 <div class="card-inset">
                     <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">What to add</p>
-                    <p style="font-size:14px;color:var(--text);">Each student gets skill ratings, a written recap, and an optional proof video. That is the exact post-session follow-up saved into the student history.</p>
+                    <p style="font-size:14px;color:var(--text);">Each student gets a written recap and an optional proof video. Skill scoring only happens once every six months inside the progress report.</p>
                 </div>
                 <div class="card-inset">
                     <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">When it appears</p>

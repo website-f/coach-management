@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from accounts.models import UserProfile
 from accounts.utils import ROLE_ADMIN, ROLE_COACH, has_role
 from finance.models import BillingConfiguration
-from members.models import DEFAULT_SKILLS, Member
+from members.models import Member
 from sessions.models import (
     SessionFeedback,
     SyllabusRoot,
@@ -209,79 +209,17 @@ class SessionFeedbackForm(forms.ModelForm):
         widgets = {
             "feedback_text": forms.Textarea(
                 attrs={
-                    "rows": 4,
-                    "placeholder": "Summarize the session clearly: strongest point, biggest issue, and what comes next.",
+                    "rows": 6,
+                    "placeholder": "Summarize this session for the student: strongest point, biggest issue, and what comes next. Skill grading is handled once every six months in the progress report.",
                 }
             ),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["feedback_text"].label = "Session summary"
+        self.fields["feedback_text"].label = "Session feedback"
+        self.fields["feedback_text"].required = True
         self.fields["video_proof"].help_text = "Optional proof clip, rally sequence, or technique example."
-        self.skill_field_rows = []
-
-        for skill in DEFAULT_SKILLS:
-            slug = skill.lower().replace(" ", "_")
-            rating_field_name = f"skill_{slug}"
-            note_field_name = f"note_{slug}"
-            self.fields[rating_field_name] = forms.IntegerField(
-                label=f"{skill} rating",
-                min_value=0,
-                max_value=100,
-                required=False,
-                widget=RangeInput(
-                    attrs={
-                        "min": 0,
-                        "max": 100,
-                        "step": 5,
-                        "class": "report-slider-input",
-                        "data-skill-label": skill,
-                    }
-                ),
-            )
-            self.fields[note_field_name] = forms.CharField(
-                label=f"{skill} note",
-                required=False,
-                widget=forms.Textarea(
-                    attrs={
-                        "rows": 2,
-                        "placeholder": f"Add a coaching note for {skill.lower()}...",
-                    }
-                ),
-            )
-
-            if self.instance.pk:
-                self.fields[rating_field_name].initial = round((self.instance.skill_snapshot.get(skill) or 0) * 20)
-                self.fields[note_field_name].initial = self.instance.skill_notes.get(skill)
-            else:
-                self.fields[rating_field_name].initial = 60
-
-            self.skill_field_rows.append(
-                {
-                    "label": skill,
-                    "rating_name": rating_field_name,
-                    "rating_field": self[rating_field_name],
-                    "note_name": note_field_name,
-                    "note_field": self[note_field_name],
-                }
-            )
-
-    def save(self, commit=True):
-        instance = super().save(commit=False)
-        instance.skill_snapshot = {}
-        instance.skill_notes = {}
-        for skill in DEFAULT_SKILLS:
-            slug = skill.lower().replace(" ", "_")
-            raw_rating = self.cleaned_data.get(f"skill_{slug}")
-            note = self.cleaned_data.get(f"note_{slug}", "").strip()
-            if raw_rating is not None:
-                instance.skill_snapshot[skill] = round(raw_rating / 20, 2)
-            if note:
-                instance.skill_notes[skill] = note
-        if commit:
-            instance.save()
-        return instance
 
 
 class WeeklySyllabusForm(forms.ModelForm):

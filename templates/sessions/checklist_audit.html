@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Coach Checklist Audit | NYO Admin Dashboard{% endblock %}
+{% block page_heading %}Coach Checklist Audit{% endblock %}
+
+{% block content %}
+<div class="space-y">
+    <div class="card">
+        <div class="section-header">
+            <span class="section-title">Coach Session Checklist Audit</span>
+        </div>
+        <p class="text-sm text-muted" style="margin-top:6px;line-height:1.8;">
+            Every time a coach saves the session checklist and feedback, the record appears here for admin review.
+        </p>
+        <form method="get" class="filter-fields" style="margin-top:14px;">
+            <div class="filter-field">
+                <label>Coach</label>
+                <select name="coach">
+                    <option value="">All coaches</option>
+                    {% for coach in coaches %}
+                    <option value="{{ coach.id }}" {% if selected_coach == coach.id|stringformat:"s" %}selected{% endif %}>
+                        {{ coach.get_full_name|default:coach.username }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-actions" style="margin-top:auto;">
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Apply</button>
+                <a href="{% url 'sessions:checklist_audit' %}" class="btn btn-ghost">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="space-y">
+            {% for report in checklist_reports %}
+            <div class="card-inset">
+                <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+                    <div>
+                        <p style="font-weight:700;font-size:15px;color:var(--text);">{{ report.training_session.title }}</p>
+                        <p class="text-sm text-muted" style="margin-top:6px;">
+                            {{ report.training_session.session_date|date:"d M Y" }} &middot; Coach {{ report.coach|default:"Unknown" }} &middot; Saved {{ report.updated_at|date:"d M Y H:i" }}
+                        </p>
+                    </div>
+                    <a href="{% url 'sessions:detail' report.training_session.pk %}" class="btn btn-ghost btn-xs">Open Session</a>
+                </div>
+                {% if report.checked_items %}
+                <div style="margin-top:12px;">
+                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Completed blocks</p>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                        {% for item in report.checked_items %}
+                        <span class="badge badge-success">{{ item }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                {% if report.feedback_text %}
+                <div style="margin-top:12px;">
+                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Coach feedback</p>
+                    <p style="font-size:14px;color:var(--text);line-height:1.7;white-space:pre-wrap;">{{ report.feedback_text }}</p>
+                </div>
+                {% endif %}
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <i class="fa-regular fa-file-lines"></i>
+                <p>No checklist reports have been submitted yet.</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if is_paginated %}
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:18px;">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% if selected_coach %}&coach={{ selected_coach }}{% endif %}" class="btn btn-ghost btn-xs">Previous</a>
+            {% endif %}
+            <span class="text-sm text-muted" style="align-self:center;">Page {{ page_obj.number }} of {{ paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if selected_coach %}&coach={{ selected_coach }}{% endif %}" class="btn btn-ghost btn-xs">Next</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
