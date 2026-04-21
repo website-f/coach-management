@@ -41,7 +41,7 @@ from sessions.models import (
     TrainingSession,
     WeeklySyllabus,
 )
-from sessions.services import build_session_plan, ensure_default_syllabus
+from sessions.services import auto_assign_monthly_sessions, build_session_plan, ensure_default_syllabus
 from sessions.video_utils import compress_session_feedback_video
 
 User = get_user_model()
@@ -601,7 +601,7 @@ class SessionListView(LoginRequiredMixin, ListView):
         return resolve_month_anchor(self.request.GET.get("month"))
 
     def uses_checklist_first_mode(self):
-        return has_role(self.request.user, ROLE_COACH) and not has_role(self.request.user, ROLE_ADMIN)
+        return has_role(self.request.user, ROLE_COACH) or has_role(self.request.user, ROLE_ADMIN)
 
     def get_session_page_mode(self):
         requested_mode = self.request.GET.get("view", "").strip()
@@ -986,6 +986,22 @@ class SessionPlanSaveView(AdminOrCoachRequiredMixin, View):
                 "already_saved": bool(existing_entry),
             }
         )
+
+
+class AutoAssignSessionsView(AdminRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        month_raw = (request.POST.get("month") or "").strip()
+        anchor = resolve_month_anchor(month_raw) if month_raw else timezone.localdate().replace(day=1)
+        result = auto_assign_monthly_sessions(anchor)
+        msg = (
+            f"Auto-assigned for {result['month']}: {result['created_sessions']} new session(s), "
+            f"{result['created_attendances']} roster placement(s) across {result['members_processed']} member(s)."
+        )
+        messages.success(request, msg)
+        if result["skipped"]:
+            for row in result["skipped"][:6]:
+                messages.warning(request, f"{row['member']}: {row['reason']}")
+        return redirect(f"{reverse('sessions:list')}?view=calendar&month={anchor:%Y-%m}")
 
 
 class ParentRescheduleView(LoginRequiredMixin, View):

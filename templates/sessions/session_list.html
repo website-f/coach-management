@@ -423,6 +423,16 @@
                 {% endif %}
 
                 {% if show_checklist_view %}
+                    {% if can_plan %}
+                    <a href="{% url 'sessions:checklist_audit' %}" class="btn btn-ghost"><i class="fa-solid fa-clipboard-list"></i> Checklist Audit</a>
+                    <form method="post" action="{% url 'sessions:auto_assign' %}" style="display:inline-block;">
+                        {% csrf_token %}
+                        <input type="hidden" name="month" value="{{ selected_month }}">
+                        <button type="submit" class="btn btn-ghost" title="Auto-assign sessions for the current month using coach availability"><i class="fa-solid fa-wand-sparkles"></i> Auto-Assign</button>
+                    </form>
+                    <a href="{% url 'sessions:syllabus' %}" class="btn btn-ghost"><i class="fa-solid fa-book-open"></i> Syllabus</a>
+                    <a href="{% url 'sessions:create' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Create Schedule</a>
+                    {% endif %}
                 {% else %}
                 <a href="?month={{ prev_month }}{% if selected_coach %}&coach={{ selected_coach }}{% endif %}{% if selected_member %}&member={{ selected_member }}{% endif %}{% if checklist_enabled %}&view=calendar{% endif %}" class="btn btn-ghost">
                     <i class="fa-solid fa-chevron-left"></i> Previous

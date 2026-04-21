@@ -2,6 +2,7 @@ from django.urls import path
 
 from sessions.views import (
     AttendanceUpdateView,
+    AutoAssignSessionsView,
     ParentRescheduleView,
     SessionChecklistAuditView,
     SessionChecklistSaveView,
@@ -30,6 +31,7 @@ urlpatterns = [
     path("", SessionListView.as_view(), name="list"),
     path("checklist-audit/", SessionChecklistAuditView.as_view(), name="checklist_audit"),
     path("parent/attendance/<int:pk>/reschedule/", ParentRescheduleView.as_view(), name="parent_reschedule"),
+    path("auto-assign/", AutoAssignSessionsView.as_view(), name="auto_assign"),
     path("<int:pk>/checklist-save/", SessionChecklistSaveView.as_view(), name="checklist_save"),
     path("syllabus/", SyllabusListView.as_view(), name="syllabus"),
     path("syllabus/root/create/", SyllabusRootCreateView.as_view(), name="syllabus_root_create"),

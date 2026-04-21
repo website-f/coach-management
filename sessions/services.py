@@ -1,4 +1,6 @@
+import calendar as _calendar
 from collections import Counter
+from datetime import date, timedelta
 from statistics import mean
 
 from django.db import transaction
@@ -8,7 +10,15 @@ from django.utils import timezone
 from finance.models import Invoice
 from members.models import Member
 from members.services import calculate_report_overall_score
-from sessions.models import AttendanceRecord, SyllabusRoot, SyllabusStandard, SyllabusTemplate, WeeklySyllabus
+from sessions.models import (
+    AttendanceRecord,
+    CoachAvailability,
+    SyllabusRoot,
+    SyllabusStandard,
+    SyllabusTemplate,
+    TrainingSession,
+    WeeklySyllabus,
+)
 
 
 DEFAULT_BASIC_TEMPLATE = {
@@ -1033,3 +1043,157 @@ DEFAULT_SYLLABUS_BLUEPRINT = {
         },
     ],
 }
+
+
+LEVEL_ORDER = [
+    Member.LEVEL_BASIC,
+    Member.LEVEL_INTERMEDIATE,
+    Member.LEVEL_ADVANCED,
+]
+
+
+def _month_bounds(anchor: date):
+    start = anchor.replace(day=1)
+    _, days = _calendar.monthrange(start.year, start.month)
+    return start, start.replace(day=days)
+
+
+def _eligible_availabilities(member):
+    queryset = CoachAvailability.objects.filter(is_active=True).select_related("coach")
+    if member.assigned_coach_id:
+        queryset = queryset.filter(coach=member.assigned_coach)
+    return list(
+        queryset.filter(Q(level=member.skill_level) | Q(level="any")).order_by(
+            "weekday", "start_time"
+        )
+    )
+
+
+def _slot_has_conflict(existing_sessions_by_date, candidate_date, slot):
+    for existing in existing_sessions_by_date.get(candidate_date, []):
+        if existing.court and slot.court and existing.court != slot.court:
+            if existing.start_time < slot.end_time and slot.start_time < existing.end_time:
+                if existing.coach_id == slot.coach_id:
+                    return True
+                continue
+            continue
+        if existing.coach_id != slot.coach_id:
+            continue
+        if existing.start_time < slot.end_time and slot.start_time < existing.end_time:
+            return True
+    return False
+
+
+def _member_has_clash(member_schedule, candidate_date, slot):
+    for existing in member_schedule.get(candidate_date, []):
+        if existing.start_time < slot.end_time and slot.start_time < existing.end_time:
+            return True
+    return False
+
+
+@transaction.atomic
+def auto_assign_monthly_sessions(month_anchor: date, *, members=None, dry_run: bool = False):
+    """Auto-assign sessions for the given month for every active member.
+
+    Distributes each member's package sessions across the month using their
+    assigned coach's availability (matched on skill level). Skips slots that
+    already clash with the coach's calendar or the member's own schedule.
+    Returns a summary dict with counts and any skipped members.
+    """
+
+    start, end = _month_bounds(month_anchor)
+    if members is None:
+        members = Member.objects.filter(status__in=[Member.STATUS_ACTIVE, Member.STATUS_TRIAL])
+    members = list(members.select_related("assigned_coach", "payment_plan"))
+
+    existing_sessions = list(
+        TrainingSession.objects.filter(session_date__range=(start, end)).select_related("coach")
+    )
+    sessions_by_date = {}
+    for session in existing_sessions:
+        sessions_by_date.setdefault(session.session_date, []).append(session)
+
+    member_schedule = {}
+    for record in AttendanceRecord.objects.filter(
+        training_session__session_date__range=(start, end)
+    ).select_related("training_session"):
+        member_schedule.setdefault(record.member_id, {}).setdefault(
+            record.training_session.session_date, []
+        ).append(record.training_session)
+
+    created_sessions = 0
+    created_attendances = 0
+    skipped = []
+
+    for member in members:
+        target = member.package_sessions or 4
+        already_scheduled = sum(
+            len(entries) for entries in member_schedule.get(member.pk, {}).values()
+        )
+        remaining = max(target - already_scheduled, 0)
+        if not remaining:
+            continue
+
+        availabilities = _eligible_availabilities(member)
+        if not availabilities:
+            skipped.append({"member": member.full_name, "reason": "no coach availability"})
+            continue
+
+        # Walk through each date in the month; for each, try the member's
+        # available slots in weekday order. Balances across the month.
+        current = start
+        assigned_for_member = 0
+        while current <= end and assigned_for_member < remaining:
+            weekday_slots = [slot for slot in availabilities if slot.weekday == current.weekday()]
+            for slot in weekday_slots:
+                if assigned_for_member >= remaining:
+                    break
+                if _slot_has_conflict(sessions_by_date, current, slot):
+                    continue
+                if _member_has_clash(member_schedule.setdefault(member.pk, {}), current, slot):
+                    continue
+                if dry_run:
+                    assigned_for_member += 1
+                    continue
+
+                title = f"{member.get_skill_level_display()} Training"
+                session, _ = TrainingSession.objects.get_or_create(
+                    session_date=current,
+                    start_time=slot.start_time,
+                    end_time=slot.end_time,
+                    coach=slot.coach,
+                    court=slot.court or "Main Court",
+                    defaults={
+                        "title": title,
+                        "syllabus_root": SyllabusRoot.get_default(),
+                    },
+                )
+                created_on_this_date = session.pk not in {s.pk for s in sessions_by_date.get(current, [])}
+                if created_on_this_date:
+                    sessions_by_date.setdefault(current, []).append(session)
+                    created_sessions += 1
+
+                _, att_created = AttendanceRecord.objects.get_or_create(
+                    training_session=session, member=member
+                )
+                if att_created:
+                    created_attendances += 1
+                    member_schedule[member.pk].setdefault(current, []).append(session)
+                    assigned_for_member += 1
+            current += timedelta(days=1)
+
+        if assigned_for_member < remaining:
+            skipped.append(
+                {
+                    "member": member.full_name,
+                    "reason": f"only placed {assigned_for_member}/{remaining} needed sessions (coach availability too narrow)",
+                }
+            )
+
+    return {
+        "month": start.strftime("%B %Y"),
+        "created_sessions": created_sessions,
+        "created_attendances": created_attendances,
+        "members_processed": len(members),
+        "skipped": skipped,
+    }

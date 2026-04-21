@@ -218,6 +218,44 @@ class WeeklySyllabus(models.Model):
         return self.phase_name
 
 
+class CoachAvailability(models.Model):
+    WEEKDAY_CHOICES = [
+        (0, "Monday"),
+        (1, "Tuesday"),
+        (2, "Wednesday"),
+        (3, "Thursday"),
+        (4, "Friday"),
+        (5, "Saturday"),
+        (6, "Sunday"),
+    ]
+    LEVEL_CHOICES = [
+        ("basic", "Basic"),
+        ("intermediate", "Intermediate"),
+        ("advanced", "Advanced"),
+        ("any", "Any level"),
+    ]
+
+    coach = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="availabilities",
+    )
+    weekday = models.PositiveSmallIntegerField(choices=WEEKDAY_CHOICES)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default="any")
+    court = models.CharField(max_length=100, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["coach__username", "weekday", "start_time"]
+
+    def __str__(self):
+        return f"{self.coach} {self.get_weekday_display()} {self.start_time:%H:%M}-{self.end_time:%H:%M}"
+
+
 class TrainingSession(models.Model):
     title = models.CharField(max_length=255)
     session_date = models.DateField()

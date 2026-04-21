@@ -380,6 +380,49 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 {"label": "Fees Still Unpaid", "value": current_month_fee_watchlist.count(), "tone": "warning"},
                 {"label": "Draft Reports", "value": coach_reports.filter(is_published=False).count(), "tone": "neutral"},
             ]
+            from sessions.models import SessionChecklistReport, SessionFeedback as _SF
+            today_sessions = coach_sessions.filter(session_date=today)
+            past_sessions_needing_checklist = coach_sessions.filter(session_date__lte=today).exclude(
+                pk__in=SessionChecklistReport.objects.filter(coach=user).values_list("training_session_id", flat=True)
+            ).order_by("-session_date", "start_time")
+            past_sessions_needing_feedback = []
+            pending_feedback_attendances = AttendanceRecord.objects.filter(
+                training_session__coach=user,
+                training_session__session_date__lte=today,
+            ).exclude(status=AttendanceRecord.STATUS_SCHEDULED).exclude(
+                member_id__in=_SF.objects.filter(training_session__coach=user).values_list("member_id", flat=True)
+            ).select_related("training_session", "member").order_by("-training_session__session_date")[:8]
+
+            coach_pending_items = []
+            for session in past_sessions_needing_checklist[:5]:
+                coach_pending_items.append({
+                    "kind": "checklist",
+                    "title": f"Checklist: {session.title}",
+                    "meta": f"{session.session_date:%d %b %Y} · {session.start_time:%H:%M}",
+                    "url": f"{reverse('sessions:list')}?view=checklist&focus={session.pk}",
+                    "tone": "warning",
+                    "label": "Pending",
+                })
+            for att in pending_feedback_attendances:
+                coach_pending_items.append({
+                    "kind": "feedback",
+                    "title": f"Feedback: {att.member.full_name}",
+                    "meta": f"{att.training_session.title} · {att.training_session.session_date:%d %b %Y}",
+                    "url": reverse("sessions:feedback", kwargs={"session_pk": att.training_session.pk, "member_pk": att.member.pk}),
+                    "tone": "info",
+                    "label": "Write",
+                })
+            for report in coach_reports.filter(is_published=False).order_by("-period_end")[:3]:
+                coach_pending_items.append({
+                    "kind": "report",
+                    "title": f"Draft: {report.member.full_name}",
+                    "meta": f"{report.period_label}",
+                    "url": reverse("members:report_detail", kwargs={"pk": report.pk}),
+                    "tone": "neutral",
+                    "label": "Draft",
+                })
+            coach_pending_count = len(coach_pending_items)
+
             workspace_lists = {
                 "queue": coach_reports.filter(is_published=False).order_by("-period_end")[:5],
                 "upcoming_sessions": coach_sessions.filter(session_date__gte=today).order_by("session_date", "start_time")[:5],
@@ -387,6 +430,9 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 "payment_watchlist": current_month_fee_watchlist[:5],
                 "plan_session": next_planning_session,
                 "reports": coach_reports.order_by("-period_end")[:5],
+                "today_sessions": today_sessions,
+                "pending_items": coach_pending_items,
+                "pending_count": coach_pending_count,
             }
         elif role == ROLE_HEADCOUNT:
             sales_leads = AdmissionApplication.objects.filter(status=AdmissionApplication.STATUS_PENDING).filter(

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from sessions.models import AttendanceRecord, SessionChecklistReport, SessionPlannerEntry, SyllabusStandard, SyllabusTemplate, TrainingSession, WeeklySyllabus
+from sessions.models import AttendanceRecord, CoachAvailability, SessionChecklistReport, SessionPlannerEntry, SyllabusStandard, SyllabusTemplate, TrainingSession, WeeklySyllabus
 
 
 class AttendanceInline(admin.TabularInline):
@@ -48,6 +48,13 @@ class SessionPlannerEntryAdmin(admin.ModelAdmin):
     list_display = ("training_session", "title", "source", "model_name", "saved_by", "created_at")
     list_filter = ("source", "created_at")
     search_fields = ("title", "user_prompt", "assistant_response", "training_session__title")
+
+@admin.register(CoachAvailability)
+class CoachAvailabilityAdmin(admin.ModelAdmin):
+    list_display = ("coach", "weekday", "start_time", "end_time", "level", "court", "is_active")
+    list_filter = ("weekday", "level", "is_active")
+    search_fields = ("coach__username", "coach__first_name", "coach__last_name", "court")
+
 
 @admin.register(SessionChecklistReport)
 class SessionChecklistReportAdmin(admin.ModelAdmin):

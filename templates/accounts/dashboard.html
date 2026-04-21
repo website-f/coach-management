@@ -7,6 +7,8 @@
 {% block content %}
 {% if current_role == 'parent' %}
 {% include "accounts/partials/student_portal.html" %}
+{% elif current_role == 'coach' %}
+{% include "accounts/partials/coach_dashboard.html" %}
 {% else %}
 <div class="space-y">
 
