@@ -1,969 +1,380 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" class="h-full scroll-smooth">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ landing_content.hero_title }} — Sports Club Management</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <script>(function(){var t=localStorage.getItem("nyo-theme")||"dark";document.documentElement.dataset.theme=t;}());</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'], display: ['Space Grotesk', 'sans-serif'] }, colors: { brand: { 50:'#fff8ec',100:'#ffeecb',200:'#ffd98a',300:'#ffbf4b',400:'#f59e0b',500:'#d97706',600:'#b45309' } } } } };
+    (function(){ var s = localStorage.getItem('nyo-theme') || 'light'; var h = document.documentElement; if (s === 'dark') h.classList.add('dark'); h.setAttribute('data-theme', s); })();
+  </script>
   <style>
-    /* ── Design tokens ──────────────────────────────────────── */
-    :root {
-      --bg:        #09090b;
-      --bg2:       #111116;
-      --surf:      rgba(255,255,255,0.048);
-      --surf-h:    rgba(255,255,255,0.085);
-      --brd:       rgba(255,255,255,0.08);
-      --brd-s:     rgba(255,255,255,0.16);
-      --txt:       #f4f4f5;
-      --txt2:      #a1a1aa;
-      --txt3:      #52525b;
-      --acc:       #f5a623;
-      --acc-s:     rgba(245,166,35,0.13);
-      --acc-d:     #ffd273;
-      --nav-bg:    rgba(9,9,11,0.84);
-      --prt-rgb:   255,255,255;
-    }
-    [data-theme="light"] {
-      --bg:        #ffffff;
-      --bg2:       #f4f4f5;
-      --surf:      rgba(0,0,0,0.042);
-      --surf-h:    rgba(0,0,0,0.072);
-      --brd:       rgba(0,0,0,0.08);
-      --brd-s:     rgba(0,0,0,0.16);
-      --txt:       #18181b;
-      --txt2:      #52525b;
-      --txt3:      #a1a1aa;
-      --acc:       #c07200;
-      --acc-s:     rgba(192,114,0,0.10);
-      --acc-d:     #7a4800;
-      --nav-bg:    rgba(255,255,255,0.88);
-      --prt-rgb:   24,24,27;
-    }
-
-    /* ── Reset ──────────────────────────────────────────────── */
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-    html{scroll-behavior:smooth;}
-    body{
-      font-family:"Inter",-apple-system,BlinkMacSystemFont,sans-serif;
-      background:var(--bg);color:var(--txt);
-      line-height:1.6;-webkit-font-smoothing:antialiased;
-      transition:background .28s,color .28s;overflow-x:hidden;
-    }
-    a{color:inherit;text-decoration:none;}
-
-    /* ── Layout ─────────────────────────────────────────────── */
-    .wrap{width:min(1160px,calc(100% - 40px));margin:0 auto;}
-    .sec{padding:100px 0;}
-    .sec-sm{padding:64px 0;}
-
-    /* ── Typography ─────────────────────────────────────────── */
-    h1,h2,h3,h4{font-family:"Space Grotesk",sans-serif;letter-spacing:-.03em;line-height:1.06;}
-    h1{font-size:clamp(40px,7vw,82px);font-weight:800;}
-    h2{font-size:clamp(28px,4vw,52px);font-weight:700;}
-    h3{font-size:clamp(16px,1.8vw,20px);font-weight:600;}
-    .eyebrow{
-      display:inline-flex;align-items:center;gap:7px;
-      font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
-      color:var(--acc);margin-bottom:14px;
-    }
-    .lead{font-size:clamp(15px,1.6vw,18px);color:var(--txt2);line-height:1.78;}
-
-    /* ── Buttons ────────────────────────────────────────────── */
-    .btn{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:13px 22px;border-radius:999px;
-      font-size:14px;font-weight:600;cursor:pointer;
-      border:none;transition:all .18s;white-space:nowrap;font-family:inherit;
-    }
-    .btn-p{background:var(--acc);color:#fff;}
-    .btn-p:hover{filter:brightness(1.1);transform:translateY(-1px);}
-    .btn-g{background:var(--surf);border:1px solid var(--brd);color:var(--txt);}
-    .btn-g:hover{background:var(--surf-h);transform:translateY(-1px);}
-    .btn-o{background:transparent;border:1px solid var(--brd-s);color:var(--txt);}
-    .btn-o:hover{border-color:var(--txt2);transform:translateY(-1px);}
-    .btn-sm{padding:9px 16px;font-size:13px;}
-
-    /* ── Nav ────────────────────────────────────────────────── */
-    .nav{
-      position:fixed;inset-block-start:0;inset-inline:0;z-index:300;
-      background:var(--nav-bg);backdrop-filter:blur(24px);
-      -webkit-backdrop-filter:blur(24px);
-      border-bottom:1px solid var(--brd);transition:background .28s;
-    }
-    .nav-inner{
-      display:flex;align-items:center;
-      justify-content:space-between;gap:14px;height:60px;
-    }
-    .brand{display:flex;align-items:center;gap:10px;}
-    .brand-mark{
-      width:36px;height:36px;border-radius:10px;
-      background:var(--acc);color:#000;
-      display:flex;align-items:center;justify-content:center;
-      font-size:15px;font-weight:800;flex-shrink:0;
-    }
-    .brand-name{
-      font-family:"Space Grotesk",sans-serif;
-      font-size:15px;font-weight:700;letter-spacing:-.02em;
-    }
-    .nav-links{display:flex;align-items:center;gap:2px;}
-    .nav-link{
-      font-size:13px;font-weight:500;color:var(--txt2);
-      padding:6px 11px;border-radius:8px;transition:color .2s;
-    }
-    .nav-link:hover{color:var(--txt);}
-    .nav-right{display:flex;align-items:center;gap:8px;}
-    .theme-btn{
-      width:36px;height:36px;border-radius:10px;
-      background:var(--surf);border:1px solid var(--brd);
-      color:var(--txt2);display:flex;align-items:center;
-      justify-content:center;cursor:pointer;font-size:14px;
-      transition:all .2s;flex-shrink:0;
-    }
-    .theme-btn:hover{background:var(--surf-h);color:var(--txt);}
-    .hamburger{
-      display:none;width:36px;height:36px;border-radius:10px;
-      background:var(--surf);border:1px solid var(--brd);
-      color:var(--txt);align-items:center;justify-content:center;
-      cursor:pointer;font-size:13px;
-    }
-    .mob-nav{
-      display:none;position:fixed;inset:60px 0 auto;z-index:299;
-      background:var(--nav-bg);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
-      border-bottom:1px solid var(--brd);padding:16px 20px 24px;
-      flex-direction:column;gap:4px;
-    }
-    .mob-nav.open{display:flex;}
-    .mob-link{
-      font-size:14px;font-weight:500;color:var(--txt2);
-      padding:11px 13px;border-radius:10px;transition:all .18s;
-    }
-    .mob-link:hover{background:var(--surf);color:var(--txt);}
-    .mob-btns{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
-    .mob-btns .btn{flex:1;justify-content:center;}
-
-    /* ── Hero ───────────────────────────────────────────────── */
-    .hero{
-      min-height:100svh;display:flex;flex-direction:column;
-      align-items:center;justify-content:center;
-      text-align:center;position:relative;overflow:hidden;
-      padding:120px 0 80px;
-    }
-    #heroCanvas{
-      position:absolute;inset:0;z-index:0;
-      pointer-events:none;width:100%;height:100%;
-    }
-    .hero-inner{position:relative;z-index:1;width:min(760px,calc(100% - 40px));}
-    .hero-badge{
-      display:inline-flex;align-items:center;gap:9px;
-      padding:6px 16px;border-radius:999px;
-      background:var(--surf);border:1px solid var(--brd-s);
-      font-size:12px;font-weight:600;color:var(--txt2);margin-bottom:28px;
-    }
-    .hero-badge .dot{
-      width:7px;height:7px;border-radius:50%;
-      background:var(--acc);flex-shrink:0;
-      animation:dot-pulse 2.2s ease-in-out infinite;
-    }
-    @keyframes dot-pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.45;transform:scale(.6);}}
-    .hero h1{margin-bottom:22px;}
-    .hero h1 em{font-style:normal;color:var(--acc);}
-    .hero .lead{max-width:540px;margin:0 auto 40px;}
-    .hero-btns{
-      display:flex;justify-content:center;
-      flex-wrap:wrap;gap:10px;margin-bottom:64px;
-    }
-
-    /* hero em — animated underline sweep */
-    .hero h1 em{
-      position:relative;display:inline;
-    }
-    .hero h1 em::after{
-      content:"";
-      position:absolute;left:0;bottom:-4px;
-      height:3px;border-radius:3px;
-      background:var(--acc);
-      width:0;animation:em-line .9s .55s ease forwards;
-    }
-    @keyframes em-line{to{width:100%;}}
-
-    /* stats bar */
-    .stats-bar{
-      display:flex;justify-content:center;align-items:stretch;
-      max-width:580px;margin:0 auto;
-      border:1px solid var(--brd);border-radius:18px;
-      background:var(--surf);overflow:hidden;
-    }
-    .stat-cell{
-      flex:1;text-align:center;padding:20px 16px;position:relative;
-    }
-    .stat-cell+.stat-cell::before{
-      content:"";position:absolute;left:0;top:18%;height:64%;
-      width:1px;background:var(--brd);
-    }
-    .stat-val{
-      font-family:"Space Grotesk",sans-serif;
-      font-size:28px;font-weight:800;letter-spacing:-.05em;
-      line-height:1;display:block;
-    }
-    .stat-lbl{font-size:11px;color:var(--txt3);margin-top:5px;text-transform:uppercase;letter-spacing:.05em;}
-
-    /* scroll indicator */
-    .scroll-cue{
-      position:absolute;bottom:30px;left:50%;
-      transform:translateX(-50%);
-      display:flex;flex-direction:column;align-items:center;gap:8px;
-      font-size:10px;font-weight:600;color:var(--txt3);
-      letter-spacing:.1em;text-transform:uppercase;
-    }
-    .scroll-line{
-      width:1px;height:0;background:linear-gradient(to bottom,var(--txt3),transparent);
-      animation:scroll-grow 2s ease-in-out infinite;
-    }
-    @keyframes scroll-grow{
-      0%{height:0;opacity:1;}80%{height:38px;opacity:1;}100%{height:38px;opacity:0;}
-    }
-
-    /* ── Sports ticker ──────────────────────────────────────── */
-    .ticker-wrap{
-      padding:26px 0;border-top:1px solid var(--brd);
-      border-bottom:1px solid var(--brd);overflow:hidden;
-    }
-    .ticker-lbl{
-      text-align:center;font-size:10px;font-weight:700;
-      letter-spacing:.14em;text-transform:uppercase;
-      color:var(--txt3);margin-bottom:18px;
-    }
-    .ticker-row{position:relative;}
-    .ticker-row::before,
-    .ticker-row::after{
-      content:"";position:absolute;top:0;bottom:0;width:80px;z-index:1;pointer-events:none;
-    }
-    .ticker-row::before{left:0;background:linear-gradient(to right,var(--bg),transparent);}
-    .ticker-row::after{right:0;background:linear-gradient(to left,var(--bg),transparent);}
-    .ticker-inner{
-      display:flex;gap:52px;align-items:center;
-      white-space:nowrap;padding:0 26px;
-      animation:ticker-run 30s linear infinite;
-      width:max-content;
-    }
-    @keyframes ticker-run{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
-    .ticker-item{
-      display:flex;align-items:center;gap:9px;
-      font-size:13.5px;font-weight:600;color:var(--txt3);
-      transition:color .2s;
-    }
-    .ticker-item i{font-size:16px;}
-
-    /* ── Scroll reveal ──────────────────────────────────────── */
-    .rv{
-      opacity:0;transform:translateY(26px);
-      transition:opacity .6s ease,transform .6s ease;
-    }
-    .rv.on{opacity:1;transform:none;}
-    .rv.d1{transition-delay:.08s;}.rv.d2{transition-delay:.16s;}
-    .rv.d3{transition-delay:.24s;}.rv.d4{transition-delay:.32s;}
-    .rv.d5{transition-delay:.40s;}.rv.d6{transition-delay:.48s;}
-
-    /* ── Section heading ────────────────────────────────────── */
-    .sec-hd{margin-bottom:56px;}
-    .sec-hd.center{text-align:center;}
-    .sec-hd h2{margin-bottom:14px;}
-    .sec-hd .lead{max-width:600px;}
-    .sec-hd.center .lead{margin:0 auto;}
-
-    /* ── Platform / About ───────────────────────────────────── */
-    .platform-grid{
-      display:grid;grid-template-columns:1fr 1fr;
-      gap:72px;align-items:center;
-    }
-    .platform-copy h2{margin-bottom:18px;}
-    .platform-copy .lead{margin-bottom:36px;max-width:480px;}
-    .platform-pts{list-style:none;display:flex;flex-direction:column;gap:22px;}
-    .platform-pt{display:flex;gap:14px;align-items:flex-start;}
-    .pt-ico{
-      width:42px;height:42px;border-radius:12px;flex-shrink:0;
-      background:var(--surf);border:1px solid var(--brd);
-      display:flex;align-items:center;justify-content:center;
-      font-size:16px;color:var(--acc);margin-top:1px;
-    }
-    .pt-body strong{display:block;font-size:15px;font-weight:600;margin-bottom:3px;}
-    .pt-body span{font-size:14px;color:var(--txt2);line-height:1.65;}
-    .platform-tiles{
-      display:grid;grid-template-columns:1fr 1fr;gap:12px;
-      position:sticky;top:84px;
-    }
-    .p-tile{
-      padding:26px 20px;text-align:center;border-radius:18px;
-      background:var(--surf);border:1px solid var(--brd);
-      transition:border-color .2s;
-    }
-    .p-tile:hover{border-color:var(--brd-s);}
-    .p-tile-val{
-      font-family:"Space Grotesk",sans-serif;
-      font-size:34px;font-weight:800;letter-spacing:-.06em;display:block;
-    }
-    .p-tile-lbl{font-size:12px;color:var(--txt3);margin-top:4px;}
-
-    /* ── Features grid ──────────────────────────────────────── */
-    .feat-grid{
-      display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
-    }
-    .feat-card{
-      padding:28px 24px;border-radius:20px;
-      background:var(--surf);border:1px solid var(--brd);
-      transition:border-color .22s,transform .22s;
-    }
-    .feat-card:hover{border-color:var(--brd-s);transform:translateY(-3px);}
-    .feat-ico{
-      width:48px;height:48px;border-radius:14px;
-      background:var(--surf-h);border:1px solid var(--brd);
-      display:flex;align-items:center;justify-content:center;
-      font-size:18px;color:var(--acc);margin-bottom:18px;
-    }
-    .feat-card h3{font-size:16px;margin-bottom:8px;}
-    .feat-card p{font-size:13.5px;color:var(--txt2);line-height:1.7;}
-    .feat-tag{
-      display:inline-flex;margin-top:14px;padding:3px 9px;border-radius:6px;
-      background:var(--acc-s);color:var(--acc-d);
-      font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
-    }
-    [data-theme="light"] .feat-tag{color:var(--acc);}
-
-    /* ── Steps ──────────────────────────────────────────────── */
-    .steps-row{
-      display:grid;grid-template-columns:repeat(4,1fr);
-      gap:0;position:relative;
-    }
-    .steps-row::before{
-      content:"";position:absolute;top:23px;
-      left:12.5%;right:12.5%;height:1px;background:var(--brd);
-    }
-    .step{text-align:center;padding:0 18px;}
-    .step-num{
-      width:48px;height:48px;border-radius:50%;
-      background:var(--txt3);color:var(--bg);
-      font-family:"Space Grotesk",sans-serif;
-      font-size:18px;font-weight:800;
-      display:flex;align-items:center;justify-content:center;
-      margin:0 auto 22px;position:relative;z-index:1;
-      transition:background .3s,color .3s;
-    }
-    .step-num.hi{background:var(--acc);color:#000;}
-    .step h3{font-size:15px;margin-bottom:10px;}
-    .step p{font-size:13px;color:var(--txt2);line-height:1.65;}
-
-    /* ── Roles ──────────────────────────────────────────────── */
-    .roles-grid{
-      display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
-    }
-    .role-card{
-      padding:36px 28px;border-radius:20px;
-      background:var(--surf);border:1px solid var(--brd);
-      transition:border-color .22s,transform .22s;
-    }
-    .role-card:hover{border-color:var(--brd-s);transform:translateY(-3px);}
-    .role-ico{
-      width:64px;height:64px;border-radius:18px;
-      background:var(--surf-h);border:1px solid var(--brd);
-      display:flex;align-items:center;justify-content:center;
-      font-size:24px;color:var(--acc);margin-bottom:20px;
-    }
-    .role-card h3{margin-bottom:10px;}
-    .role-card>p{font-size:14px;color:var(--txt2);line-height:1.7;margin-bottom:22px;}
-    .role-perks{list-style:none;display:flex;flex-direction:column;gap:9px;margin-bottom:28px;}
-    .role-perk{display:flex;gap:9px;font-size:13px;color:var(--txt2);align-items:flex-start;}
-    .role-perk::before{content:"✓";color:var(--acc);font-weight:700;flex-shrink:0;}
-    .role-btn{width:100%;justify-content:center;}
-
-    /* ── FAQ ────────────────────────────────────────────────── */
-    .faq-wrap{
-      display:grid;grid-template-columns:220px 1fr;
-      gap:32px;align-items:start;
-    }
-    .faq-sidebar{position:sticky;top:80px;display:flex;flex-direction:column;gap:4px;}
-    .faq-tab{
-      padding:10px 14px;border-radius:10px;
-      font-size:13px;font-weight:500;color:var(--txt2);
-      cursor:pointer;transition:all .18s;border:1px solid transparent;
-      display:flex;align-items:center;gap:9px;
-    }
-    .faq-tab:hover{color:var(--txt);background:var(--surf);}
-    .faq-tab.on{color:var(--acc);background:var(--acc-s);border-color:rgba(245,166,35,.18);}
-    [data-theme="light"] .faq-tab.on{color:var(--acc);}
-    .faq-grp{display:none;flex-direction:column;gap:6px;}
-    .faq-grp.on{display:flex;}
-    .faq-item{border-radius:14px;overflow:hidden;}
-    .faq-q{
-      width:100%;text-align:left;padding:17px 20px;
-      display:flex;align-items:center;justify-content:space-between;gap:14px;
-      font-size:14px;font-weight:600;color:var(--txt);
-      background:var(--surf);border:1px solid var(--brd);border-radius:14px;
-      cursor:pointer;transition:all .18s;font-family:inherit;
-    }
-    .faq-q:hover{background:var(--surf-h);}
-    .faq-item.on .faq-q{border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom-color:transparent;}
-    .faq-chev{font-size:11px;color:var(--txt3);transition:transform .22s;flex-shrink:0;}
-    .faq-item.on .faq-chev{transform:rotate(180deg);}
-    .faq-a{
-      display:none;padding:4px 20px 16px;
-      font-size:14px;color:var(--txt2);line-height:1.8;
-      background:var(--surf);border:1px solid var(--brd);
-      border-top:none;border-bottom-left-radius:14px;border-bottom-right-radius:14px;
-    }
-    .faq-item.on .faq-a{display:block;}
-
-    /* ── CTA panel ──────────────────────────────────────────── */
-    .cta-panel{
-      padding:88px 40px;text-align:center;position:relative;
-      border-radius:28px;overflow:hidden;
-      background:var(--surf);border:1px solid var(--brd-s);
-    }
-    /* subtle grid overlay inside CTA */
-    .cta-panel::before{
-      content:"";position:absolute;inset:0;
-      background-image:
-        linear-gradient(var(--brd) 1px,transparent 1px),
-        linear-gradient(90deg,var(--brd) 1px,transparent 1px);
-      background-size:36px 36px;
-      mask-image:radial-gradient(ellipse 70% 70% at 50% 50%,transparent 30%,black 100%);
-      -webkit-mask-image:radial-gradient(ellipse 70% 70% at 50% 50%,transparent 30%,black 100%);
-      pointer-events:none;
-    }
-    .cta-panel>*{position:relative;z-index:1;}
-    .cta-panel h2{margin-bottom:14px;}
-    .cta-panel p{color:var(--txt2);font-size:17px;max-width:460px;margin:0 auto 38px;line-height:1.72;}
-    .cta-btns{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;}
-
-    /* ── Divider ────────────────────────────────────────────── */
-    hr.div{border:none;height:1px;background:var(--brd);margin:0;}
-
-    /* ── Footer ─────────────────────────────────────────────── */
-    footer{
-      padding:40px 0;color:var(--txt3);font-size:13px;
-      border-top:1px solid var(--brd);
-    }
-    .foot-inner{
-      display:flex;justify-content:space-between;
-      align-items:center;flex-wrap:wrap;gap:16px;
-    }
-    .foot-brand strong{display:block;font-size:14px;color:var(--txt);margin-bottom:4px;font-weight:600;}
-    .foot-links{display:flex;gap:18px;flex-wrap:wrap;}
-    .foot-links a{color:var(--txt3);transition:color .2s;}
-    .foot-links a:hover{color:var(--txt);}
-
-    /* ── Demo modal ─────────────────────────────────────────── */
-    .modal-bg{
-      display:none;position:fixed;inset:0;z-index:500;
-      background:rgba(0,0,0,.6);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-      align-items:center;justify-content:center;padding:20px;
-    }
-    .modal-bg.open{display:flex;}
-    .modal-box{
-      width:min(520px,100%);border-radius:24px;padding:40px;
-      position:relative;max-height:90vh;overflow-y:auto;
-      background:var(--bg2);border:1px solid var(--brd-s);
-      animation:modal-pop .22s ease both;
-    }
-    @keyframes modal-pop{
-      from{opacity:0;transform:scale(.95) translateY(10px);}
-      to{opacity:1;transform:none;}
-    }
-    .modal-close{
-      position:absolute;top:14px;right:14px;
-      width:30px;height:30px;border-radius:8px;
-      background:var(--surf);border:1px solid var(--brd);
-      color:var(--txt2);display:flex;align-items:center;justify-content:center;
-      cursor:pointer;font-size:12px;transition:all .18s;
-    }
-    .modal-close:hover{background:var(--surf-h);color:var(--txt);}
-    .modal-box h3{font-size:22px;margin-bottom:8px;}
-    .modal-box>p{font-size:14px;color:var(--txt2);margin-bottom:28px;line-height:1.72;}
-    .demo-form{display:flex;flex-direction:column;gap:14px;}
-    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-    .field{display:flex;flex-direction:column;gap:6px;}
-    .field label{font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.08em;}
-    .field input,.field select,.field textarea{
-      background:var(--surf-h);border:1px solid var(--brd);
-      border-radius:10px;padding:10px 14px;color:var(--txt);
-      font-family:inherit;font-size:14px;outline:none;transition:border-color .18s;
-    }
-    .field input::placeholder,.field textarea::placeholder{color:var(--txt3);}
-    .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--acc);}
-    .field textarea{resize:vertical;min-height:80px;}
-    .field select{
-      appearance:none;cursor:pointer;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2371717a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-      background-repeat:no-repeat;background-position:right 12px center;
-      padding-right:34px;
-    }
-    .form-submit{margin-top:4px;}
-    .form-submit .btn{width:100%;justify-content:center;}
-    .demo-success{display:none;text-align:center;padding:28px 0;}
-    .demo-success i{font-size:44px;color:var(--acc);margin-bottom:16px;display:block;}
-    .demo-success h4{font-size:19px;margin-bottom:8px;}
-    .demo-success p{font-size:14px;color:var(--txt2);line-height:1.7;}
-
-    /* ── Responsive ─────────────────────────────────────────── */
-    @media(max-width:980px){
-      .nav-links{display:none;}
-      .hamburger{display:flex;}
-      .nav-right .btn{display:none;}
-      .nav-right .theme-btn{display:flex;}
-      .platform-grid{grid-template-columns:1fr;gap:48px;}
-      .platform-tiles{position:static;}
-      .feat-grid{grid-template-columns:1fr 1fr;}
-      .steps-row{grid-template-columns:1fr 1fr;gap:32px;}
-      .steps-row::before{display:none;}
-      .roles-grid{grid-template-columns:1fr;}
-      .faq-wrap{grid-template-columns:1fr;}
-      .faq-sidebar{position:static;flex-direction:row;flex-wrap:wrap;}
-      .sec{padding:72px 0;}
-    }
-    @media(max-width:600px){
-      .feat-grid{grid-template-columns:1fr;}
-      .steps-row{grid-template-columns:1fr;}
-      .stats-bar{flex-direction:column;}
-      .stat-cell+.stat-cell::before{display:none;}
-      .hero{padding:100px 0 72px;}
-      .hero-btns{gap:8px;}
-      .form-row{grid-template-columns:1fr;}
-      .cta-panel{padding:52px 24px;}
-      .sec{padding:56px 0;}
-    }
-    @media(prefers-reduced-motion:reduce){
-      .rv{opacity:1;transform:none;}
-      #heroCanvas{display:none;}
-      .ticker-inner{animation:none;}
-      .word-cycle-inner{animation:none;}
-    }
+    html, body { font-family: 'Inter', system-ui, sans-serif; }
+    h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.02em; }
+    .rv { opacity: 0; transform: translateY(20px); transition: opacity .6s ease, transform .6s ease; }
+    .rv.on { opacity: 1; transform: translateY(0); }
+    .faq-grp { display: none; } .faq-grp.on { display: block; }
+    .faq-item .faq-a { display: none; } .faq-item.on .faq-a { display: block; }
+    .faq-item.on .faq-chev { transform: rotate(180deg); }
+    .faq-chev { transition: transform .2s; }
+    @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    .ticker-track { animation: ticker 40s linear infinite; }
   </style>
 </head>
-<body>
+<body class="h-full bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 antialiased">
 
-<!-- ── Nav ──────────────────────────────────────────────────────── -->
-<nav class="nav">
-  <div class="wrap nav-inner">
-    <a href="#" class="brand">
-      <div class="brand-mark"><i class="fa-solid fa-bolt"></i></div>
-      <span class="brand-name">{{ landing_content.hero_title }}</span>
+<!-- NAV -->
+<nav class="sticky top-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur border-b border-gray-200 dark:border-gray-800">
+  <div class="max-w-6xl mx-auto flex items-center justify-between gap-3 h-14 px-4 sm:px-6">
+    <a href="#" class="flex items-center gap-2">
+      <div class="w-9 h-9 rounded-lg bg-brand-400 text-white grid place-items-center"><i class="fa-solid fa-bolt"></i></div>
+      <span class="font-display text-base font-bold">{{ landing_content.hero_title }}</span>
     </a>
-    <div class="nav-links">
-      <a href="#about"        class="nav-link">About</a>
-      <a href="#features"     class="nav-link">Features</a>
-      <a href="#how-it-works" class="nav-link">How It Works</a>
-      <a href="#roles"        class="nav-link">Who It's For</a>
-      <a href="#faq"          class="nav-link">FAQ</a>
-      <a href="/store/"       class="nav-link"><i class="fa-solid fa-bag-shopping" style="font-size:11px;margin-right:3px;"></i>Store</a>
+    <div class="hidden lg:flex items-center gap-1">
+      <a href="#about" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-lg">About</a>
+      <a href="#features" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-lg">Features</a>
+      <a href="#how-it-works" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-lg">How it works</a>
+      <a href="#roles" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-lg">Roles</a>
+      <a href="#faq" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-lg">FAQ</a>
+      <a href="/store/" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-lg"><i class="fa-solid fa-bag-shopping text-xs mr-1"></i>Store</a>
     </div>
-    <div class="nav-right">
-      <button class="theme-btn" id="themeBtn" aria-label="Toggle theme">
-        <i class="fa-solid fa-sun" id="themeIco"></i>
-      </button>
-      <a href="#" class="btn btn-o btn-sm" id="demoNavBtn"><i class="fa-solid fa-calendar-check"></i> Book a Demo</a>
-      <a href="{% url 'members:apply' %}" class="btn btn-g btn-sm"><i class="fa-solid fa-user-plus"></i> Register</a>
-      <a href="/accounts/login/" class="btn btn-p btn-sm"><i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In</a>
+    <div class="flex items-center gap-2">
+      <button id="themeBtn" class="w-9 h-9 rounded-lg text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"><i class="fa-solid fa-sun dark:hidden"></i><i class="fa-solid fa-moon hidden dark:inline"></i></button>
+      <a href="#" id="demoNavBtn" class="hidden md:inline-flex text-sm px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800"><i class="fa-solid fa-calendar-check mr-1"></i>Demo</a>
+      <a href="{% url 'members:apply' %}" class="hidden sm:inline-flex text-sm px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">Register</a>
+      <a href="/accounts/login/" class="text-sm px-3 py-1.5 rounded-lg bg-brand-400 hover:bg-brand-500 text-white font-semibold"><i class="fa-solid fa-arrow-right-to-bracket mr-1"></i>Sign In</a>
+      <button id="menuBtn" class="lg:hidden w-9 h-9 rounded-lg text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"><i class="fa-solid fa-bars"></i></button>
     </div>
-    <button class="hamburger" id="menuBtn" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
+  </div>
+  <div id="mobNav" class="lg:hidden hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 py-4 space-y-1">
+    <a href="#about" class="block py-2 text-sm" onclick="closeMob()">About</a>
+    <a href="#features" class="block py-2 text-sm" onclick="closeMob()">Features</a>
+    <a href="#how-it-works" class="block py-2 text-sm" onclick="closeMob()">How it works</a>
+    <a href="#roles" class="block py-2 text-sm" onclick="closeMob()">Roles</a>
+    <a href="#faq" class="block py-2 text-sm" onclick="closeMob()">FAQ</a>
+    <a href="/store/" class="block py-2 text-sm" onclick="closeMob()">Store</a>
   </div>
 </nav>
 
-<!-- Mobile nav -->
-<div class="mob-nav" id="mobNav">
-  <a href="#about"        class="mob-link" onclick="closeMob()">About</a>
-  <a href="#features"     class="mob-link" onclick="closeMob()">Features</a>
-  <a href="#how-it-works" class="mob-link" onclick="closeMob()">How It Works</a>
-  <a href="#roles"        class="mob-link" onclick="closeMob()">Who It's For</a>
-  <a href="#faq"          class="mob-link" onclick="closeMob()">FAQ</a>
-  <a href="/store/"       class="mob-link" onclick="closeMob()"><i class="fa-solid fa-bag-shopping" style="margin-right:6px;"></i>Store</a>
-  <div class="mob-btns">
-    <a href="#" class="btn btn-o btn-sm" id="demoMobBtn" onclick="closeMob()"><i class="fa-solid fa-calendar-check"></i> Book Demo</a>
-    <a href="{% url 'members:apply' %}" class="btn btn-g btn-sm" onclick="closeMob()"><i class="fa-solid fa-user-plus"></i> Register</a>
-    <a href="/accounts/login/" class="btn btn-p btn-sm" onclick="closeMob()"><i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In</a>
-  </div>
-</div>
-
-<!-- ── Hero ─────────────────────────────────────────────────────── -->
-<section class="hero" id="home">
-  <canvas id="heroCanvas" aria-hidden="true"></canvas>
-  <div class="hero-inner">
-    <div class="hero-badge rv">
-      <span class="dot"></span>
+<!-- HERO -->
+<section class="relative py-16 sm:py-24 lg:py-32 overflow-hidden" id="home">
+  <div class="absolute inset-0 bg-gradient-to-br from-brand-50/60 via-white to-blue-50/30 dark:from-brand-400/10 dark:via-gray-950 dark:to-blue-500/5 pointer-events-none"></div>
+  <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(245,158,11,0.15),transparent_50%)] pointer-events-none"></div>
+  <div class="relative max-w-5xl mx-auto px-4 sm:px-6 text-center">
+    <div class="inline-flex items-center gap-2 rounded-full border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/70 backdrop-blur px-4 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 rv on">
+      <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
       {{ landing_content.announcement_text }}
     </div>
-    <h1 class="rv d1">The platform built<br>for <em>every sport.</em></h1>
-    <p class="lead rv d2">Members, sessions, payments, and progress reports — all connected in one clean platform. Built for clubs of any sport, designed for everyone.</p>
-    <div class="hero-btns rv d3">
-      <a href="{% url 'members:apply' %}" class="btn btn-p"><i class="fa-solid fa-user-plus"></i> {{ parent_signup_cta_text }}</a>
-      <a href="#" class="btn btn-g" id="demoHeroBtn"><i class="fa-solid fa-calendar-check"></i> Book a Demo</a>
-      <a href="/accounts/login/" class="btn btn-o"><i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In</a>
+    <h1 class="mt-6 text-4xl sm:text-6xl lg:text-7xl font-extrabold leading-[1.05] rv on">
+      The platform built<br>for <span class="text-brand-500 relative">every sport.</span>
+    </h1>
+    <p class="mt-6 max-w-xl mx-auto text-base sm:text-lg text-gray-600 dark:text-gray-400 leading-relaxed rv on">
+      Members, sessions, payments, and progress reports — all connected in one clean platform. Built for clubs of any sport.
+    </p>
+    <div class="mt-8 flex flex-wrap gap-3 justify-center rv on">
+      <a href="{% url 'members:apply' %}" class="inline-flex items-center gap-2 bg-brand-400 hover:bg-brand-500 text-white px-6 py-3 rounded-full text-sm font-semibold shadow-lg shadow-brand-400/30"><i class="fa-solid fa-user-plus"></i>{{ parent_signup_cta_text }}</a>
+      <a href="#" id="demoHeroBtn" class="inline-flex items-center gap-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white px-6 py-3 rounded-full text-sm font-semibold"><i class="fa-solid fa-calendar-check"></i>Book a Demo</a>
+      <a href="/accounts/login/" class="inline-flex items-center gap-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 px-6 py-3 rounded-full text-sm font-semibold"><i class="fa-solid fa-arrow-right-to-bracket"></i>Sign In</a>
     </div>
-    <div class="stats-bar rv d4">
-      <div class="stat-cell">
-        <span class="stat-val">{{ active_members }}</span>
-        <div class="stat-lbl">Active Members</div>
-      </div>
-      <div class="stat-cell">
-        <span class="stat-val">{{ sessions_this_month }}</span>
-        <div class="stat-lbl">Sessions This Month</div>
-      </div>
-      <div class="stat-cell">
-        <span class="stat-val">{{ coach_count }}</span>
-        <div class="stat-lbl">Coaches</div>
-      </div>
+    <div class="mt-12 grid grid-cols-3 gap-4 sm:gap-8 max-w-2xl mx-auto rv on">
+      <div><p class="text-3xl sm:text-4xl font-bold text-brand-500">{{ active_members }}</p><p class="text-xs sm:text-sm text-gray-500 mt-1">Active Members</p></div>
+      <div><p class="text-3xl sm:text-4xl font-bold text-brand-500">{{ sessions_this_month }}</p><p class="text-xs sm:text-sm text-gray-500 mt-1">Sessions / mo</p></div>
+      <div><p class="text-3xl sm:text-4xl font-bold text-brand-500">{{ coach_count }}</p><p class="text-xs sm:text-sm text-gray-500 mt-1">Coaches</p></div>
     </div>
-  </div>
-  <div class="scroll-cue" aria-hidden="true">
-    <div class="scroll-line"></div>
-    <span>Scroll</span>
   </div>
 </section>
 
-<!-- ── Sports ticker ─────────────────────────────────────────────── -->
-<div class="ticker-wrap">
-  <div class="ticker-lbl">Works for any sport or physical activity</div>
-  <div class="ticker-row">
-    <div class="ticker-inner">
-      <span class="ticker-item"><i class="fa-solid fa-table-tennis-paddle-ball"></i> Badminton</span>
-      <span class="ticker-item"><i class="fa-solid fa-futbol"></i> Football</span>
-      <span class="ticker-item"><i class="fa-solid fa-basketball"></i> Basketball</span>
-      <span class="ticker-item"><i class="fa-solid fa-baseball-bat-ball"></i> Tennis</span>
-      <span class="ticker-item"><i class="fa-solid fa-person-swimming"></i> Swimming</span>
-      <span class="ticker-item"><i class="fa-solid fa-dumbbell"></i> Gym &amp; Fitness</span>
-      <span class="ticker-item"><i class="fa-solid fa-person-running"></i> Athletics</span>
-      <span class="ticker-item"><i class="fa-solid fa-volleyball"></i> Volleyball</span>
-      <span class="ticker-item"><i class="fa-solid fa-hockey-puck"></i> Hockey</span>
-      <span class="ticker-item"><i class="fa-solid fa-person-biking"></i> Cycling</span>
-      <!-- duplicate for seamless loop -->
-      <span class="ticker-item"><i class="fa-solid fa-table-tennis-paddle-ball"></i> Badminton</span>
-      <span class="ticker-item"><i class="fa-solid fa-futbol"></i> Football</span>
-      <span class="ticker-item"><i class="fa-solid fa-basketball"></i> Basketball</span>
-      <span class="ticker-item"><i class="fa-solid fa-baseball-bat-ball"></i> Tennis</span>
-      <span class="ticker-item"><i class="fa-solid fa-person-swimming"></i> Swimming</span>
-      <span class="ticker-item"><i class="fa-solid fa-dumbbell"></i> Gym &amp; Fitness</span>
-      <span class="ticker-item"><i class="fa-solid fa-person-running"></i> Athletics</span>
-      <span class="ticker-item"><i class="fa-solid fa-volleyball"></i> Volleyball</span>
-      <span class="ticker-item"><i class="fa-solid fa-hockey-puck"></i> Hockey</span>
-      <span class="ticker-item"><i class="fa-solid fa-person-biking"></i> Cycling</span>
+<!-- TICKER -->
+<div class="border-y border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 py-6 overflow-hidden">
+  <p class="text-center text-xs uppercase tracking-widest text-gray-500 font-semibold mb-3">Works for any sport or activity</p>
+  <div class="overflow-hidden">
+    <div class="ticker-track flex gap-10 whitespace-nowrap w-max">
+      {% with sports="Badminton,Football,Basketball,Tennis,Swimming,Gym & Fitness,Athletics,Volleyball,Hockey,Cycling,Badminton,Football,Basketball,Tennis,Swimming,Gym & Fitness,Athletics,Volleyball,Hockey,Cycling" %}
+      {% for s in sports|cut:" "|slice:"0" %}{% endfor %}
+      {% endwith %}
+      <span class="flex items-center gap-2 text-sm text-gray-500"><i class="fa-solid fa-table-tennis-paddle-ball"></i>Badminton</span>
+      <span class="flex items-center gap-2 text-sm text-gray-500"><i class="fa-solid fa-futbol"></i>Football</span>
+      <span class="flex items-center gap-2 text-sm text-gray-500"><i class="fa-solid fa-basketball"></i>Basketball</span>
+      <span class="flex items-center gap-2 text-sm text-gray-500"><i class="fa-solid fa-baseball-bat-ball"></i>Tennis</span>
+      <span class="flex items-center gap-2 text-sm text-gray-500"><i class="fa-solid fa-person-swimming"></i>Swimming</span>
+      <span class="flex items-center gap-2 text-sm text-gray-500"><i class="fa-solid fa-dumbbell"></i>Gym</span>
+      <span class="flex items-center gap-2 text-sm text-gray-500"><i class="fa-solid fa-person-running"></i>Athletics</span>
+      <span class="flex items-center gap-2 text-sm text-gray-500"><i class="fa-solid fa-volleyball"></i>Volleyball</span>
+      <span class="flex items-center gap-2 text-sm text-gray-500"><i class="fa-solid fa-hockey-puck"></i>Hockey</span>
+      <span class="flex items-center gap-2 text-sm text-gray-500"><i class="fa-solid fa-person-biking"></i>Cycling</span>
+      <!-- duplicate for loop -->
+      <span class="flex items-center gap-2 text-sm text-gray-500"><i class="fa-solid fa-table-tennis-paddle-ball"></i>Badminton</span>
+      <span class="flex items-center gap-2 text-sm text-gray-500"><i class="fa-solid fa-futbol"></i>Football</span>
+      <span class="flex items-center gap-2 text-sm text-gray-500"><i class="fa-solid fa-basketball"></i>Basketball</span>
+      <span class="flex items-center gap-2 text-sm text-gray-500"><i class="fa-solid fa-baseball-bat-ball"></i>Tennis</span>
+      <span class="flex items-center gap-2 text-sm text-gray-500"><i class="fa-solid fa-person-swimming"></i>Swimming</span>
+      <span class="flex items-center gap-2 text-sm text-gray-500"><i class="fa-solid fa-dumbbell"></i>Gym</span>
+      <span class="flex items-center gap-2 text-sm text-gray-500"><i class="fa-solid fa-person-running"></i>Athletics</span>
+      <span class="flex items-center gap-2 text-sm text-gray-500"><i class="fa-solid fa-volleyball"></i>Volleyball</span>
     </div>
   </div>
 </div>
 
-<hr class="div">
+<!-- ABOUT -->
+<section class="py-16 sm:py-20" id="about">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 grid gap-12 lg:grid-cols-2 items-center">
+    <div class="rv">
+      <p class="text-xs uppercase tracking-widest text-brand-500 font-bold mb-3"><i class="fa-solid fa-circle-dot mr-1"></i>About the Platform</p>
+      <h2 class="text-3xl sm:text-4xl font-bold leading-tight">A complete management system built for sports clubs of any size.</h2>
+      <p class="mt-4 text-gray-600 dark:text-gray-400 leading-relaxed">Whether you're a parent tracking your child's progress, a coach running sessions, or an admin managing the whole club — everything is here, connected and simple.</p>
+      <ul class="mt-8 space-y-4">
+        <li class="flex gap-4"><div class="w-10 h-10 rounded-lg bg-brand-50 dark:bg-brand-400/10 text-brand-500 grid place-items-center shrink-0"><i class="fa-solid fa-child-reaching"></i></div><div><strong class="block text-sm">For Parents &amp; Guardians</strong><span class="text-sm text-gray-600 dark:text-gray-400">Register your child, track attendance, read progress reports, and manage payments.</span></div></li>
+        <li class="flex gap-4"><div class="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-500 grid place-items-center shrink-0"><i class="fa-solid fa-user-check"></i></div><div><strong class="block text-sm">For Coaches</strong><span class="text-sm text-gray-600 dark:text-gray-400">View your schedule, mark attendance, publish structured progress reports.</span></div></li>
+        <li class="flex gap-4"><div class="w-10 h-10 rounded-lg bg-green-50 dark:bg-green-500/10 text-green-500 grid place-items-center shrink-0"><i class="fa-solid fa-shield-halved"></i></div><div><strong class="block text-sm">For Club Admins</strong><span class="text-sm text-gray-600 dark:text-gray-400">Control members, staff, billing, payment approvals from one dashboard.</span></div></li>
+      </ul>
+    </div>
+    <div class="grid grid-cols-2 gap-4 rv">
+      <div class="aspect-square rounded-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-brand-50/40 to-white dark:from-brand-400/10 dark:to-gray-900 grid place-items-center text-center p-6"><div><p class="text-4xl sm:text-5xl font-bold text-brand-500">{{ active_members }}</p><p class="text-xs sm:text-sm text-gray-500 mt-2">Active Members</p></div></div>
+      <div class="aspect-square rounded-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-blue-50/40 to-white dark:from-blue-500/10 dark:to-gray-900 grid place-items-center text-center p-6"><div><p class="text-4xl sm:text-5xl font-bold text-blue-500">{{ sessions_this_month }}</p><p class="text-xs sm:text-sm text-gray-500 mt-2">Sessions This Month</p></div></div>
+      <div class="aspect-square rounded-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-green-50/40 to-white dark:from-green-500/10 dark:to-gray-900 grid place-items-center text-center p-6"><div><p class="text-4xl sm:text-5xl font-bold text-green-500">{{ coach_count }}</p><p class="text-xs sm:text-sm text-gray-500 mt-2">Coaches</p></div></div>
+      <div class="aspect-square rounded-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-purple-50/40 to-white dark:from-purple-500/10 dark:to-gray-900 grid place-items-center text-center p-6"><div><p class="text-4xl sm:text-5xl font-bold text-purple-500">{{ product_count }}</p><p class="text-xs sm:text-sm text-gray-500 mt-2">Store Items</p></div></div>
+    </div>
+  </div>
+</section>
 
-<!-- ── About / Platform ──────────────────────────────────────────── -->
-<section class="sec" id="about">
-  <div class="wrap">
-    <div class="platform-grid">
-      <div class="rv">
-        <div class="eyebrow"><i class="fa-solid fa-circle-dot"></i> About the Platform</div>
-        <h2>A complete management system built for sports clubs of any size.</h2>
-        <p class="lead">Whether you're a parent tracking your child's progress, a coach running sessions, or an admin managing the whole club — everything is here, connected and simple.</p>
-        <ul class="platform-pts" style="margin-top:32px;">
-          <li class="platform-pt">
-            <div class="pt-ico"><i class="fa-solid fa-child-reaching"></i></div>
-            <div class="pt-body">
-              <strong>For Parents &amp; Guardians</strong>
-              <span>Register your child, track attendance, read progress reports, and manage payments — all from one parent account.</span>
-            </div>
-          </li>
-          <li class="platform-pt">
-            <div class="pt-ico"><i class="fa-solid fa-user-check"></i></div>
-            <div class="pt-body">
-              <strong>For Coaches</strong>
-              <span>View your session schedule, mark attendance in real time, and publish structured progress report cards for each student.</span>
-            </div>
-          </li>
-          <li class="platform-pt">
-            <div class="pt-ico"><i class="fa-solid fa-shield-halved"></i></div>
-            <div class="pt-body">
-              <strong>For Club Admins</strong>
-              <span>Control everything from one dashboard — members, staff, billing, payment approvals, and club announcements.</span>
-            </div>
-          </li>
+<hr class="border-gray-200 dark:border-gray-800">
+
+<!-- FEATURES -->
+<section class="py-16 sm:py-20" id="features">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="text-center max-w-2xl mx-auto rv">
+      <p class="text-xs uppercase tracking-widest text-brand-500 font-bold mb-3"><i class="fa-solid fa-circle-dot mr-1"></i>Platform Features</p>
+      <h2 class="text-3xl sm:text-4xl font-bold leading-tight">Powerful tools, designed to stay simple.</h2>
+      <p class="mt-4 text-gray-600 dark:text-gray-400 leading-relaxed">Every feature was built so anyone — even someone new to computers — can use it without a manual.</p>
+    </div>
+    <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {% with feats="fa-user-plus|Online Admission|Families apply through a simple form. Staff approve; member profile goes live immediately.|Enrolment;;fa-chart-line|Skill Level Assessment|The admission form suggests the right training group from a few short questions.|Smart Placement;;fa-calendar-days|Session Scheduling|Plan one-off or recurring sessions. Assign coaches, set venues, auto-notify everyone.|Scheduling;;fa-clipboard-check|Live Attendance|Mark each student Present, Late, or Absent. Parents see it instantly — no delay.|Real-Time;;fa-file-lines|Progress Reports|Publish structured reports per training period with skill scores and feedback.|Reports;;fa-qrcode|QR Code Payments|Scan, pay, upload proof. Admins verify — no manual tracking.|Payments;;fa-file-invoice-dollar|Invoicing|Clear, itemised invoices for every fee. Full payment history always visible.|Finance;;fa-bag-shopping|Club Store|Sell merchandise, equipment, training gear — no separate e-commerce needed.|Store;;fa-bell|Notifications|Schedule changes, payment confirmations, new report cards, announcements.|Alerts" %}
+      {% for item in feats|slice:"0" %}{% endfor %}
+      {% endwith %}
+      <div class="rv rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 hover:border-brand-300 hover:shadow-lg transition">
+        <div class="w-11 h-11 rounded-xl bg-brand-50 dark:bg-brand-400/10 text-brand-500 grid place-items-center mb-4"><i class="fa-solid fa-user-plus"></i></div>
+        <h3 class="font-bold text-lg">Online Admission</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">Families apply through a simple form. Staff approve; member profile goes live immediately.</p>
+        <span class="inline-block mt-4 text-[11px] uppercase tracking-wider font-semibold text-brand-500">Enrolment</span>
+      </div>
+      <div class="rv rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 hover:border-brand-300 hover:shadow-lg transition">
+        <div class="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-500 grid place-items-center mb-4"><i class="fa-solid fa-chart-line"></i></div>
+        <h3 class="font-bold text-lg">Skill Assessment</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">The form suggests the right training group from a few short questions. Coaches adjust later.</p>
+        <span class="inline-block mt-4 text-[11px] uppercase tracking-wider font-semibold text-blue-500">Smart Placement</span>
+      </div>
+      <div class="rv rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 hover:border-brand-300 hover:shadow-lg transition">
+        <div class="w-11 h-11 rounded-xl bg-green-50 dark:bg-green-500/10 text-green-500 grid place-items-center mb-4"><i class="fa-solid fa-calendar-days"></i></div>
+        <h3 class="font-bold text-lg">Session Scheduling</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">Plan one-off or recurring sessions. Assign coaches, set venues, auto-notify everyone.</p>
+        <span class="inline-block mt-4 text-[11px] uppercase tracking-wider font-semibold text-green-500">Scheduling</span>
+      </div>
+      <div class="rv rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 hover:border-brand-300 hover:shadow-lg transition">
+        <div class="w-11 h-11 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-500 grid place-items-center mb-4"><i class="fa-solid fa-clipboard-check"></i></div>
+        <h3 class="font-bold text-lg">Live Attendance</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">Mark each student Present, Late, or Absent. Parents see it instantly — no delay.</p>
+        <span class="inline-block mt-4 text-[11px] uppercase tracking-wider font-semibold text-purple-500">Real-Time</span>
+      </div>
+      <div class="rv rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 hover:border-brand-300 hover:shadow-lg transition">
+        <div class="w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-500 grid place-items-center mb-4"><i class="fa-solid fa-file-lines"></i></div>
+        <h3 class="font-bold text-lg">Progress Reports</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">Structured reports per training period with skill scores, feedback, improvement tracking.</p>
+        <span class="inline-block mt-4 text-[11px] uppercase tracking-wider font-semibold text-amber-500">Reports</span>
+      </div>
+      <div class="rv rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 hover:border-brand-300 hover:shadow-lg transition">
+        <div class="w-11 h-11 rounded-xl bg-cyan-50 dark:bg-cyan-500/10 text-cyan-500 grid place-items-center mb-4"><i class="fa-solid fa-qrcode"></i></div>
+        <h3 class="font-bold text-lg">QR Payments</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">Scan, pay, upload proof. Admins verify and confirm — no manual tracking.</p>
+        <span class="inline-block mt-4 text-[11px] uppercase tracking-wider font-semibold text-cyan-500">Payments</span>
+      </div>
+      <div class="rv rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 hover:border-brand-300 hover:shadow-lg transition">
+        <div class="w-11 h-11 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-500 grid place-items-center mb-4"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+        <h3 class="font-bold text-lg">Invoicing</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">Clear, itemised invoices for every fee. Full payment history always visible.</p>
+        <span class="inline-block mt-4 text-[11px] uppercase tracking-wider font-semibold text-red-500">Finance</span>
+      </div>
+      <div class="rv rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 hover:border-brand-300 hover:shadow-lg transition">
+        <div class="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-500 grid place-items-center mb-4"><i class="fa-solid fa-bag-shopping"></i></div>
+        <h3 class="font-bold text-lg">Club Store</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">Sell merchandise, equipment, training gear — no separate e-commerce needed.</p>
+        <span class="inline-block mt-4 text-[11px] uppercase tracking-wider font-semibold text-indigo-500">Store</span>
+      </div>
+      <div class="rv rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 hover:border-brand-300 hover:shadow-lg transition">
+        <div class="w-11 h-11 rounded-xl bg-pink-50 dark:bg-pink-500/10 text-pink-500 grid place-items-center mb-4"><i class="fa-solid fa-bell"></i></div>
+        <h3 class="font-bold text-lg">Notifications</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">Schedule changes, payment confirmations, new reports, announcements.</p>
+        <span class="inline-block mt-4 text-[11px] uppercase tracking-wider font-semibold text-pink-500">Alerts</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="border-gray-200 dark:border-gray-800">
+
+<!-- HOW -->
+<section class="py-16 sm:py-20" id="how-it-works">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="text-center max-w-2xl mx-auto rv">
+      <p class="text-xs uppercase tracking-widest text-brand-500 font-bold mb-3"><i class="fa-solid fa-circle-dot mr-1"></i>Getting Started</p>
+      <h2 class="text-3xl sm:text-4xl font-bold leading-tight">From sign-up to first session in 4 steps.</h2>
+      <p class="mt-4 text-gray-600 dark:text-gray-400 leading-relaxed">Here's exactly what happens when a new family joins.</p>
+    </div>
+    <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      {% with steps="Apply Online,Create a parent account and submit your child's details.;;Staff Approves,Admin reviews, assigns a coach, approves the trial.;;Pay Enrolment,Scan QR, pay via banking app, upload receipt screenshot.;;Start Training,First session. Attendance, reports, payments all live." %}
+      {% for step in steps|slice:"0" %}{% endfor %}
+      {% endwith %}
+      <div class="rv rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6"><div class="w-10 h-10 rounded-full bg-brand-400 text-white grid place-items-center text-lg font-bold mb-4">1</div><h3 class="font-bold text-lg">Apply Online</h3><p class="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">Create a parent account and submit your child's details with a few skill questions.</p></div>
+      <div class="rv rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6"><div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 grid place-items-center text-lg font-bold mb-4">2</div><h3 class="font-bold text-lg">Staff Approves</h3><p class="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">Admin reviews, assigns a coach, approves the trial — usually within 1-2 working days.</p></div>
+      <div class="rv rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6"><div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 grid place-items-center text-lg font-bold mb-4">3</div><h3 class="font-bold text-lg">Pay Enrolment</h3><p class="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">Scan QR code in your portal, pay via banking app, upload a receipt screenshot.</p></div>
+      <div class="rv rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6"><div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 grid place-items-center text-lg font-bold mb-4">4</div><h3 class="font-bold text-lg">Start Training</h3><p class="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">First session! Attendance, reports, and payments are all live in your dashboard.</p></div>
+    </div>
+  </div>
+</section>
+
+<hr class="border-gray-200 dark:border-gray-800">
+
+<!-- ROLES -->
+<section class="py-16 sm:py-20" id="roles">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="text-center max-w-2xl mx-auto rv">
+      <p class="text-xs uppercase tracking-widest text-brand-500 font-bold mb-3"><i class="fa-solid fa-circle-dot mr-1"></i>Who Is This For?</p>
+      <h2 class="text-3xl sm:text-4xl font-bold leading-tight">Three roles, one connected system.</h2>
+      <p class="mt-4 text-gray-600 dark:text-gray-400 leading-relaxed">Each role has a dedicated workspace with exactly the tools they need.</p>
+    </div>
+    <div class="mt-12 grid gap-5 md:grid-cols-3">
+      <div class="rv rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
+        <div class="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-400/10 text-brand-500 grid place-items-center text-xl mb-4"><i class="fa-solid fa-child-reaching"></i></div>
+        <h3 class="font-bold text-lg">Parents &amp; Guardians</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">Stay connected to your child's training journey — sessions, reports, and payments all in one portal.</p>
+        <ul class="mt-4 space-y-2 text-sm">
+          <li class="flex gap-2"><i class="fa-solid fa-check text-brand-500 mt-1"></i>Register &amp; manage your child's profile</li>
+          <li class="flex gap-2"><i class="fa-solid fa-check text-brand-500 mt-1"></i>View training schedule &amp; attendance</li>
+          <li class="flex gap-2"><i class="fa-solid fa-check text-brand-500 mt-1"></i>Detailed progress reports</li>
+          <li class="flex gap-2"><i class="fa-solid fa-check text-brand-500 mt-1"></i>Pay fees via QR code</li>
+          <li class="flex gap-2"><i class="fa-solid fa-check text-brand-500 mt-1"></i>Browse the club store</li>
         </ul>
+        <a href="/accounts/login/?role=parent" class="mt-5 inline-flex items-center gap-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 px-4 py-2 rounded-full text-sm font-semibold"><i class="fa-solid fa-arrow-right-to-bracket"></i>Parent Login</a>
       </div>
-      <div class="platform-tiles rv d2">
-        <div class="p-tile">
-          <span class="p-tile-val">{{ active_members }}</span>
-          <div class="p-tile-lbl">Active Members</div>
-        </div>
-        <div class="p-tile">
-          <span class="p-tile-val">{{ coach_count }}</span>
-          <div class="p-tile-lbl">Coaches</div>
-        </div>
-        <div class="p-tile">
-          <span class="p-tile-val">{{ sessions_this_month }}</span>
-          <div class="p-tile-lbl">Sessions This Month</div>
-        </div>
-        <div class="p-tile">
-          <span class="p-tile-val">{{ product_count }}</span>
-          <div class="p-tile-lbl">Store Items</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
 
-<hr class="div">
-
-<!-- ── Features ─────────────────────────────────────────────────── -->
-<section class="sec" id="features">
-  <div class="wrap">
-    <div class="sec-hd center rv">
-      <div class="eyebrow"><i class="fa-solid fa-circle-dot"></i> Platform Features</div>
-      <h2>Powerful tools, designed to stay simple.</h2>
-      <p class="lead" style="margin-top:14px;">Every feature was built so that anyone — including someone new to computers — can use it without a manual.</p>
-    </div>
-    <div class="feat-grid">
-      <div class="feat-card rv d1">
-        <div class="feat-ico"><i class="fa-solid fa-user-plus"></i></div>
-        <h3>Online Admission</h3>
-        <p>Families apply through a simple form. Staff review and approve. The member profile goes live immediately — no paperwork, no spreadsheets.</p>
-        <div class="feat-tag">Enrolment</div>
-      </div>
-      <div class="feat-card rv d2">
-        <div class="feat-ico"><i class="fa-solid fa-chart-line"></i></div>
-        <h3>Skill Level Assessment</h3>
-        <p>The admission form suggests the right training group from a few short questions. Coaches can adjust after the first in-person session.</p>
-        <div class="feat-tag">Smart Placement</div>
-      </div>
-      <div class="feat-card rv d3">
-        <div class="feat-ico"><i class="fa-solid fa-calendar-days"></i></div>
-        <h3>Session Scheduling</h3>
-        <p>Plan one-off or recurring monthly sessions. Assign coaches, set venues, and let the system notify everyone automatically.</p>
-        <div class="feat-tag">Scheduling</div>
-      </div>
-      <div class="feat-card rv d4">
-        <div class="feat-ico"><i class="fa-solid fa-clipboard-check"></i></div>
-        <h3>Live Attendance</h3>
-        <p>Mark each student as Present, Late, or Absent during every session. Parents see it instantly in their portal — no delay.</p>
-        <div class="feat-tag">Real-Time</div>
-      </div>
-      <div class="feat-card rv d5">
-        <div class="feat-ico"><i class="fa-solid fa-file-lines"></i></div>
-        <h3>Progress Report Cards</h3>
-        <p>Coaches publish structured reports per training period — skill scores, written feedback, and improvement tracking across sessions.</p>
-        <div class="feat-tag">Reports</div>
-      </div>
-      <div class="feat-card rv d6">
-        <div class="feat-ico"><i class="fa-solid fa-qrcode"></i></div>
-        <h3>QR Code Payments</h3>
-        <p>Scan, pay, upload proof. Admins verify and confirm — no manual tracking, no complicated bank transfers.</p>
-        <div class="feat-tag">Payments</div>
-      </div>
-      <div class="feat-card rv d1">
-        <div class="feat-ico"><i class="fa-solid fa-file-invoice-dollar"></i></div>
-        <h3>Invoicing &amp; Billing</h3>
-        <p>Clear, itemised invoices for every fee — registration, monthly packages, and custom charges. Full payment history always visible.</p>
-        <div class="feat-tag">Finance</div>
-      </div>
-      <div class="feat-card rv d2">
-        <div class="feat-ico"><i class="fa-solid fa-bag-shopping"></i></div>
-        <h3>Club Store</h3>
-        <p>Manage and sell merchandise, equipment, and training gear directly from the platform — no separate e-commerce needed.</p>
-        <div class="feat-tag">Store</div>
-      </div>
-      <div class="feat-card rv d3">
-        <div class="feat-ico"><i class="fa-solid fa-bell"></i></div>
-        <h3>Notifications</h3>
-        <p>Session changes, payment confirmations, new report cards, and club-wide announcements — all through the built-in notification centre.</p>
-        <div class="feat-tag">Alerts</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<hr class="div">
-
-<!-- ── How it works ──────────────────────────────────────────────── -->
-<section class="sec" id="how-it-works">
-  <div class="wrap">
-    <div class="sec-hd center rv">
-      <div class="eyebrow"><i class="fa-solid fa-circle-dot"></i> Getting Started</div>
-      <h2>From sign-up to first session in 4 steps.</h2>
-      <p class="lead" style="margin-top:14px;">Here's exactly what happens when a new family joins — no confusion, no missing pieces.</p>
-    </div>
-    <div class="steps-row">
-      <div class="step rv d1">
-        <div class="step-num hi">1</div>
-        <h3>Apply Online</h3>
-        <p>Create a parent account and submit your child's details. Choose a program and answer a few quick skill questions.</p>
-      </div>
-      <div class="step rv d2">
-        <div class="step-num">2</div>
-        <h3>Staff Approves</h3>
-        <p>The admin reviews, assigns a coach, and approves the trial — usually within one to two working days.</p>
-      </div>
-      <div class="step rv d3">
-        <div class="step-num">3</div>
-        <h3>Pay Enrolment Fee</h3>
-        <p>Scan the QR code in your portal, pay via your banking app, upload a receipt screenshot. Admin confirms it the same day.</p>
-      </div>
-      <div class="step rv d4">
-        <div class="step-num">4</div>
-        <h3>Start Training</h3>
-        <p>Your child attends their first session. Attendance, reports, and payments are all live in your dashboard from day one.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<hr class="div">
-
-<!-- ── Roles ─────────────────────────────────────────────────────── -->
-<section class="sec" id="roles">
-  <div class="wrap">
-    <div class="sec-hd center rv">
-      <div class="eyebrow"><i class="fa-solid fa-circle-dot"></i> Who Is This For?</div>
-      <h2>Three roles, one connected system.</h2>
-      <p class="lead" style="margin-top:14px;">Each role has a dedicated workspace with exactly the tools they need — nothing extra, nothing missing.</p>
-    </div>
-    <div class="roles-grid">
-      <div class="role-card rv d1">
-        <div class="role-ico"><i class="fa-solid fa-child-reaching"></i></div>
-        <h3>Parents &amp; Guardians</h3>
-        <p>Stay connected to your child's training journey — sessions, reports, and payments all in one parent portal.</p>
-        <ul class="role-perks">
-          <li class="role-perk">Register and manage your child's profile</li>
-          <li class="role-perk">View training schedule and attendance</li>
-          <li class="role-perk">Read detailed skill progress reports</li>
-          <li class="role-perk">Pay fees via QR code scanning</li>
-          <li class="role-perk">Track invoice history and payment status</li>
-          <li class="role-perk">Browse the official club store</li>
+      <div class="rv rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
+        <div class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-500 grid place-items-center text-xl mb-4"><i class="fa-solid fa-user-check"></i></div>
+        <h3 class="font-bold text-lg">Coaches</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">Focus on coaching. The system handles scheduling, attendance, and reports.</p>
+        <ul class="mt-4 space-y-2 text-sm">
+          <li class="flex gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i>View your session schedule</li>
+          <li class="flex gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i>Mark attendance in real time</li>
+          <li class="flex gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i>Write &amp; publish progress reports</li>
+          <li class="flex gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i>Session feedback per student</li>
+          <li class="flex gap-2"><i class="fa-solid fa-check text-blue-500 mt-1"></i>Monitor student payment status</li>
         </ul>
-        <a href="/accounts/login/?role=parent" class="btn btn-o role-btn"><i class="fa-solid fa-arrow-right-to-bracket"></i> Parent Login</a>
+        <a href="/accounts/login/?role=coach" class="mt-5 inline-flex items-center gap-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 px-4 py-2 rounded-full text-sm font-semibold"><i class="fa-solid fa-arrow-right-to-bracket"></i>Coach Login</a>
       </div>
-      <div class="role-card rv d2">
-        <div class="role-ico"><i class="fa-solid fa-user-check"></i></div>
-        <h3>Coaches</h3>
-        <p>Focus on coaching. The system handles scheduling, attendance logging, and report publishing so you can focus on your athletes.</p>
-        <ul class="role-perks">
-          <li class="role-perk">View your assigned session schedule</li>
-          <li class="role-perk">Mark attendance in real time</li>
-          <li class="role-perk">Write and publish progress reports</li>
-          <li class="role-perk">Give session feedback per student</li>
-          <li class="role-perk">See all assigned players in one list</li>
-          <li class="role-perk">Monitor payment status for students</li>
+
+      <div class="rv rounded-2xl border-brand-200 dark:border-brand-500/40 border-2 bg-gradient-to-br from-brand-50/30 to-white dark:from-brand-400/10 dark:to-gray-900 p-6">
+        <div class="w-12 h-12 rounded-xl bg-brand-400 text-white grid place-items-center text-xl mb-4"><i class="fa-solid fa-shield-halved"></i></div>
+        <h3 class="font-bold text-lg">Club Admin</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">Complete control over every part of the club — members, staff, finance, approvals.</p>
+        <ul class="mt-4 space-y-2 text-sm">
+          <li class="flex gap-2"><i class="fa-solid fa-check text-brand-500 mt-1"></i>Review &amp; approve applications</li>
+          <li class="flex gap-2"><i class="fa-solid fa-check text-brand-500 mt-1"></i>Manage staff accounts</li>
+          <li class="flex gap-2"><i class="fa-solid fa-check text-brand-500 mt-1"></i>Plan all sessions</li>
+          <li class="flex gap-2"><i class="fa-solid fa-check text-brand-500 mt-1"></i>Billing &amp; invoices</li>
+          <li class="flex gap-2"><i class="fa-solid fa-check text-brand-500 mt-1"></i>Verify payment proofs</li>
+          <li class="flex gap-2"><i class="fa-solid fa-check text-brand-500 mt-1"></i>Full finance overview</li>
         </ul>
-        <a href="/accounts/login/?role=coach" class="btn btn-o role-btn"><i class="fa-solid fa-arrow-right-to-bracket"></i> Coach Login</a>
-      </div>
-      <div class="role-card rv d3">
-        <div class="role-ico"><i class="fa-solid fa-shield-halved"></i></div>
-        <h3>Club Admin</h3>
-        <p>Complete control over every part of the club — members, staff, finance, and approvals — from a single command centre.</p>
-        <ul class="role-perks">
-          <li class="role-perk">Review and approve applications</li>
-          <li class="role-perk">Create and manage staff accounts</li>
-          <li class="role-perk">Plan and schedule all sessions</li>
-          <li class="role-perk">Issue invoices and manage billing</li>
-          <li class="role-perk">Verify payment proofs</li>
-          <li class="role-perk">Full finance overview and reports</li>
-        </ul>
-        <a href="/accounts/login/?role=admin" class="btn btn-p role-btn"><i class="fa-solid fa-shield-halved"></i> Admin Login</a>
+        <a href="/accounts/login/?role=admin" class="mt-5 inline-flex items-center gap-2 bg-brand-400 hover:bg-brand-500 text-white px-4 py-2 rounded-full text-sm font-semibold"><i class="fa-solid fa-shield-halved"></i>Admin Login</a>
       </div>
     </div>
   </div>
 </section>
 
-<hr class="div">
+<hr class="border-gray-200 dark:border-gray-800">
 
-<!-- ── FAQ ──────────────────────────────────────────────────────── -->
-<section class="sec" id="faq">
-  <div class="wrap">
-    <div class="sec-hd rv">
-      <div class="eyebrow"><i class="fa-solid fa-circle-dot"></i> FAQ</div>
-      <h2>Got questions? We have answers.</h2>
-      <p class="lead" style="margin-top:14px;">The most common questions from parents, coaches, and new members.</p>
+<!-- FAQ -->
+<section class="py-16 sm:py-20" id="faq">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="max-w-2xl rv">
+      <p class="text-xs uppercase tracking-widest text-brand-500 font-bold mb-3"><i class="fa-solid fa-circle-dot mr-1"></i>FAQ</p>
+      <h2 class="text-3xl sm:text-4xl font-bold leading-tight">Got questions? We have answers.</h2>
+      <p class="mt-4 text-gray-600 dark:text-gray-400 leading-relaxed">The most common questions from parents, coaches, and new members.</p>
     </div>
-    <div class="faq-wrap">
-      <div class="faq-sidebar">
-        <div class="faq-tab on" data-for="fq-signup"><i class="fa-solid fa-user-plus"></i> Sign Up</div>
-        <div class="faq-tab" data-for="fq-login"><i class="fa-solid fa-key"></i> Login</div>
-        <div class="faq-tab" data-for="fq-payment"><i class="fa-solid fa-credit-card"></i> Payments</div>
-        <div class="faq-tab" data-for="fq-sessions"><i class="fa-solid fa-calendar-days"></i> Sessions</div>
-        <div class="faq-tab" data-for="fq-reports"><i class="fa-solid fa-file-lines"></i> Reports</div>
-      </div>
-      <div class="faq-content">
-        <div class="faq-grp on" id="fq-signup">
-          <div class="faq-item">
-            <button class="faq-q">How do I register my child for the club? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
-            <div class="faq-a">Click <strong>Register</strong> at the top of this page. Create your parent account first, then use <strong>Add Child</strong> inside the portal to submit each child's details for staff review.</div>
+
+    <div class="mt-10 grid gap-6 lg:grid-cols-[220px_1fr]">
+      <aside class="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible">
+        <button class="faq-tab on shrink-0 flex items-center gap-2 text-sm px-4 py-2 rounded-lg text-left text-brand-500 bg-brand-50 dark:bg-brand-400/10 border border-brand-200 dark:border-brand-500/30" data-for="fq-signup"><i class="fa-solid fa-user-plus"></i>Sign Up</button>
+        <button class="faq-tab shrink-0 flex items-center gap-2 text-sm px-4 py-2 rounded-lg text-left text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800" data-for="fq-login"><i class="fa-solid fa-key"></i>Login</button>
+        <button class="faq-tab shrink-0 flex items-center gap-2 text-sm px-4 py-2 rounded-lg text-left text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800" data-for="fq-payment"><i class="fa-solid fa-credit-card"></i>Payments</button>
+        <button class="faq-tab shrink-0 flex items-center gap-2 text-sm px-4 py-2 rounded-lg text-left text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800" data-for="fq-sessions"><i class="fa-solid fa-calendar-days"></i>Sessions</button>
+        <button class="faq-tab shrink-0 flex items-center gap-2 text-sm px-4 py-2 rounded-lg text-left text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800" data-for="fq-reports"><i class="fa-solid fa-file-lines"></i>Reports</button>
+      </aside>
+
+      <div>
+        <div class="faq-grp on space-y-2" id="fq-signup">
+          {% for q_a in "How do I register my child for the club?_Click Register at the top. Create your parent account first, then use Add Child inside the portal to submit each child's details.;;What info do I need to start?_Your name, email, contact, a username, and a password. Add each child's details separately inside the portal.;;How is my child's skill level decided?_The intake form includes short questions about experience. System recommends Beginner, Intermediate, or Advanced. Staff adjust after assessment.;;Can I register more than one child?_Yes. One parent account supports multiple children.;;What happens after submitting?_Request enters the review queue. Once approved, profile/attendance/reports/invoices appear under your account."|slice:"0" %}{% endfor %}
+          <div class="faq-item rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <button class="faq-q w-full flex items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-left hover:bg-gray-50 dark:hover:bg-gray-800/50">How do I register my child for the club?<i class="fa-solid fa-chevron-down faq-chev text-xs text-gray-400"></i></button>
+            <div class="faq-a px-4 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Click <strong>Register</strong> at the top. Create your parent account first, then use <strong>Add Child</strong> inside the portal.</div>
           </div>
-          <div class="faq-item">
-            <button class="faq-q">What information do I need to get started? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
-            <div class="faq-a">For the first step you only need your name, email, contact number, a username, and a password. You add each child's details separately from inside the portal after signing in.</div>
+          <div class="faq-item rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <button class="faq-q w-full flex items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-left hover:bg-gray-50 dark:hover:bg-gray-800/50">What information do I need to get started?<i class="fa-solid fa-chevron-down faq-chev text-xs text-gray-400"></i></button>
+            <div class="faq-a px-4 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">For the first step you only need your name, email, contact, a username, and a password. You add each child's details separately from inside the portal.</div>
           </div>
-          <div class="faq-item">
-            <button class="faq-q">How is my child's skill level decided? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
-            <div class="faq-a">The child intake form includes short questions about training experience. Based on the answers, the system recommends a starting level — Beginner, Intermediate, or Advanced. Staff can adjust after an in-person assessment.</div>
+          <div class="faq-item rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <button class="faq-q w-full flex items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-left hover:bg-gray-50 dark:hover:bg-gray-800/50">How is my child's skill level decided?<i class="fa-solid fa-chevron-down faq-chev text-xs text-gray-400"></i></button>
+            <div class="faq-a px-4 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">The intake form includes short experience questions. System recommends Beginner, Intermediate, or Advanced. Staff adjust after an in-person assessment.</div>
           </div>
-          <div class="faq-item">
-            <button class="faq-q">Can I register more than one child? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
-            <div class="faq-a">Yes. One parent account supports multiple children. Use <strong>Add Child</strong> inside the portal as many times as you need — each child gets their own profile, attendance history, and progress reports.</div>
-          </div>
-          <div class="faq-item">
-            <button class="faq-q">What happens after I submit the application? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
-            <div class="faq-a">Your child's request enters the staff review queue. Once approved, their profile, attendance, reports, and invoices appear automatically under your account — usually within one to two working days.</div>
-          </div>
-        </div>
-        <div class="faq-grp" id="fq-login">
-          <div class="faq-item">
-            <button class="faq-q">How do I log in? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
-            <div class="faq-a">Click <strong>Sign In</strong> and enter the username and password you created during account sign-up. Haven't registered yet? Use <strong>Register</strong> first.</div>
-          </div>
-          <div class="faq-item">
-            <button class="faq-q">What if I forget my password? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
-            <div class="faq-a">On the login page, click <strong>Forgot Password</strong> and enter your registered email. A reset link will arrive in your inbox. Check your spam folder if you don't see it, or contact the club admin for help.</div>
-          </div>
-          <div class="faq-item">
-            <button class="faq-q">What's the difference between Parent and Staff login? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
-            <div class="faq-a"><strong>Parent login</strong> is for families to track their child's sessions, attendance, reports, and payments. <strong>Staff login</strong> is for coaches and admins only — staff accounts are created by the admin and cannot be self-registered.</div>
+          <div class="faq-item rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <button class="faq-q w-full flex items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-left hover:bg-gray-50 dark:hover:bg-gray-800/50">Can I register more than one child?<i class="fa-solid fa-chevron-down faq-chev text-xs text-gray-400"></i></button>
+            <div class="faq-a px-4 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Yes. One parent account supports multiple children. Use <strong>Add Child</strong> inside the portal as many times as needed.</div>
           </div>
         </div>
-        <div class="faq-grp" id="fq-payment">
-          <div class="faq-item">
-            <button class="faq-q">How does the payment system work? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
-            <div class="faq-a">Invoices appear in your portal. Scan the displayed QR code with your banking app, pay the exact amount, take a screenshot of the success screen, and upload it as proof. Admin reviews and confirms — usually within 1 business day.</div>
+
+        <div class="faq-grp space-y-2" id="fq-login">
+          <div class="faq-item rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <button class="faq-q w-full flex items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-left hover:bg-gray-50 dark:hover:bg-gray-800/50">How do I log in?<i class="fa-solid fa-chevron-down faq-chev text-xs text-gray-400"></i></button>
+            <div class="faq-a px-4 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Click <strong>Sign In</strong> and enter the username and password from signup.</div>
           </div>
-          <div class="faq-item">
-            <button class="faq-q">What fees does the club charge? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
-            <div class="faq-a">The fee structure is admin-managed. Current pricing: <strong id="registrationFeeCopy"></strong>, plus recurring monthly plans of <strong id="billingPlanCopy"></strong>. All amounts are shown clearly on every invoice.</div>
-          </div>
-          <div class="faq-item">
-            <button class="faq-q">How long does payment verification take? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
-            <div class="faq-a">Most proofs are reviewed within <strong>1 business day</strong>. Once confirmed, the invoice is marked Paid and you receive a system notification.</div>
+          <div class="faq-item rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <button class="faq-q w-full flex items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-left hover:bg-gray-50 dark:hover:bg-gray-800/50">What if I forget my password?<i class="fa-solid fa-chevron-down faq-chev text-xs text-gray-400"></i></button>
+            <div class="faq-a px-4 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Click <strong>Forgot Password</strong> on the login page. A reset link will arrive in your registered email.</div>
           </div>
         </div>
-        <div class="faq-grp" id="fq-sessions">
-          <div class="faq-item">
-            <button class="faq-q">How do I see my child's training schedule? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
-            <div class="faq-a">Log in and go to <strong>Session Schedule</strong>. All upcoming and past sessions are listed with dates, times, venue, and attendance status.</div>
+
+        <div class="faq-grp space-y-2" id="fq-payment">
+          <div class="faq-item rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <button class="faq-q w-full flex items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-left hover:bg-gray-50 dark:hover:bg-gray-800/50">How does payment work?<i class="fa-solid fa-chevron-down faq-chev text-xs text-gray-400"></i></button>
+            <div class="faq-a px-4 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Invoices appear in your portal. Scan the QR with your banking app, pay, screenshot the success, upload as proof. Admin reviews within 1 business day.</div>
           </div>
-          <div class="faq-item">
-            <button class="faq-q">How is attendance recorded? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
-            <div class="faq-a">The coach or attendance staff marks each student as Present, Late, or Absent at the start of every session. You can see it immediately in your portal — no waiting.</div>
-          </div>
-          <div class="faq-item">
-            <button class="faq-q">My child missed a session. Does it affect anything? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
-            <div class="faq-a">Missed sessions are recorded as Absent in the history. The overall attendance rate is visible to both you and the coach. If your child needs to miss a session for a valid reason, inform the coach in advance so it can be noted.</div>
+          <div class="faq-item rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <button class="faq-q w-full flex items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-left hover:bg-gray-50 dark:hover:bg-gray-800/50">What fees does the club charge?<i class="fa-solid fa-chevron-down faq-chev text-xs text-gray-400"></i></button>
+            <div class="faq-a px-4 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Current pricing: <strong id="registrationFeeCopy"></strong>, plus monthly plans of <strong id="billingPlanCopy"></strong>.</div>
           </div>
         </div>
-        <div class="faq-grp" id="fq-reports">
-          <div class="faq-item">
-            <button class="faq-q">What is a Progress Report Card? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
-            <div class="faq-a">A structured assessment published by your child's coach at the end of each training period. It covers skill areas with numerical scores and written feedback — like a school report card, but for sport.</div>
+
+        <div class="faq-grp space-y-2" id="fq-sessions">
+          <div class="faq-item rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <button class="faq-q w-full flex items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-left hover:bg-gray-50 dark:hover:bg-gray-800/50">How do I see my child's schedule?<i class="fa-solid fa-chevron-down faq-chev text-xs text-gray-400"></i></button>
+            <div class="faq-a px-4 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Log in, go to <strong>Session Schedule</strong>. All upcoming and past sessions are listed.</div>
           </div>
-          <div class="faq-item">
-            <button class="faq-q">How often are reports published? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
-            <div class="faq-a">At the end of each training period as set by the coach or admin. You receive a system notification when a new report is available. All past reports are stored and always accessible.</div>
+          <div class="faq-item rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <button class="faq-q w-full flex items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-left hover:bg-gray-50 dark:hover:bg-gray-800/50">How is attendance recorded?<i class="fa-solid fa-chevron-down faq-chev text-xs text-gray-400"></i></button>
+            <div class="faq-a px-4 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Coach marks each student Present, Late, or Absent at the start. You see it immediately in your portal.</div>
           </div>
-          <div class="faq-item">
-            <button class="faq-q">Can I see how my child improves over time? <i class="fa-solid fa-chevron-down faq-chev"></i></button>
-            <div class="faq-a">Yes. Each report shows scores for the current period alongside the previous one. You can see at a glance whether each skill improved, stayed the same, or dropped — along with an overall grade.</div>
+        </div>
+
+        <div class="faq-grp space-y-2" id="fq-reports">
+          <div class="faq-item rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <button class="faq-q w-full flex items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-left hover:bg-gray-50 dark:hover:bg-gray-800/50">How often are reports published?<i class="fa-solid fa-chevron-down faq-chev text-xs text-gray-400"></i></button>
+            <div class="faq-a px-4 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">At the end of each training period. You get a system notification when a new report is available.</div>
+          </div>
+          <div class="faq-item rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <button class="faq-q w-full flex items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-left hover:bg-gray-50 dark:hover:bg-gray-800/50">Can I see improvement over time?<i class="fa-solid fa-chevron-down faq-chev text-xs text-gray-400"></i></button>
+            <div class="faq-a px-4 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">Yes. Each report shows current scores vs previous, so you see whether each skill improved, stayed, or dropped.</div>
           </div>
         </div>
       </div>
@@ -971,275 +382,150 @@
   </div>
 </section>
 
-<hr class="div">
+<hr class="border-gray-200 dark:border-gray-800">
 
-<!-- ── CTA Banner ────────────────────────────────────────────────── -->
-<section class="sec-sm" id="join">
-  <div class="wrap rv">
-    <div class="cta-panel">
-      <div class="eyebrow"><i class="fa-solid fa-circle-dot"></i> Ready to Start?</div>
-      <h2>Get your club running today.</h2>
-      <p>Register in minutes or book a personalised demo. The team is ready to set up your club, assign your coaches, and welcome your first members.</p>
-      <div class="cta-btns">
-        <a href="{% url 'members:apply' %}" class="btn btn-p"><i class="fa-solid fa-user-plus"></i> {{ parent_signup_cta_text }}</a>
-        <a href="#" class="btn btn-g" id="demoCtaBtn"><i class="fa-solid fa-calendar-check"></i> Book a Demo</a>
-        <a href="/accounts/login/" class="btn btn-o"><i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In</a>
+<!-- CTA -->
+<section class="py-16 sm:py-20" id="join">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6">
+    <div class="rv rounded-3xl bg-gradient-to-br from-brand-400 to-brand-500 text-white p-8 sm:p-12 text-center shadow-xl shadow-brand-400/30">
+      <p class="text-xs uppercase tracking-widest font-bold mb-3 opacity-80"><i class="fa-solid fa-circle-dot mr-1"></i>Ready to Start?</p>
+      <h2 class="text-3xl sm:text-4xl font-bold leading-tight">Get your club running today.</h2>
+      <p class="mt-4 text-white/90 leading-relaxed max-w-xl mx-auto">Register in minutes or book a personalised demo. The team is ready to set up your club and welcome your first members.</p>
+      <div class="mt-8 flex flex-wrap gap-3 justify-center">
+        <a href="{% url 'members:apply' %}" class="inline-flex items-center gap-2 bg-white text-brand-500 hover:bg-white/90 px-6 py-3 rounded-full text-sm font-bold"><i class="fa-solid fa-user-plus"></i>{{ parent_signup_cta_text }}</a>
+        <a href="#" id="demoCtaBtn" class="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/30 text-white px-6 py-3 rounded-full text-sm font-semibold"><i class="fa-solid fa-calendar-check"></i>Book a Demo</a>
+        <a href="/accounts/login/" class="inline-flex items-center gap-2 border border-white/30 hover:bg-white/10 text-white px-6 py-3 rounded-full text-sm font-semibold"><i class="fa-solid fa-arrow-right-to-bracket"></i>Sign In</a>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ── Footer ────────────────────────────────────────────────────── -->
-<footer>
-  <div class="wrap foot-inner">
-    <div class="foot-brand">
-      <strong>{{ landing_content.hero_title }}</strong>
-      <span>Sports club management — sessions, reports, payments, and more.</span>
+<!-- FOOTER -->
+<footer class="border-t border-gray-200 dark:border-gray-800">
+  <div class="max-w-6xl mx-auto flex items-center justify-between gap-4 px-4 sm:px-6 py-8 text-sm flex-wrap">
+    <div>
+      <strong class="block text-gray-900 dark:text-white font-semibold">{{ landing_content.hero_title }}</strong>
+      <span class="text-gray-500">Sports club management — sessions, reports, payments.</span>
     </div>
-    <div class="foot-links">
-      {% if landing_content.instagram_link %}
-      <a href="{{ landing_content.instagram_link }}" target="_blank" rel="noreferrer"><i class="fa-brands fa-instagram"></i> Instagram</a>
-      {% endif %}
-      {% if landing_content.tiktok_link %}
-      <a href="{{ landing_content.tiktok_link }}" target="_blank" rel="noreferrer"><i class="fa-brands fa-tiktok"></i> TikTok</a>
-      {% endif %}
-      {% if landing_content.contact_email %}
-      <a href="mailto:{{ landing_content.contact_email }}"><i class="fa-solid fa-envelope"></i> {{ landing_content.contact_email }}</a>
-      {% endif %}
-      <a href="{% url 'members:apply' %}"><i class="fa-solid fa-user-plus"></i> Register</a>
-      <a href="/accounts/login/"><i class="fa-solid fa-arrow-right-to-bracket"></i> Login</a>
+    <div class="flex gap-4 flex-wrap text-gray-500">
+      {% if landing_content.instagram_link %}<a href="{{ landing_content.instagram_link }}" target="_blank" class="hover:text-brand-500"><i class="fa-brands fa-instagram mr-1"></i>Instagram</a>{% endif %}
+      {% if landing_content.tiktok_link %}<a href="{{ landing_content.tiktok_link }}" target="_blank" class="hover:text-brand-500"><i class="fa-brands fa-tiktok mr-1"></i>TikTok</a>{% endif %}
+      {% if landing_content.contact_email %}<a href="mailto:{{ landing_content.contact_email }}" class="hover:text-brand-500"><i class="fa-solid fa-envelope mr-1"></i>{{ landing_content.contact_email }}</a>{% endif %}
+      <a href="{% url 'members:apply' %}" class="hover:text-brand-500"><i class="fa-solid fa-user-plus mr-1"></i>Register</a>
+      <a href="/accounts/login/" class="hover:text-brand-500"><i class="fa-solid fa-arrow-right-to-bracket mr-1"></i>Login</a>
     </div>
   </div>
 </footer>
 
-<!-- ── Demo modal ────────────────────────────────────────────────── -->
-<div class="modal-bg" id="demoModal" role="dialog" aria-modal="true" aria-label="Book a Demo">
-  <div class="modal-box">
-    <button class="modal-close" id="demoClose" aria-label="Close dialog"><i class="fa-solid fa-xmark"></i></button>
+<!-- DEMO MODAL -->
+<dialog id="demoModal" class="rounded-2xl backdrop:bg-black/50 p-0 w-full max-w-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+  <div class="p-6 sm:p-8">
+    <div class="flex items-start justify-between gap-3 mb-3">
+      <div>
+        <p class="text-xs uppercase tracking-widest text-brand-500 font-bold mb-1"><i class="fa-solid fa-calendar-check mr-1"></i>Book a Demo</p>
+        <h3 class="font-display text-xl font-bold">See the platform in action.</h3>
+      </div>
+      <button type="button" onclick="document.getElementById('demoModal').close()" class="w-9 h-9 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"><i class="fa-solid fa-xmark"></i></button>
+    </div>
     <div id="demoFormWrap">
-      <div class="eyebrow" style="margin-bottom:10px;"><i class="fa-solid fa-calendar-check"></i> Book a Demo</div>
-      <h3>See the platform in action.</h3>
-      <p>Fill in your details and the team will schedule a walkthrough tailored to your club.</p>
-      <form class="demo-form" id="demoForm" novalidate>
-        <div class="form-row">
-          <div class="field">
-            <label>Your Name *</label>
-            <input type="text" name="name" placeholder="Full name" required>
-          </div>
-          <div class="field">
-            <label>Club Name *</label>
-            <input type="text" name="club" placeholder="Your club or academy" required>
-          </div>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">The team will schedule a walkthrough tailored to your club.</p>
+      <form id="demoForm" class="space-y-3" novalidate>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div><label class="block text-xs font-medium mb-1">Your name *</label><input type="text" name="name" required class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-sm"></div>
+          <div><label class="block text-xs font-medium mb-1">Club name *</label><input type="text" name="club" required class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-sm"></div>
+          <div><label class="block text-xs font-medium mb-1">Email *</label><input type="email" name="email" required class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-sm"></div>
+          <div><label class="block text-xs font-medium mb-1">Phone</label><input type="tel" name="phone" class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-sm"></div>
         </div>
-        <div class="form-row">
-          <div class="field">
-            <label>Email *</label>
-            <input type="email" name="email" placeholder="you@example.com" required>
-          </div>
-          <div class="field">
-            <label>Phone / WhatsApp</label>
-            <input type="tel" name="phone" placeholder="+60 12 345 6789">
-          </div>
-        </div>
-        <div class="field">
-          <label>Your Sport / Activity</label>
-          <select name="sport">
-            <option value="">Select your sport...</option>
-            <option>Badminton</option>
-            <option>Football / Soccer</option>
-            <option>Basketball</option>
-            <option>Tennis</option>
-            <option>Swimming</option>
-            <option>Gymnastics</option>
-            <option>Athletics / Running</option>
-            <option>Volleyball</option>
-            <option>Gym &amp; Fitness</option>
-            <option>Other</option>
+        <div>
+          <label class="block text-xs font-medium mb-1">Sport / Activity</label>
+          <select name="sport" class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-sm">
+            <option value="">Select…</option><option>Badminton</option><option>Football</option><option>Basketball</option><option>Tennis</option><option>Swimming</option><option>Gymnastics</option><option>Athletics</option><option>Volleyball</option><option>Gym &amp; Fitness</option><option>Other</option>
           </select>
         </div>
-        <div class="field">
-          <label>Message (optional)</label>
-          <textarea name="message" placeholder="Any specific questions or club setup requirements?"></textarea>
-        </div>
-        <div class="form-submit">
-          <button type="submit" class="btn btn-p"><i class="fa-solid fa-paper-plane"></i> Send Demo Request</button>
-        </div>
+        <div><label class="block text-xs font-medium mb-1">Message (optional)</label><textarea name="message" rows="3" class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-sm"></textarea></div>
+        <div class="pt-2"><button type="submit" class="w-full bg-brand-400 hover:bg-brand-500 text-white py-2.5 rounded-lg text-sm font-semibold"><i class="fa-solid fa-paper-plane mr-1"></i>Send Request</button></div>
       </form>
     </div>
-    <div class="demo-success" id="demoSuccess">
-      <i class="fa-solid fa-circle-check"></i>
-      <h4>Request sent!</h4>
-      <p>We'll be in touch shortly to schedule your personalised demo. Keep an eye on your inbox.</p>
+    <div id="demoSuccess" class="hidden text-center py-8">
+      <i class="fa-solid fa-circle-check text-5xl text-brand-500 mb-4 block"></i>
+      <h4 class="font-display text-xl font-bold">Request sent!</h4>
+      <p class="text-sm text-gray-500 mt-2">We'll be in touch shortly.</p>
     </div>
   </div>
-</div>
+</dialog>
 
 <script>
-/* ── Particle vars declared first to avoid TDZ ─────────────────── */
-let _raf, _particles, _ctx, _canvas;
+  // Theme
+  var themeBtn = document.getElementById('themeBtn');
+  themeBtn.addEventListener('click', function () {
+    var isDark = document.documentElement.classList.toggle('dark');
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    localStorage.setItem('nyo-theme', isDark ? 'dark' : 'light');
+  });
 
-/* ── Theme ─────────────────────────────────────────────────────── */
-const html     = document.documentElement;
-const themeBtn = document.getElementById("themeBtn");
-const themeIco = document.getElementById("themeIco");
+  // Mobile menu
+  var menuBtn = document.getElementById('menuBtn');
+  var mobNav = document.getElementById('mobNav');
+  if (menuBtn) menuBtn.addEventListener('click', function () { mobNav.classList.toggle('hidden'); });
+  window.closeMob = function () { mobNav.classList.add('hidden'); };
 
-function applyTheme(t) {
-  html.dataset.theme = t;
-  themeIco.className = t === "dark" ? "fa-solid fa-sun" : "fa-solid fa-moon";
-  localStorage.setItem("nyo-theme", t);
-  startParticles();   // reinit canvas with correct colour
-}
-applyTheme(html.dataset.theme || "dark");
-themeBtn.addEventListener("click", () => applyTheme(html.dataset.theme === "dark" ? "light" : "dark"));
+  // Reveal on scroll
+  (function () {
+    var els = document.querySelectorAll('.rv');
+    if (!('IntersectionObserver' in window)) { els.forEach(function (el) { el.classList.add('on'); }); return; }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('on'); io.unobserve(e.target); } });
+    }, { threshold: 0.1 });
+    els.forEach(function (el) { if (!el.classList.contains('on')) io.observe(el); });
+  })();
 
-/* ── Mobile menu ───────────────────────────────────────────────── */
-const menuBtn = document.getElementById("menuBtn");
-const mobNav  = document.getElementById("mobNav");
-menuBtn.addEventListener("click", () => mobNav.classList.toggle("open"));
-function closeMob() { mobNav.classList.remove("open"); }
+  // Demo modal
+  ['demoNavBtn', 'demoHeroBtn', 'demoCtaBtn'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('click', function (e) { e.preventDefault(); document.getElementById('demoModal').showModal(); });
+  });
+  var form = document.getElementById('demoForm');
+  if (form) form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var fd = new FormData(this);
+    document.getElementById('demoFormWrap').classList.add('hidden');
+    document.getElementById('demoSuccess').classList.remove('hidden');
+    {% if landing_content.contact_email %}
+    var subject = encodeURIComponent('Demo Request — ' + (fd.get('club') || ''));
+    var body = encodeURIComponent('Name: ' + (fd.get('name') || '') + '\nClub: ' + (fd.get('club') || '') + '\nEmail: ' + (fd.get('email') || '') + '\nPhone: ' + (fd.get('phone') || '') + '\nSport: ' + (fd.get('sport') || '') + '\nMessage: ' + (fd.get('message') || ''));
+    setTimeout(function () { window.location.href = 'mailto:{{ landing_content.contact_email }}?subject=' + subject + '&body=' + body; }, 900);
+    {% endif %}
+  });
 
-/* ── Hero canvas — particle network ───────────────────────────── */
-
-function startParticles() {
-  if (_raf) cancelAnimationFrame(_raf);
-  _canvas = document.getElementById("heroCanvas");
-  if (!_canvas || window.matchMedia("(prefers-reduced-motion:reduce)").matches) return;
-  _ctx = _canvas.getContext("2d");
-
-  function resize() {
-    _canvas.width  = _canvas.offsetWidth  || window.innerWidth;
-    _canvas.height = _canvas.offsetHeight || window.innerHeight;
-    buildParticles();
-  }
-
-  function buildParticles() {
-    const n = Math.min(90, Math.max(35, Math.floor(_canvas.width / 15)));
-    _particles = Array.from({ length: n }, () => ({
-      x:  Math.random() * _canvas.width,
-      y:  Math.random() * _canvas.height,
-      vx: (Math.random() - 0.5) * 0.38,
-      vy: (Math.random() - 0.5) * 0.38,
-      r:  Math.random() * 1.4 + 0.4,
-    }));
-  }
-
-  resize();
-  const ro = new ResizeObserver(resize);
-  ro.observe(_canvas.parentElement);
-
-  function draw() {
-    const isDark  = html.dataset.theme !== "light";
-    const rgb     = isDark ? "255,255,255" : "20,20,24";
-    const dotAlpha  = isDark ? 0.45 : 0.25;
-    const lineAlpha = isDark ? 0.12 : 0.08;
-    const DIST      = 115;
-
-    _ctx.clearRect(0, 0, _canvas.width, _canvas.height);
-
-    for (const p of _particles) {
-      p.x += p.vx; p.y += p.vy;
-      if (p.x < 0 || p.x > _canvas.width)  p.vx *= -1;
-      if (p.y < 0 || p.y > _canvas.height) p.vy *= -1;
-      _ctx.beginPath();
-      _ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      _ctx.fillStyle = `rgba(${rgb},${dotAlpha})`;
-      _ctx.fill();
-    }
-
-    for (let i = 0; i < _particles.length; i++) {
-      for (let j = i + 1; j < _particles.length; j++) {
-        const dx   = _particles[i].x - _particles[j].x;
-        const dy   = _particles[i].y - _particles[j].y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < DIST) {
-          _ctx.beginPath();
-          _ctx.moveTo(_particles[i].x, _particles[i].y);
-          _ctx.lineTo(_particles[j].x, _particles[j].y);
-          _ctx.strokeStyle = `rgba(${rgb},${lineAlpha * (1 - dist / DIST)})`;
-          _ctx.lineWidth = 0.6;
-          _ctx.stroke();
-        }
-      }
-    }
-    _raf = requestAnimationFrame(draw);
-  }
-  draw();
-}
-startParticles();
-
-/* ── Scroll reveal (IntersectionObserver) ──────────────────────── */
-(function() {
-  const els = document.querySelectorAll(".rv");
-  // Hero items visible immediately
-  document.querySelectorAll(".hero .rv").forEach(el => el.classList.add("on"));
-
-  const io = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (e.isIntersecting) { e.target.classList.add("on"); io.unobserve(e.target); }
+  // FAQ tabs
+  document.querySelectorAll('.faq-tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.faq-tab').forEach(function (t) {
+        t.classList.remove('on', 'text-brand-500', 'bg-brand-50', 'dark:bg-brand-400/10', 'border-brand-200', 'dark:border-brand-500/30');
+        t.classList.add('text-gray-600', 'dark:text-gray-400', 'hover:bg-gray-100', 'dark:hover:bg-gray-800');
+      });
+      document.querySelectorAll('.faq-grp').forEach(function (g) { g.classList.remove('on'); });
+      tab.classList.add('on', 'text-brand-500', 'bg-brand-50', 'dark:bg-brand-400/10', 'border', 'border-brand-200', 'dark:border-brand-500/30');
+      tab.classList.remove('text-gray-600', 'dark:text-gray-400', 'hover:bg-gray-100', 'dark:hover:bg-gray-800');
+      document.getElementById(tab.dataset.for).classList.add('on');
     });
-  }, { threshold: 0.10 });
-  els.forEach(el => { if (!el.classList.contains("on")) io.observe(el); });
-})();
-
-/* ── Demo modal ────────────────────────────────────────────────── */
-function openDemo()  { document.getElementById("demoModal").classList.add("open"); document.body.style.overflow = "hidden"; }
-function closeDemo() { document.getElementById("demoModal").classList.remove("open"); document.body.style.overflow = ""; }
-
-["demoNavBtn","demoHeroBtn","demoCtaBtn","demoMobBtn"].forEach(id => {
-  const el = document.getElementById(id);
-  if (el) el.addEventListener("click", e => { e.preventDefault(); openDemo(); });
-});
-document.getElementById("demoClose").addEventListener("click", closeDemo);
-document.getElementById("demoModal").addEventListener("click", e => { if (e.target === e.currentTarget) closeDemo(); });
-document.addEventListener("keydown", e => { if (e.key === "Escape") closeDemo(); });
-
-document.getElementById("demoForm").addEventListener("submit", function(e) {
-  e.preventDefault();
-  const fd   = new FormData(this);
-  const name = fd.get("name") || ""; const club = fd.get("club") || "";
-  const email= fd.get("email") || ""; const phone= fd.get("phone") || "";
-  const sport= fd.get("sport") || ""; const msg  = fd.get("message") || "";
-
-  document.getElementById("demoFormWrap").style.display = "none";
-  document.getElementById("demoSuccess").style.display  = "block";
-
-  {% if landing_content.contact_email %}
-  const subject = encodeURIComponent("Demo Request — " + club);
-  const body    = encodeURIComponent(
-    "Name: " + name + "\nClub: " + club + "\nEmail: " + email +
-    "\nPhone: " + phone + "\nSport: " + sport + "\nMessage: " + msg
-  );
-  setTimeout(() => { window.location.href = "mailto:{{ landing_content.contact_email }}?subject=" + subject + "&body=" + body; }, 900);
-  {% endif %}
-});
-
-/* ── FAQ tabs ──────────────────────────────────────────────────── */
-document.querySelectorAll(".faq-tab").forEach(tab => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".faq-tab").forEach(t => t.classList.remove("on"));
-    document.querySelectorAll(".faq-grp").forEach(g => g.classList.remove("on"));
-    tab.classList.add("on");
-    document.getElementById(tab.dataset.for).classList.add("on");
   });
-});
 
-/* ── FAQ accordion ─────────────────────────────────────────────── */
-document.querySelectorAll(".faq-q").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const item   = btn.closest(".faq-item");
-    const isOpen = item.classList.contains("on");
-    btn.closest(".faq-grp").querySelectorAll(".faq-item").forEach(i => i.classList.remove("on"));
-    if (!isOpen) item.classList.add("on");
+  // FAQ accordion
+  document.querySelectorAll('.faq-q').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var item = btn.closest('.faq-item');
+      var isOpen = item.classList.contains('on');
+      btn.closest('.faq-grp').querySelectorAll('.faq-item').forEach(function (i) { i.classList.remove('on'); });
+      if (!isOpen) item.classList.add('on');
+    });
   });
-});
 
-/* ── Dynamic billing copy ──────────────────────────────────────── */
-const billingPlanSummary     = "{{ billing_plan_summary|escapejs }}";
-const registrationFeeSummary = "{{ registration_fee_summary|escapejs }}";
-const rfEl = document.getElementById("registrationFeeCopy");
-const bpEl = document.getElementById("billingPlanCopy");
-if (rfEl) rfEl.textContent = registrationFeeSummary;
-if (bpEl) bpEl.textContent = billingPlanSummary;
+  // Billing copy
+  var rf = document.getElementById('registrationFeeCopy');
+  var bp = document.getElementById('billingPlanCopy');
+  if (rf) rf.textContent = '{{ registration_fee_summary|escapejs }}';
+  if (bp) bp.textContent = '{{ billing_plan_summary|escapejs }}';
 </script>
 </body>
 </html>

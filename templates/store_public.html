@@ -1,258 +1,130 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Club Store | NYO Badminton</title>
-  <script>(function(){var t=localStorage.getItem('nyo-theme')||'dark';document.documentElement.dataset.theme=t;})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <style>
-    :root {
-      --bg:#000;--bg2:#0a0a0f;--surface:rgba(255,255,255,.055);--surface-h:rgba(255,255,255,.09);
-      --border:rgba(255,255,255,.09);--border-s:rgba(255,255,255,.18);
-      --text:#f5f5f7;--text-2:#a1a1a6;--text-3:#6e6e73;
-      --accent:#f5a623;--accent-soft:rgba(245,166,35,.13);--accent-dim:#ffd080;
-      --nav-bg:rgba(0,0,0,.72);--shadow:0 8px 40px rgba(0,0,0,.45);
-    }
-    [data-theme="light"] {
-      --bg:#fff;--bg2:#f5f5f7;--surface:rgba(0,0,0,.042);--surface-h:rgba(0,0,0,.07);
-      --border:rgba(0,0,0,.08);--border-s:rgba(0,0,0,.16);
-      --text:#1d1d1f;--text-2:#515154;--text-3:#86868b;
-      --accent:#b87300;--accent-soft:rgba(184,115,0,.10);--accent-dim:#8a5500;
-      --nav-bg:rgba(255,255,255,.82);--shadow:0 8px 40px rgba(0,0,0,.10);
-    }
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-    html{scroll-behavior:smooth;}
-    body{font-family:"Inter",-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s;}
-    a{color:inherit;text-decoration:none;}
-
-    .wrap{width:min(1160px,calc(100% - 40px));margin:0 auto;}
-
-    /* Nav */
-    .nav{position:fixed;inset-block-start:0;inset-inline:0;z-index:200;background:var(--nav-bg);backdrop-filter:blur(22px);border-bottom:1px solid var(--border);transition:background .25s;}
-    .nav-inner{display:flex;align-items:center;justify-content:space-between;gap:14px;height:58px;}
-    .brand{display:flex;align-items:center;gap:10px;}
-    .brand-ico{width:34px;height:34px;border-radius:10px;background:var(--accent);color:#000;display:flex;align-items:center;justify-content:center;font-size:15px;}
-    .brand-name{font-family:"Space Grotesk",sans-serif;font-size:15px;font-weight:700;letter-spacing:-.02em;}
-    .nav-right{display:flex;align-items:center;gap:8px;}
-    .nav-lnk{font-size:13px;font-weight:500;color:var(--text-2);padding:6px 11px;border-radius:8px;transition:color .2s;}
-    .nav-lnk:hover{color:var(--text);}
-    .theme-btn{width:34px;height:34px;border-radius:50%;background:var(--surface);border:1px solid var(--border);color:var(--text-2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;transition:all .2s;}
-    .theme-btn:hover{background:var(--surface-h);color:var(--text);}
-    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .18s;white-space:nowrap;}
-    .btn-p{background:var(--accent);color:#000;}
-    .btn-p:hover{opacity:.87;transform:translateY(-1px);}
-    .btn-g{background:var(--surface);border:1px solid var(--border);color:var(--text);}
-    .btn-g:hover{background:var(--surface-h);transform:translateY(-1px);}
-
-    /* Page header */
-    .page-hero{padding:96px 0 48px;text-align:center;}
-    .eyebrow{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:14px;}
-    h1{font-family:"Space Grotesk",sans-serif;font-size:clamp(36px,6vw,64px);font-weight:800;letter-spacing:-.04em;line-height:1.06;margin-bottom:16px;}
-    .sub{font-size:clamp(15px,1.8vw,18px);color:var(--text-2);line-height:1.75;max-width:540px;margin:0 auto 36px;}
-
-    /* Filter bar */
-    .filter-wrap{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px 24px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;backdrop-filter:blur(18px);margin-bottom:32px;}
-    .filter-field{display:flex;flex-direction:column;gap:6px;min-width:180px;flex:1;}
-    .filter-field label{font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;}
-    .filter-field input,.filter-field select{background:var(--surface-h);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:13.5px;padding:10px 14px;outline:none;transition:border-color .18s;}
-    .filter-field input:focus,.filter-field select:focus{border-color:var(--accent);}
-    .filter-actions{display:flex;gap:8px;align-items:center;flex-shrink:0;}
-
-    /* Product grid */
-    .prod-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
-    .prod-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden;backdrop-filter:blur(18px);transition:transform .2s,border-color .2s,box-shadow .2s;}
-    .prod-card:hover{transform:translateY(-4px);border-color:var(--border-s);box-shadow:var(--shadow);}
-    .prod-img{width:100%;height:220px;object-fit:cover;}
-    .prod-img-ph{width:100%;height:220px;background:linear-gradient(135deg,var(--accent-soft),rgba(79,110,247,.1));display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:48px;}
-    .prod-body{padding:20px;}
-    .prod-name{font-family:"Space Grotesk",sans-serif;font-size:18px;font-weight:700;letter-spacing:-.02em;margin-bottom:8px;}
-    .prod-desc{font-size:13px;color:var(--text-2);line-height:1.7;margin-bottom:16px;}
-    .prod-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
-    .prod-meta-item{background:var(--surface-h);border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
-    .prod-meta-item .lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:3px;}
-    .prod-meta-item .val{font-family:"Space Grotesk",sans-serif;font-size:20px;font-weight:700;}
-    .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700;border:1px solid var(--border);margin-bottom:14px;}
-    .badge::before{content:"";width:6px;height:6px;border-radius:50%;display:block;}
-    .badge-ready{color:#22c55e;}.badge-ready::before{background:#22c55e;}
-    .badge-preorder{color:#f59e0b;}.badge-preorder::before{background:#f59e0b;}
-    .badge-sold{color:#ef4444;}.badge-sold::before{background:#ef4444;}
-    [data-theme="light"] .badge-ready{color:#15803d;}
-    [data-theme="light"] .badge-preorder{color:#92400e;}
-    [data-theme="light"] .badge-sold{color:#991b1b;}
-    .prod-cta{display:flex;gap:10px;flex-wrap:wrap;}
-
-    /* Empty state */
-    .empty{text-align:center;padding:72px 20px;color:var(--text-3);grid-column:1/-1;}
-    .empty i{font-size:48px;margin-bottom:16px;opacity:.3;display:block;}
-    .empty p{font-size:16px;}
-
-    /* Pagination */
-    .pages{display:flex;align-items:center;gap:8px;justify-content:center;padding:32px 0 0;flex-wrap:wrap;}
-    .page-btn{min-width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;border-radius:9px;background:var(--surface);border:1px solid var(--border);color:var(--text-2);font-size:13px;font-weight:500;text-decoration:none;transition:all .2s;padding:0 12px;}
-    .page-btn:hover{background:var(--surface-h);color:var(--text);}
-    .page-btn.on{background:var(--accent);color:#000;border-color:transparent;}
-    .page-info{font-size:13px;color:var(--text-3);padding:0 6px;}
-
-    /* Footer */
-    footer{border-top:1px solid var(--border);padding:36px 0;color:var(--text-3);font-size:13px;margin-top:64px;}
-    .foot-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;}
-    .foot-links{display:flex;gap:18px;flex-wrap:wrap;}
-    .foot-links a{color:var(--text-3);transition:color .2s;}
-    .foot-links a:hover{color:var(--text);}
-
-    /* Responsive */
-    @media(max-width:900px){.prod-grid{grid-template-columns:1fr 1fr;}}
-    @media(max-width:600px){.prod-grid{grid-template-columns:1fr;}.filter-wrap{flex-direction:column;}.filter-field{min-width:unset;}}
-    ::-webkit-scrollbar{width:5px;height:5px;}
-    ::-webkit-scrollbar-track{background:transparent;}
-    ::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px;}
-  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'], display: ['Space Grotesk', 'sans-serif'] }, colors: { brand: { 50:'#fff8ec',100:'#ffeecb',200:'#ffd98a',300:'#ffbf4b',400:'#f59e0b',500:'#d97706' } } } } };
+    (function(){ var s = localStorage.getItem('nyo-theme') || 'light'; var h = document.documentElement; if (s === 'dark') h.classList.add('dark'); h.setAttribute('data-theme', s); })();
+  </script>
+  <style>html,body{font-family:'Inter',system-ui,sans-serif;}h1,h2{font-family:'Space Grotesk',sans-serif;}</style>
 </head>
-<body>
+<body class="h-full bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 antialiased">
 
-<nav class="nav">
-  <div class="wrap nav-inner">
-    <a href="/" class="brand">
-      <div class="brand-ico"><i class="fa-solid fa-shuttlecock"></i></div>
-      <span class="brand-name">NYO Badminton</span>
+<nav class="sticky top-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur border-b border-gray-200 dark:border-gray-800">
+  <div class="max-w-6xl mx-auto flex items-center justify-between gap-4 h-14 px-4 sm:px-6">
+    <a href="/" class="flex items-center gap-2">
+      <div class="w-9 h-9 rounded-lg bg-brand-400 text-white grid place-items-center"><i class="fa-solid fa-shuttlecock"></i></div>
+      <span class="font-display text-base font-bold">NYO Badminton</span>
     </a>
-    <div class="nav-right">
-      <a href="/" class="nav-lnk"><i class="fa-solid fa-arrow-left" style="font-size:11px;"></i> Home</a>
-      <a href="/#faq" class="nav-lnk">FAQ</a>
-      <button class="theme-btn" id="themeBtn" aria-label="Toggle theme"><i class="fa-solid fa-sun" id="themeIco"></i></button>
-      <a href="{% url 'members:apply' %}" class="btn btn-g" style="padding:8px 16px;font-size:12px;">Create Parent Account</a>
-      <a href="/accounts/login/" class="btn btn-p" style="padding:8px 16px;font-size:12px;"><i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In</a>
+    <div class="flex items-center gap-2">
+      <a href="/" class="hidden sm:inline-flex text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white px-3 py-1.5 rounded-lg"><i class="fa-solid fa-arrow-left text-xs mr-1"></i>Home</a>
+      <button id="themeBtn" class="w-9 h-9 rounded-lg text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"><i class="fa-solid fa-sun dark:hidden"></i><i class="fa-solid fa-moon hidden dark:inline"></i></button>
+      <a href="{% url 'members:apply' %}" class="hidden sm:inline-flex text-sm px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">Create Account</a>
+      <a href="/accounts/login/" class="text-sm px-3 py-1.5 rounded-lg bg-brand-400 hover:bg-brand-500 text-white font-semibold"><i class="fa-solid fa-arrow-right-to-bracket mr-1"></i>Sign In</a>
     </div>
   </div>
 </nav>
 
-<div class="wrap">
+<div class="max-w-6xl mx-auto px-4 sm:px-6">
   <!-- Hero -->
-  <div class="page-hero">
-    <div class="eyebrow">Official Merchandise</div>
-    <h1>Club Store</h1>
-    <p class="sub">Browse official club gear, equipment, and merchandise. {{ total_products }} item{{ total_products|pluralize }} available from the NYO Badminton Club.</p>
-  </div>
+  <header class="py-12 sm:py-20 text-center">
+    <p class="text-[11px] uppercase tracking-widest font-bold text-brand-500 mb-3">Official Merchandise</p>
+    <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight leading-tight mb-3">Club Store</h1>
+    <p class="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-xl mx-auto leading-relaxed">Browse official club gear, equipment, and merchandise. {{ total_products }} item{{ total_products|pluralize }} available.</p>
+  </header>
 
   <!-- Filters -->
-  <form method="get" class="filter-wrap">
-    <div class="filter-field">
-      <label>Search products</label>
-      <input type="text" name="q" value="{{ search_query }}" placeholder="e.g. racket, shirt, bag...">
+  <form method="get" class="mb-6 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 grid gap-3 md:grid-cols-[1.5fr_1fr_auto] items-end">
+    <div>
+      <label class="block text-[11px] uppercase tracking-wider font-semibold text-gray-500 mb-1">Search products</label>
+      <input type="text" name="q" value="{{ search_query }}" placeholder="e.g. racket, shirt, bag…" class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-sm focus:border-brand-400 focus:ring-2 focus:ring-brand-400/30 focus:outline-none">
     </div>
-    <div class="filter-field">
-      <label>Availability</label>
-      <select name="availability">
-        <option value="">All availability</option>
-        {% for value, label in availability_choices %}
-        <option value="{{ value }}" {% if selected_availability == value %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
+    <div>
+      <label class="block text-[11px] uppercase tracking-wider font-semibold text-gray-500 mb-1">Availability</label>
+      <select name="availability" class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-sm">
+        <option value="">All</option>
+        {% for value, label in availability_choices %}<option value="{{ value }}" {% if selected_availability == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
       </select>
     </div>
-    <div class="filter-actions">
-      <button type="submit" class="btn btn-p"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
-      {% if search_query or selected_availability %}
-      <a href="{% url 'public_store' %}" class="btn btn-g">Clear</a>
-      {% endif %}
+    <div class="flex gap-2">
+      <button type="submit" class="inline-flex items-center gap-2 bg-brand-400 hover:bg-brand-500 text-white px-5 py-2 rounded-lg text-sm font-semibold"><i class="fa-solid fa-magnifying-glass"></i>Search</button>
+      {% if search_query or selected_availability %}<a href="{% url 'public_store' %}" class="inline-flex items-center gap-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-100 px-5 py-2 rounded-lg text-sm">Clear</a>{% endif %}
     </div>
   </form>
 
-  <!-- Results info -->
   {% if page_obj.paginator.count %}
-  <p style="color:var(--text-3);font-size:13px;margin-bottom:20px;">
-    Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} product{{ page_obj.paginator.count|pluralize }}
-    {% if search_query %} matching "{{ search_query }}"{% endif %}
-  </p>
+  <p class="text-xs text-gray-500 mb-5">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} item{{ page_obj.paginator.count|pluralize }}{% if search_query %} matching "{{ search_query }}"{% endif %}</p>
   {% endif %}
 
-  <!-- Product grid -->
-  <div class="prod-grid">
+  <!-- Grid -->
+  <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 pb-10">
     {% for product in products %}
-    <div class="prod-card">
+    <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden flex flex-col hover:shadow-lg transition">
       {% if product.image %}
-      <img src="{{ product.image.url }}" alt="{{ product.name }}" class="prod-img">
+      <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-full h-56 object-cover">
       {% else %}
-      <div class="prod-img-ph"><i class="fa-solid fa-bag-shopping"></i></div>
+      <div class="h-56 bg-gradient-to-br from-brand-100 to-blue-100 dark:from-brand-400/20 dark:to-blue-500/10 grid place-items-center text-5xl text-brand-500"><i class="fa-solid fa-bag-shopping"></i></div>
       {% endif %}
-      <div class="prod-body">
-        <h2 class="prod-name">{{ product.name }}</h2>
-        {% if product.availability == 'ready' %}
-        <span class="badge badge-ready">In Stock</span>
-        {% elif product.availability == 'preorder' %}
-        <span class="badge badge-preorder">Pre-Order</span>
-        {% else %}
-        <span class="badge badge-sold">Sold Out</span>
-        {% endif %}
-        <p class="prod-desc">{{ product.description|default:"Official NYO Badminton Club merchandise."|truncatechars:120 }}</p>
-        <div class="prod-meta">
-          <div class="prod-meta-item">
-            <div class="lbl">Price</div>
-            <div class="val">RM {{ product.price }}</div>
-          </div>
-          <div class="prod-meta-item">
-            <div class="lbl">Stock</div>
-            <div class="val">{{ product.stock }}</div>
-          </div>
+      <div class="p-5 flex-1 flex flex-col">
+        <div class="flex items-start justify-between gap-2 flex-wrap">
+          <h2 class="font-display text-lg font-bold">{{ product.name }}</h2>
+          {% if product.availability == 'ready' %}<span class="inline-flex text-xs font-semibold bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full">In Stock</span>
+          {% elif product.availability == 'preorder' %}<span class="inline-flex text-xs font-semibold bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">Pre-Order</span>
+          {% else %}<span class="inline-flex text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-2 py-0.5 rounded-full">Sold Out</span>{% endif %}
         </div>
-        <div class="prod-cta">
-          <a href="/accounts/login/" class="btn btn-p"><i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In to Order</a>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed line-clamp-2">{{ product.description|default:"Official NYO Badminton Club merchandise."|truncatechars:120 }}</p>
+        <div class="grid grid-cols-2 gap-2 mt-4">
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-2"><p class="text-[10px] uppercase tracking-wider text-gray-500">Price</p><p class="text-lg font-bold">RM {{ product.price }}</p></div>
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-2"><p class="text-[10px] uppercase tracking-wider text-gray-500">Stock</p><p class="text-lg font-bold">{{ product.stock }}</p></div>
         </div>
+        <a href="/accounts/login/" class="inline-flex items-center justify-center gap-2 mt-4 bg-brand-400 hover:bg-brand-500 text-white px-4 py-2 rounded-lg text-sm font-semibold"><i class="fa-solid fa-arrow-right-to-bracket"></i>Sign In to Order</a>
       </div>
     </div>
     {% empty %}
-    <div class="empty">
-      <i class="fa-regular fa-bag-shopping"></i>
+    <div class="sm:col-span-2 lg:col-span-3 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-700 p-16 text-center text-gray-500">
+      <i class="fa-regular fa-bag-shopping text-4xl block mb-3"></i>
       <p>No products available right now.</p>
     </div>
     {% endfor %}
   </div>
 
-  <!-- Pagination -->
   {% if page_obj.has_other_pages %}
-  <div class="pages">
-    {% if page_obj.has_previous %}
-    <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_availability %}&availability={{ selected_availability }}{% endif %}" class="page-btn"><i class="fa-solid fa-chevron-left" style="font-size:11px;"></i></a>
-    {% endif %}
+  <div class="flex items-center justify-center gap-2 flex-wrap pb-10">
+    {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_availability %}&availability={{ selected_availability }}{% endif %}" class="w-9 h-9 grid place-items-center rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800"><i class="fa-solid fa-chevron-left text-xs"></i></a>{% endif %}
     {% for num in page_obj.paginator.page_range %}
-    {% if page_obj.number == num %}
-    <span class="page-btn on">{{ num }}</span>
-    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-    <a href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_availability %}&availability={{ selected_availability }}{% endif %}" class="page-btn">{{ num }}</a>
-    {% endif %}
+      {% if page_obj.number == num %}<span class="w-9 h-9 grid place-items-center rounded-lg bg-brand-400 text-white font-semibold">{{ num }}</span>
+      {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}<a href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_availability %}&availability={{ selected_availability }}{% endif %}" class="w-9 h-9 grid place-items-center rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800">{{ num }}</a>{% endif %}
     {% endfor %}
-    {% if page_obj.has_next %}
-    <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_availability %}&availability={{ selected_availability }}{% endif %}" class="page-btn"><i class="fa-solid fa-chevron-right" style="font-size:11px;"></i></a>
-    {% endif %}
-    <span class="page-info">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_availability %}&availability={{ selected_availability }}{% endif %}" class="w-9 h-9 grid place-items-center rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800"><i class="fa-solid fa-chevron-right text-xs"></i></a>{% endif %}
+    <span class="ml-3 text-xs text-gray-500">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
   </div>
   {% endif %}
 </div>
 
-<footer>
-  <div class="wrap foot-inner">
-    <div>NYO Badminton Club &mdash; Official Store</div>
-    <div class="foot-links">
-      <a href="/">Home</a>
-      <a href="/#faq">FAQ</a>
-      <a href="{% url 'members:apply' %}">Create Parent Account</a>
-      <a href="/accounts/login/">Sign In</a>
+<footer class="border-t border-gray-200 dark:border-gray-800 mt-auto">
+  <div class="max-w-6xl mx-auto flex items-center justify-between gap-4 px-4 sm:px-6 py-6 text-sm text-gray-500 flex-wrap">
+    <div>NYO Badminton Club — Official Store</div>
+    <div class="flex gap-4">
+      <a href="/" class="hover:text-brand-500">Home</a>
+      <a href="{% url 'members:apply' %}" class="hover:text-brand-500">Create Account</a>
+      <a href="/accounts/login/" class="hover:text-brand-500">Sign In</a>
     </div>
   </div>
 </footer>
 
 <script>
-  var html = document.documentElement;
-  var themeBtn = document.getElementById('themeBtn');
-  var themeIco = document.getElementById('themeIco');
-  function syncIco(t){ themeIco.className = t==='dark'?'fa-solid fa-sun':'fa-solid fa-moon'; }
-  syncIco(html.dataset.theme||'dark');
-  themeBtn.addEventListener('click',function(){
-    var n = html.dataset.theme==='dark'?'light':'dark';
-    html.dataset.theme=n; localStorage.setItem('nyo-theme',n); syncIco(n);
+  var btn = document.getElementById('themeBtn');
+  if (btn) btn.addEventListener('click', function () {
+    var isDark = document.documentElement.classList.toggle('dark');
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    localStorage.setItem('nyo-theme', isDark ? 'dark' : 'light');
   });
 </script>
 </body>

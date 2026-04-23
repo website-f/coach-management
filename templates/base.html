@@ -40,8 +40,11 @@
         },
       };
       (function () {
-        var saved = localStorage.getItem('nyo-theme');
-        if (saved === 'dark') document.documentElement.classList.add('dark');
+        var saved = localStorage.getItem('nyo-theme') || 'light';
+        var html = document.documentElement;
+        if (saved === 'dark') html.classList.add('dark');
+        // Mirror to data-theme so legacy CSS tokens switch too
+        html.setAttribute('data-theme', saved);
       })();
     </script>
 
@@ -64,10 +67,19 @@
       .form-input, .form-select, .form-textarea, input[type="text"], input[type="email"], input[type="password"], input[type="number"], input[type="tel"], input[type="date"], input[type="time"], input[type="datetime-local"], select, textarea {
         @apply w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:border-brand-400 focus:ring-2 focus:ring-brand-400/30 focus:outline-none;
       }
-      table.data-table { @apply w-full text-sm text-left; }
-      table.data-table thead { @apply bg-gray-50 dark:bg-gray-800 text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400; }
-      table.data-table th, table.data-table td { @apply px-4 py-3; }
-      table.data-table tbody tr { @apply border-t border-gray-100 dark:border-gray-800; }
+      table.data-table { @apply w-full text-sm text-left border-collapse; }
+      table.data-table thead { @apply bg-gray-50 dark:bg-gray-800/60 text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400 sticky top-0 z-10; }
+      table.data-table th { @apply px-4 py-3 font-semibold whitespace-nowrap; }
+      table.data-table td { @apply px-4 py-3 align-top; }
+      table.data-table tbody tr { @apply border-t border-gray-100 dark:border-gray-800 transition-colors; }
+      table.data-table tbody tr:hover { @apply bg-gray-50/70 dark:bg-gray-800/40; }
+      table.data-table tbody tr:nth-child(even) { @apply bg-gray-50/30 dark:bg-gray-800/20; }
+      table.data-table tbody tr:nth-child(even):hover { @apply bg-gray-50 dark:bg-gray-800/50; }
+      /* Scrollable table shell with edge fade on mobile to hint horizontal scroll */
+      .overflow-x-auto { scrollbar-width: thin; }
+      .overflow-x-auto::-webkit-scrollbar { height: 6px; }
+      .overflow-x-auto::-webkit-scrollbar-thumb { @apply bg-gray-300 dark:bg-gray-700 rounded-full; }
+      .overflow-x-auto::-webkit-scrollbar-track { background: transparent; }
       .nav-link {
         @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition;
       }
@@ -284,14 +296,51 @@
 {% endif %}
 
 <script>
+  // Lazy-load helpers (used by pages that need CDN assets like FullCalendar / Chart.js).
+  (function () {
+    var assetPromises = {};
+    window.nyoLoadScriptOnce = function (src) {
+      if (assetPromises[src]) return assetPromises[src];
+      assetPromises[src] = new Promise(function (resolve, reject) {
+        var existing = document.querySelector('script[src="' + src + '"]');
+        if (existing && existing.dataset.loaded === '1') { resolve(); return; }
+        var s = existing || document.createElement('script');
+        s.src = src; s.async = true;
+        s.onload = function () { s.dataset.loaded = '1'; resolve(); };
+        s.onerror = function (e) { delete assetPromises[src]; if (!existing && s.parentNode) s.parentNode.removeChild(s); reject(e); };
+        if (!existing) document.body.appendChild(s);
+      });
+      return assetPromises[src];
+    };
+    window.nyoLoadStyleOnce = function (href) {
+      if (assetPromises[href]) return assetPromises[href];
+      assetPromises[href] = new Promise(function (resolve, reject) {
+        var existing = document.querySelector('link[href="' + href + '"]');
+        if (existing) { resolve(); return; }
+        var l = document.createElement('link');
+        l.rel = 'stylesheet'; l.href = href;
+        l.onload = function () { resolve(); };
+        l.onerror = function (e) { delete assetPromises[href]; reject(e); };
+        document.head.appendChild(l);
+      });
+      return assetPromises[href];
+    };
+    window.nyoRunDeferred = function (cb) {
+      if ('requestIdleCallback' in window) requestIdleCallback(cb, { timeout: 1200 });
+      else setTimeout(cb, 0);
+    };
+    window.nyoIsMobileViewport = function () { return window.innerWidth < 640; };
+  })();
+
   // Sidebar toggle
   (function () {
     var sb = document.getElementById('sidebar');
     var ov = document.getElementById('sidebarOverlay');
     var btn = document.getElementById('sidebarToggle');
     var closeBtn = document.getElementById('sidebarClose');
-    function open() { sb.classList.remove('-translate-x-full'); ov.classList.remove('opacity-0','pointer-events-none'); }
-    function close() { sb.classList.add('-translate-x-full'); ov.classList.add('opacity-0','pointer-events-none'); }
+    if (!sb) return;
+    function open() { sb.classList.remove('-translate-x-full'); if (ov) ov.classList.remove('opacity-0','pointer-events-none'); }
+    function close() { sb.classList.add('-translate-x-full'); if (ov) ov.classList.add('opacity-0','pointer-events-none'); }
     if (btn) btn.addEventListener('click', open);
     if (closeBtn) closeBtn.addEventListener('click', close);
     if (ov) ov.addEventListener('click', close);
@@ -302,6 +351,7 @@
     if (!tg) return;
     tg.addEventListener('click', function () {
       var isDark = document.documentElement.classList.toggle('dark');
+      document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
       localStorage.setItem('nyo-theme', isDark ? 'dark' : 'light');
     });
   })();

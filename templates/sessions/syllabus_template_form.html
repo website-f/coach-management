@@ -1,38 +1,34 @@
 {% extends "base.html" %}
 
-{% block title %}Edit Syllabus Template | NYO Admin Dashboard{% endblock %}
+{% block title %}Edit Syllabus Template | NYO{% endblock %}
 {% block page_heading %}Edit Syllabus Template{% endblock %}
 
 {% block content %}
-<div class="form-centered">
-    <div class="card" style="max-width:1120px;">
-        <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px;">
-            <div>
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Curriculum Framework</p>
-                <h2 style="font-size:28px;font-weight:700;color:var(--text);">Update {{ form.instance.get_track_display }} Template</h2>
-                <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;max-width:760px;">This is the higher-level guide the AI planner and coaches follow before weekly drill details are applied.</p>
-            </div>
-            <a href="{% url 'sessions:syllabus' %}" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Back to syllabus</a>
-        </div>
-
-        <form method="post" class="form-grid">
-            {% csrf_token %}
-            {% for field in form %}
-            <div class="form-group {% if field.name == 'annual_goal' or field.name == 'year_end_outcomes' or field.name == 'assessment_approach' or field.name == 'assessment_methods' or field.name == 'curriculum_values' or field.name == 'annual_phase_notes' or field.name == 'ai_planner_instructions' %}full{% endif %}">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.errors %}
-                <p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ field.errors|join:", " }}</p>
-                {% endif %}
-            </div>
-            {% endfor %}
-            <div class="full" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px;">
-                <a href="{% url 'sessions:syllabus' %}" class="btn btn-ghost" style="border-radius:99px;justify-content:center;padding:12px;">Cancel</a>
-                <button type="submit" class="btn btn-primary" style="border-radius:99px;justify-content:center;padding:12px;">
-                    <i class="fa-solid fa-check"></i> Save Template
-                </button>
-            </div>
-        </form>
+<div class="max-w-5xl mx-auto">
+  <section class="card p-6 sm:p-8">
+    <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+      <div class="max-w-xl">
+        <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">Curriculum Framework</p>
+        <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">Update {{ form.instance.get_track_display }} Template</h2>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Higher-level guide the AI planner and coaches follow before weekly drills.</p>
+      </div>
+      <a href="{% url 'sessions:syllabus' %}" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i>Back</a>
     </div>
+
+    <form method="post" class="grid gap-4 sm:grid-cols-2">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="{% if field.name == 'annual_goal' or field.name == 'year_end_outcomes' or field.name == 'assessment_approach' or field.name == 'assessment_methods' or field.name == 'curriculum_values' or field.name == 'annual_phase_notes' or field.name == 'ai_planner_instructions' %}sm:col-span-2{% endif %}">
+        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}<p class="text-xs text-red-600 mt-1">{{ field.errors|join:", " }}</p>{% endif %}
+      </div>
+      {% endfor %}
+      <div class="sm:col-span-2 flex flex-col sm:flex-row gap-3 pt-3">
+        <a href="{% url 'sessions:syllabus' %}" class="btn btn-secondary flex-1 justify-center">Cancel</a>
+        <button type="submit" class="btn btn-primary flex-1 justify-center"><i class="fa-solid fa-check"></i>Save Template</button>
+      </div>
+    </form>
+  </section>
 </div>
 {% endblock %}

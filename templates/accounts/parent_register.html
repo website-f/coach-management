@@ -12,7 +12,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }, colors: { brand: { 50:'#fff8ec',100:'#ffeecb',200:'#ffd98a',300:'#ffbf4b',400:'#f59e0b',500:'#d97706',600:'#b45309' } } } } };
-    (function(){ if (localStorage.getItem('nyo-theme') === 'dark') document.documentElement.classList.add('dark'); })();
+    (function(){ var s = localStorage.getItem('nyo-theme') || 'light'; var h = document.documentElement; if (s === 'dark') h.classList.add('dark'); h.setAttribute('data-theme', s); })();
   </script>
   <style>
     html,body{font-family:'Inter',system-ui,sans-serif;}

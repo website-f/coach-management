@@ -1,973 +1,524 @@
 {% extends "base.html" %}
 {% load ui_tags %}
 
-{% block title %}{% if show_checklist_view %}Coach Session Checklist | NYO Admin Dashboard{% else %}Sessions | NYO Admin Dashboard{% endif %}{% endblock %}
+{% block title %}{% if show_checklist_view %}Checklist{% else %}Sessions{% endif %} | NYO{% endblock %}
 {% block page_heading %}{% if show_checklist_view %}Session Checklist{% else %}Session Calendar{% endif %}{% endblock %}
 
 {% block extra_head %}
 <style>
-    .calendar-toolbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 14px;
-        flex-wrap: wrap;
-        margin-bottom: 16px;
-    }
-    .calendar-shell {
-        background: var(--surface2);
-        border: 1px solid var(--border);
-        border-radius: 20px;
-        padding: 12px;
-        overflow: hidden;
-    }
-    .calendar-shell.is-loading #sessionCalendar {
-        opacity: 0.45;
-        pointer-events: none;
-    }
-    #sessionCalendar {
-        min-height: 320px;
-    }
-    .calendar-status {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        flex-wrap: wrap;
-        margin-bottom: 12px;
-        border: 1px solid var(--border2);
-        border-radius: 16px;
-        padding: 12px 14px;
-        background: rgba(79,110,247,0.08);
-        color: var(--text);
-    }
-    .calendar-status[hidden] {
-        display: none;
-    }
-    .calendar-status[data-tone="error"] {
-        background: rgba(239,68,68,0.08);
-        border-color: rgba(239,68,68,0.24);
-    }
-    .calendar-status-copy {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        min-width: 0;
-    }
-    .calendar-status-copy span {
-        line-height: 1.6;
-    }
-    .session-view-switch {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px;
-        border-radius: 999px;
-        border: 1px solid var(--border);
-        background: var(--surface2);
-    }
-    .session-view-pill {
-        border-radius: 999px;
-        padding: 9px 16px;
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--text-muted);
-        text-decoration: none;
-        transition: all .18s ease;
-    }
-    .session-view-pill:hover {
-        color: var(--text);
-        background: rgba(79,110,247,0.08);
-    }
-    .session-view-pill.is-active {
-        background: var(--accent);
-        color: #fff;
-    }
-    .session-hero {
-        display: flex;
-        justify-content: space-between;
-        gap: 20px;
-        align-items: flex-start;
-        flex-wrap: wrap;
-    }
-    .session-hero-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 14px;
-    }
-    .session-meta-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px 12px;
-        border-radius: 999px;
-        border: 1px solid var(--border);
-        background: var(--surface2);
-        font-size: 12.5px;
-        color: var(--text);
-        line-height: 1.4;
-    }
-    .session-meta-chip i {
-        font-size: 11px;
-        color: var(--text-muted);
-    }
-    .session-meta-chip strong {
-        font-weight: 600;
-    }
-    .session-meta-chip span {
-        color: var(--text-muted);
-    }
-    .session-tabs {
-        display: flex;
-        gap: 4px;
-        padding: 4px;
-        border-radius: 999px;
-        border: 1px solid var(--border);
-        background: var(--surface2);
-        width: fit-content;
-        margin: 28px auto 22px;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-    .session-tab-btn {
-        border: none;
-        background: transparent;
-        border-radius: 999px;
-        padding: 8px 16px;
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--text-muted);
-        cursor: pointer;
-        transition: all .18s ease;
-        font-family: inherit;
-    }
-    .session-tab-btn:hover {
-        color: var(--text);
-    }
-    .session-tab-btn.is-active {
-        background: var(--accent);
-        color: #fff;
-    }
-    .session-panel-center {
-        max-width: 760px;
-        margin: 0 auto;
-    }
-    .session-tab-panel {
-        display: none;
-    }
-    .session-tab-panel.is-active {
-        display: block;
-    }
-    .btn-open-session {
-        padding: 12px 20px;
-        font-size: 14.5px;
-        font-weight: 700;
-        border-radius: 14px;
-        box-shadow: 0 10px 24px -10px rgba(79, 110, 247, 0.55);
-    }
-    .coach-checklist {
-        display: grid;
-        gap: 12px;
-        margin-top: 18px;
-    }
-    .coach-checklist-item {
-        position: relative;
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        padding: 14px 16px;
-        border-radius: 18px;
-        border: 1px solid var(--border);
-        background: var(--surface2);
-        cursor: pointer;
-        transition: border-color .2s ease, background .2s ease, transform .2s ease;
-    }
-    .coach-checklist-item:hover {
-        border-color: rgba(79,110,247,0.28);
-    }
-    .coach-checklist-item.is-checked {
-        border-color: rgba(34, 197, 94, 0.45);
-        background: linear-gradient(90deg, rgba(34, 197, 94, 0.12), rgba(34, 197, 94, 0.04));
-    }
-    .coach-checklist-item.is-checked::before {
-        content: "";
-        position: absolute;
-        left: 0; top: 0; bottom: 0;
-        width: 3px;
-        border-radius: 18px 0 0 18px;
-        background: linear-gradient(180deg, #22c55e, rgba(34,197,94,0));
-    }
-    .coach-checklist-item.is-checked .coach-checklist-copy strong {
-        color: var(--muted);
-        text-decoration: line-through;
-        text-decoration-color: rgba(34, 197, 94, 0.5);
-        text-decoration-thickness: 2px;
-    }
-    .coach-checklist-item.is-checked .coach-checklist-copy p {
-        opacity: 0.65;
-    }
-    .coach-checklist-item input {
-        margin-top: 3px;
-        width: 18px;
-        height: 18px;
-        accent-color: #22c55e;
-    }
-    .coach-checklist-copy {
-        min-width: 0;
-    }
-    .coach-checklist-title-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-    .coach-checklist-copy p {
-        margin: 8px 0 0;
-        font-size: 14px;
-        color: var(--text-muted);
-        line-height: 1.7;
-    }
-    .coach-kv-grid {
-        display: grid;
-        gap: 12px;
-    }
-    .coach-kv {
-        border-radius: 18px;
-        border: 1px solid var(--border);
-        background: var(--surface2);
-        padding: 14px 16px;
-    }
-    .coach-kv-label {
-        margin: 0 0 6px;
-        font-size: 11px;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-        color: var(--text-muted);
-    }
-    .coach-kv-value {
-        margin: 0;
-        font-size: 15px;
-        line-height: 1.6;
-        color: var(--text);
-    }
-    .coach-note-list {
-        margin: 0;
-        padding-left: 18px;
-        display: grid;
-        gap: 10px;
-        color: var(--text);
-    }
-    .coach-note-list li {
-        line-height: 1.7;
-    }
-    .coach-session-link {
-        display: block;
-        border-radius: 18px;
-        border: 1px solid var(--border);
-        background: var(--surface2);
-        padding: 14px 16px;
-        text-decoration: none;
-        transition: border-color .18s ease, transform .18s ease, background .18s ease;
-    }
-    .coach-session-link:hover {
-        border-color: rgba(79,110,247,0.28);
-        transform: translateY(-1px);
-    }
-    .coach-session-link.is-active {
-        background: rgba(79,110,247,0.08);
-        border-color: rgba(79,110,247,0.28);
-    }
-    .coach-session-link p {
-        margin: 0;
-    }
-    .coach-session-link-meta {
-        margin-top: 6px;
-        font-size: 13px;
-        color: var(--text-muted);
-        line-height: 1.7;
-    }
-    .fc {
-        --fc-border-color: var(--border);
-        --fc-page-bg-color: transparent;
-        --fc-neutral-bg-color: transparent;
-        --fc-list-event-hover-bg-color: rgba(79,110,247,0.08);
-        --fc-small-font-size: 12px;
-        color: var(--text);
-    }
-    .fc .fc-toolbar.fc-header-toolbar {
-        margin-bottom: 1rem;
-        gap: 12px;
-    }
-    .fc .fc-toolbar-chunk {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-    .fc .fc-toolbar-title {
-        font-size: clamp(1rem, 2vw, 1.35rem);
-        line-height: 1.2;
-    }
-    .fc .fc-button {
-        background: var(--surface2);
-        border: 1px solid var(--border2);
-        color: var(--text);
-        box-shadow: none;
-        text-transform: capitalize;
-    }
-    .fc .fc-button-group {
-        display: inline-flex;
-        flex-wrap: wrap;
-        gap: 6px;
-    }
-    .fc .fc-button-group > .fc-button {
-        border-radius: 10px !important;
-    }
-    .fc .fc-button-primary:not(:disabled).fc-button-active,
-    .fc .fc-button-primary:not(:disabled):active,
-    .fc .fc-button:hover {
-        background: var(--accent);
-        border-color: var(--accent);
-        color: #fff;
-    }
-    .fc .fc-daygrid-day-number,
-    .fc .fc-col-header-cell-cushion {
-        color: var(--text);
-        text-decoration: none;
-    }
-    .fc .fc-day-today {
-        background: rgba(245, 166, 35, 0.08) !important;
-    }
-    .fc .fc-event {
-        border-radius: 10px;
-        padding: 2px 4px;
-        font-size: 11px;
-    }
-    @media (max-width: 767px) {
-        .calendar-shell {
-            padding: 10px;
-            border-radius: 16px;
-        }
-        #sessionCalendar {
-            min-height: 260px;
-        }
-        .calendar-status {
-            align-items: flex-start;
-        }
-        .session-view-switch {
-            width: 100%;
-            justify-content: stretch;
-        }
-        .session-view-pill {
-            flex: 1 1 0;
-            text-align: center;
-        }
-        .coach-checklist-item {
-            border-radius: 16px;
-        }
-        .fc .fc-toolbar.fc-header-toolbar {
-            flex-direction: column;
-            align-items: stretch;
-        }
-        .fc .fc-toolbar-chunk {
-            justify-content: space-between;
-        }
-        .fc .fc-button {
-            padding: 0.45em 0.65em;
-            font-size: 12px;
-        }
-        .fc .fc-toolbar-title {
-            font-size: 1rem;
-        }
-        .fc .fc-col-header-cell-cushion,
-        .fc .fc-daygrid-day-number,
-        .fc .fc-list-event-time,
-        .fc .fc-list-event-title a {
-            font-size: 12px;
-        }
-    }
+  /* FullCalendar brand-aligned overrides */
+  .fc { --fc-border-color: rgb(229 231 235); --fc-page-bg-color: transparent; --fc-neutral-bg-color: transparent;
+        --fc-list-event-hover-bg-color: rgb(255 248 236); --fc-small-font-size: 12px; color: inherit; }
+  .dark .fc { --fc-border-color: rgb(31 41 55); --fc-list-event-hover-bg-color: rgba(245,158,11,0.1); }
+  .fc .fc-toolbar.fc-header-toolbar { margin-bottom: 1rem; gap: 12px; flex-wrap: wrap; }
+  .fc .fc-toolbar-chunk { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .fc .fc-toolbar-title { font-size: clamp(1rem, 2vw, 1.25rem); font-weight: 600; line-height: 1.2; }
+  .fc .fc-button {
+    background: rgb(243 244 246); border: 1px solid rgb(229 231 235); color: rgb(55 65 81);
+    box-shadow: none; text-transform: capitalize; font-weight: 500; padding: 0.4em 0.85em; font-size: 13px;
+    border-radius: 0.5rem;
+  }
+  .dark .fc .fc-button { background: rgb(31 41 55); border-color: rgb(55 65 81); color: rgb(229 231 235); }
+  .fc .fc-button-group { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+  .fc .fc-button-group > .fc-button { border-radius: 0.5rem !important; }
+  .fc .fc-button-primary:not(:disabled).fc-button-active,
+  .fc .fc-button-primary:not(:disabled):active,
+  .fc .fc-button:hover { background: #f59e0b; border-color: #f59e0b; color: #fff; }
+  .fc .fc-daygrid-day-number, .fc .fc-col-header-cell-cushion { color: inherit; text-decoration: none; }
+  .fc .fc-day-today { background: rgba(245, 158, 11, 0.08) !important; }
+  .fc .fc-event { border-radius: 0.5rem; padding: 2px 5px; font-size: 11px; border: none; cursor: pointer; }
+  .fc-list-event-title a, .fc-list-event-title a:hover { color: inherit; text-decoration: none; }
+  @media (max-width: 767px) {
+    .fc .fc-toolbar.fc-header-toolbar { flex-direction: column; align-items: stretch; }
+    .fc .fc-toolbar-chunk { justify-content: space-between; }
+    .fc .fc-toolbar-title { font-size: 1rem; text-align: center; }
+    .fc .fc-button { padding: 0.4em 0.6em; font-size: 12px; }
+    #sessionCalendar { min-height: 260px; }
+  }
+
+  .session-tab-btn { padding: 8px 14px; border-radius: 999px; font-size: 13px; font-weight: 500; color: rgb(107 114 128); border: 1px solid transparent; transition: all .15s; background: transparent; }
+  .session-tab-btn:hover { background: rgb(243 244 246); color: rgb(17 24 39); }
+  .dark .session-tab-btn:hover { background: rgb(31 41 55); color: rgb(243 244 246); }
+  .session-tab-btn.is-active { background: #f59e0b; color: #fff; }
+  .session-tab-panel { display: none; }
+  .session-tab-panel.is-active { display: block; }
+
+  .coach-checklist-item { display: flex; gap: 12px; padding: 14px; border-radius: 0.75rem; border: 1px solid rgb(229 231 235); background: white; cursor: pointer; transition: all .15s; }
+  .dark .coach-checklist-item { border-color: rgb(31 41 55); background: rgb(17 24 39); }
+  .coach-checklist-item:hover { border-color: #fbbf24; }
+  .coach-checklist-item input[type="checkbox"] { margin-top: 3px; accent-color: #f59e0b; width: 18px; height: 18px; flex-shrink: 0; }
+  .coach-checklist-item.is-checked { background: rgba(245, 158, 11, 0.06); border-color: rgba(245, 158, 11, 0.35); }
+  .dark .coach-checklist-item.is-checked { background: rgba(245, 158, 11, 0.12); }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="space-y">
-    <div class="card">
-        <div class="session-hero">
-            <div style="min-width:0;">
-                {% if show_checklist_view %}
-                <h2 style="font-size:22px;font-weight:700;color:var(--text);margin:0;">Session Checklist</h2>
-                {% if selected_focus_session and checklist_plan %}
-                <div class="session-hero-meta">
-                    <span class="session-meta-chip"><i class="fa-solid fa-calendar-day"></i><strong>{{ selected_focus_session.session_date|date:"d M" }}</strong><span>{{ selected_focus_session.start_time|time:"H:i" }}–{{ selected_focus_session.end_time|time:"H:i" }} · Court {{ selected_focus_session.court }}</span></span>
-                    <span class="session-meta-chip"><i class="fa-solid fa-users"></i><strong>{{ checklist_plan.roster_size }}</strong><span>{{ checklist_plan.roster_level_summary }}</span></span>
-                    <span class="session-meta-chip"><i class="fa-solid fa-road" style="color:#4ade80;"></i><strong>{{ checklist_plan.track_label }}</strong></span>
-                    <span class="session-meta-chip"><i class="fa-solid fa-bullseye" style="color:#f59e0b;"></i><strong>{{ checklist_plan.phase_label|default:"Adaptive block" }}</strong></span>
-                </div>
-                {% endif %}
-                {% else %}
-                <h2 style="font-size:22px;font-weight:700;color:var(--text);margin:0;">{{ calendar_month_label }}</h2>
-                {% endif %}
-            </div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-                {% if checklist_enabled %}
-                <div class="session-view-switch">
-                    <a href="{% url 'sessions:list' %}?{{ view_query_base }}&view=checklist{% if selected_focus_session %}&focus={{ selected_focus_session.pk }}{% endif %}" class="session-view-pill {% if show_checklist_view %}is-active{% endif %}">
-                        Checklist
-                    </a>
-                    <a href="{% url 'sessions:list' %}?{{ view_query_base }}&view=calendar" class="session-view-pill {% if show_calendar_view %}is-active{% endif %}">
-                        Calendar
-                    </a>
-                </div>
-                {% endif %}
+<div class="space-y-5">
 
-                {% if show_checklist_view %}
-                    {% if can_plan %}
-                    <a href="{% url 'sessions:checklist_audit' %}" class="btn btn-ghost"><i class="fa-solid fa-clipboard-list"></i> Checklist Audit</a>
-                    <form method="post" action="{% url 'sessions:auto_assign' %}" style="display:inline-block;">
-                        {% csrf_token %}
-                        <input type="hidden" name="month" value="{{ selected_month }}">
-                        <button type="submit" class="btn btn-ghost" title="Auto-assign sessions for the current month using coach availability"><i class="fa-solid fa-wand-sparkles"></i> Auto-Assign</button>
-                    </form>
-                    <a href="{% url 'sessions:syllabus' %}" class="btn btn-ghost"><i class="fa-solid fa-book-open"></i> Syllabus</a>
-                    <a href="{% url 'sessions:create' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Create Schedule</a>
-                    {% endif %}
-                {% else %}
-                <a href="?month={{ prev_month }}{% if selected_coach %}&coach={{ selected_coach }}{% endif %}{% if selected_member %}&member={{ selected_member }}{% endif %}{% if checklist_enabled %}&view=calendar{% endif %}" class="btn btn-ghost">
-                    <i class="fa-solid fa-chevron-left"></i> Previous
-                </a>
-                <a href="?month={{ next_month }}{% if selected_coach %}&coach={{ selected_coach }}{% endif %}{% if selected_member %}&member={{ selected_member }}{% endif %}{% if checklist_enabled %}&view=calendar{% endif %}" class="btn btn-ghost">
-                    Next <i class="fa-solid fa-chevron-right"></i>
-                </a>
-                {% if can_plan %}
-                <a href="{% url 'sessions:syllabus' %}" class="btn btn-ghost">
-                    <i class="fa-solid fa-book-open"></i> Syllabus
-                </a>
-                <a href="{% url 'sessions:create' %}" class="btn btn-primary">
-                    <i class="fa-solid fa-plus"></i> Create Schedule
-                </a>
-                {% endif %}
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    {% if show_checklist_view %}
+  <!-- Hero -->
+  <section class="card p-6">
+    <div class="flex flex-wrap justify-between items-start gap-4">
+      <div class="min-w-0">
+        {% if show_checklist_view %}
+        <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">Coach checklist</p>
+        <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white leading-tight">Session Checklist</h2>
         {% if selected_focus_session and checklist_plan %}
-        <div class="session-tabs" role="tablist">
-            <button type="button" class="session-tab-btn is-active" data-tab="checklist" role="tab">Checklist</button>
-            <button type="button" class="session-tab-btn" data-tab="focus" role="tab">Focus</button>
-            <button type="button" class="session-tab-btn" data-tab="cues" role="tab">Cues</button>
-            <button type="button" class="session-tab-btn" data-tab="syllabus" role="tab">Syllabus</button>
-            <button type="button" class="session-tab-btn" data-tab="month" role="tab">Month</button>
-        </div>
-
-        <div class="session-panel-center">
-            <div class="session-tab-panel is-active" data-panel="checklist">
-                <div class="card">
-                    <div class="section-header">
-                        <span class="section-title">Training Checklist</span>
-                        {% if can_submit_checklist %}
-                        <a href="{% url 'sessions:plan' selected_focus_session.pk %}" class="section-link">Open planner</a>
-                        {% endif %}
-                    </div>
-                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">{{ selected_focus_session.title }}</p>
-                    <h3 style="font-size:22px;font-weight:700;color:var(--text);margin-top:8px;">{{ checklist_plan.plan_title }}</h3>
-                    <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">{{ checklist_plan.summary }}</p>
-                    {% if existing_checklist_report %}
-                    <p class="text-xs text-muted" style="margin-top:10px;">Last saved {{ existing_checklist_report.updated_at|date:"d M Y H:i" }} by {{ existing_checklist_report.coach|default:"Coach" }}.</p>
-                    {% endif %}
-
-                    <form method="post" action="{% url 'sessions:checklist_save' selected_focus_session.pk %}">
-                        {% csrf_token %}
-                        <div class="coach-checklist">
-                            {% for item in checklist_items %}
-                            <label class="coach-checklist-item" for="coachChecklist{{ forloop.counter }}">
-                                <input type="checkbox" name="checked_items" value="{{ item.title }}" id="coachChecklist{{ forloop.counter }}" {% if item.title in existing_checklist_checked %}checked{% endif %} {% if not can_submit_checklist %}disabled{% endif %}>
-                                <div class="coach-checklist-copy">
-                                    <div class="coach-checklist-title-row">
-                                        <strong style="font-size:16px;color:var(--text);">{{ item.title }}</strong>
-                                        <span class="badge badge-info">{{ item.duration }}</span>
-                                    </div>
-                                    <p>{{ item.detail }}</p>
-                                </div>
-                            </label>
-                            {% endfor %}
-                        </div>
-
-                        <div class="form-group" style="margin-top:20px;">
-                            <label for="checklistFeedback" style="display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;">Session feedback</label>
-                            <textarea id="checklistFeedback" name="feedback_text" rows="5" placeholder="How did the session actually run? What needs adjusting next time? Admin will audit this."
-                                {% if not can_submit_checklist %}disabled{% endif %}
-                                style="width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;line-height:1.6;resize:vertical;">{{ existing_checklist_feedback }}</textarea>
-                        </div>
-
-                        {% if can_submit_checklist %}
-                        <div style="display:flex;justify-content:flex-end;margin-top:14px;">
-                            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Checklist &amp; Feedback</button>
-                        </div>
-                        {% endif %}
-                    </form>
-                </div>
-            </div>
-
-            <div class="session-tab-panel" data-panel="focus">
-                <div class="card">
-                    <div class="section-header">
-                        <span class="section-title">Session Focus</span>
-                        {% if selected_focus_session.session_date == today %}
-                        <span class="badge badge-success">Today</span>
-                        {% elif selected_focus_session.session_date > today %}
-                        <span class="badge badge-info">Upcoming</span>
-                        {% else %}
-                        <span class="badge badge-neutral">Reference</span>
-                        {% endif %}
-                    </div>
-                    <div class="coach-kv-grid">
-                        <div class="coach-kv">
-                            <p class="coach-kv-label">Session Window</p>
-                            <p class="coach-kv-value">{{ selected_focus_session.session_date|date:"l, d F Y" }}<br>{{ selected_focus_session.start_time|time:"H:i" }} - {{ selected_focus_session.end_time|time:"H:i" }}</p>
-                        </div>
-                        <div class="coach-kv">
-                            <p class="coach-kv-label">Assessment Focus</p>
-                            <p class="coach-kv-value">{{ checklist_plan.syllabus_reference.assessment_focus|default:"Observe the main session pattern and player responses." }}</p>
-                        </div>
-                        <div class="coach-kv">
-                            <p class="coach-kv-label">Success Criteria</p>
-                            <p class="coach-kv-value">{{ checklist_plan.syllabus_reference.success_criteria }}</p>
-                        </div>
-                        <div class="coach-kv">
-                            <p class="coach-kv-label">Homework</p>
-                            <p class="coach-kv-value">{{ checklist_plan.syllabus_reference.homework }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="session-tab-panel" data-panel="cues">
-                <div class="card">
-                    <div class="section-header">
-                        <span class="section-title">Coach Cues</span>
-                        {% if can_mark_attendance %}
-                        <a href="{% url 'sessions:attendance' selected_focus_session.pk %}" class="section-link">Attendance</a>
-                        {% endif %}
-                    </div>
-                    <ul class="coach-note-list">
-                        {% for cue in checklist_plan.coach_prompts %}
-                        <li>{{ cue }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
-
-            <div class="session-tab-panel" data-panel="syllabus">
-                <div class="card">
-                    <div class="section-header">
-                        <span class="section-title">Syllabus Anchor</span>
-                        {% if checklist_plan.standard_reference.code %}
-                        <span class="badge badge-info">{{ checklist_plan.standard_reference.code }}</span>
-                        {% endif %}
-                    </div>
-                    <div class="space-y">
-                        <div class="coach-kv">
-                            <p class="coach-kv-label">Objective</p>
-                            <p class="coach-kv-value">{{ checklist_plan.syllabus_reference.objective|default:"No active syllabus objective is linked yet, so this checklist is using the adaptive session plan." }}</p>
-                        </div>
-                        {% if checklist_plan.standard_reference.title %}
-                        <div class="coach-kv">
-                            <p class="coach-kv-label">Curriculum Standard</p>
-                            <p class="coach-kv-value">{{ checklist_plan.standard_reference.title }}</p>
-                        </div>
-                        {% endif %}
-                        {% if checklist_plan.standard_reference.learning_standards %}
-                        <div class="coach-kv">
-                            <p class="coach-kv-label">Learning Standards</p>
-                            <ul class="coach-note-list" style="margin-top:8px;">
-                                {% for standard_item in checklist_plan.standard_reference.learning_standards|slice:":3" %}
-                                <li>{{ standard_item }}</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
-            <div class="session-tab-panel" data-panel="month">
-                <div class="card">
-                    <div class="section-header">
-                        <span class="section-title">This Month's Sessions</span>
-                        <a href="{% url 'sessions:list' %}?{{ view_query_base }}&view=calendar" class="section-link">Open calendar</a>
-                    </div>
-                    <div class="space-y">
-                        {% for session in sessions %}
-                        <a href="{% url 'sessions:list' %}?{{ view_query_base }}&view=checklist&focus={{ session.pk }}" class="coach-session-link {% if selected_focus_session and selected_focus_session.pk == session.pk %}is-active{% endif %}">
-                            <p style="font-weight:700;font-size:15px;color:var(--text);">{{ session.title }}</p>
-                            <p class="coach-session-link-meta">
-                                {{ session.session_date|date:"d M Y" }} &middot; {{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}<br>
-                                Court {{ session.court }} &middot; {{ session.attendee_count }} player(s)
-                            </p>
-                        </a>
-                        {% empty %}
-                        <div class="empty-state">
-                            <i class="fa-regular fa-calendar-xmark"></i>
-                            <p>No sessions are scheduled in this month yet.</p>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% else %}
-        <div class="card">
-            <div class="empty-state">
-                <i class="fa-regular fa-calendar-xmark"></i>
-                <p>No coach sessions are scheduled in this month yet. Open the calendar if you want the wider schedule view.</p>
-                <a href="{% url 'sessions:list' %}?{{ view_query_base }}&view=calendar" class="btn btn-primary">Open Calendar</a>
-            </div>
+        <div class="flex flex-wrap gap-2 mt-3">
+          <span class="inline-flex items-center gap-1.5 text-xs rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1"><i class="fa-solid fa-calendar-day"></i><strong>{{ selected_focus_session.session_date|date:"d M" }}</strong><span class="text-gray-500">{{ selected_focus_session.start_time|time:"H:i" }}–{{ selected_focus_session.end_time|time:"H:i" }} · Court {{ selected_focus_session.court }}</span></span>
+          <span class="inline-flex items-center gap-1.5 text-xs rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1"><i class="fa-solid fa-users"></i><strong>{{ checklist_plan.roster_size }}</strong><span class="text-gray-500">{{ checklist_plan.roster_level_summary }}</span></span>
+          <span class="inline-flex items-center gap-1.5 text-xs rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1"><i class="fa-solid fa-road text-green-500"></i><strong>{{ checklist_plan.track_label }}</strong></span>
+          <span class="inline-flex items-center gap-1.5 text-xs rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1"><i class="fa-solid fa-bullseye text-amber-500"></i><strong>{{ checklist_plan.phase_label|default:"Adaptive block" }}</strong></span>
         </div>
         {% endif %}
-    {% endif %}
+        {% else %}
+        <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">Schedule</p>
+        <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white leading-tight">{{ calendar_month_label }}</h2>
+        {% endif %}
+      </div>
+      <div class="flex gap-2 flex-wrap items-center">
+        {% if checklist_enabled %}
+        <div class="inline-flex items-center gap-1 p-1 rounded-full border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40">
+          <a href="{% url 'sessions:list' %}?{{ view_query_base }}&view=checklist{% if selected_focus_session %}&focus={{ selected_focus_session.pk }}{% endif %}" class="session-tab-btn {% if show_checklist_view %}is-active{% endif %}">Checklist</a>
+          <a href="{% url 'sessions:list' %}?{{ view_query_base }}&view=calendar" class="session-tab-btn {% if show_calendar_view %}is-active{% endif %}">Calendar</a>
+        </div>
+        {% endif %}
 
-    {% if show_calendar_view %}
-    {% if is_parent_user %}
-    <div class="card" style="display:flex;justify-content:space-between;gap:18px;align-items:center;flex-wrap:wrap;">
-        <div style="min-width:220px;">
-            <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;">Package progress this month</p>
-            <h3 style="font-size:28px;font-weight:700;color:var(--text);margin-top:6px;">{{ parent_done_count }}/{{ parent_package_target }} done</h3>
-            <p class="text-sm text-muted" style="margin-top:6px;">Green events are completed sessions. Red are absences.</p>
-        </div>
-        <div style="flex:1;min-width:240px;">
-            <div style="height:12px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);overflow:hidden;">
-                <div style="height:100%;width:{{ parent_progress_percent }}%;background:linear-gradient(90deg,#22c55e,#4ade80);transition:width .5s ease;"></div>
-            </div>
-            <p class="text-xs text-muted" style="margin-top:8px;">You have {{ parent_scheduled_count }} session(s) on the schedule this month. Reschedule limit: 2 per month across all your children.</p>
-        </div>
-    </div>
-    {% endif %}
-
-    <div class="stat-cards">
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div>
-                    <p class="stat-label">Sessions This Month</p>
-                    <p class="stat-value">{{ month_total_sessions }}</p>
-                </div>
-                <div class="stat-icon"><i class="fa-solid fa-calendar-days"></i></div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div>
-                    <p class="stat-label">Player Slots</p>
-                    <p class="stat-value">{{ month_total_players }}</p>
-                </div>
-                <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div>
-                    <p class="stat-label">Pending Attendance</p>
-                    <p class="stat-value">{{ month_pending_attendance }}</p>
-                </div>
-                <div class="stat-icon" style="background:rgba(245,158,11,.12);color:#fbbf24;"><i class="fa-solid fa-clipboard-check"></i></div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div>
-                    <p class="stat-label">Visible Window</p>
-                    <p class="stat-value" style="font-size:20px;">{{ month_start|date:"d M" }} - {{ month_end|date:"d M" }}</p>
-                </div>
-                <div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-eye"></i></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="filter-bar">
-        <form method="get" class="filter-fields">
+        {% if show_checklist_view %}
+          {% if can_plan %}
+          <a href="{% url 'sessions:checklist_audit' %}" class="btn btn-secondary"><i class="fa-solid fa-clipboard-list"></i>Audit</a>
+          <form method="post" action="{% url 'sessions:auto_assign' %}" class="inline-block">
+            {% csrf_token %}
             <input type="hidden" name="month" value="{{ selected_month }}">
-            {% if checklist_enabled %}
-            <input type="hidden" name="view" value="calendar">
+            <button type="submit" class="btn btn-secondary" title="Auto-assign sessions for the current month"><i class="fa-solid fa-wand-sparkles"></i>Auto</button>
+          </form>
+          <a href="{% url 'sessions:syllabus' %}" class="btn btn-secondary"><i class="fa-solid fa-book-open"></i>Syllabus</a>
+          <a href="{% url 'sessions:create' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i>Create</a>
+          {% endif %}
+        {% else %}
+        <a href="?month={{ prev_month }}{% if selected_coach %}&coach={{ selected_coach }}{% endif %}{% if selected_member %}&member={{ selected_member }}{% endif %}{% if checklist_enabled %}&view=calendar{% endif %}" class="btn btn-secondary"><i class="fa-solid fa-chevron-left"></i>Prev</a>
+        <a href="?month={{ next_month }}{% if selected_coach %}&coach={{ selected_coach }}{% endif %}{% if selected_member %}&member={{ selected_member }}{% endif %}{% if checklist_enabled %}&view=calendar{% endif %}" class="btn btn-secondary">Next<i class="fa-solid fa-chevron-right"></i></a>
+        {% if can_plan %}
+        <a href="{% url 'sessions:syllabus' %}" class="btn btn-secondary"><i class="fa-solid fa-book-open"></i>Syllabus</a>
+        <a href="{% url 'sessions:create' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i>Create</a>
+        {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  {% if show_checklist_view %}
+    {% if selected_focus_session and checklist_plan %}
+    <!-- Checklist tabs -->
+    <div class="flex gap-1 p-1 rounded-full border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40 overflow-x-auto" role="tablist">
+      <button type="button" class="session-tab-btn is-active shrink-0" data-tab="checklist" role="tab">Checklist</button>
+      <button type="button" class="session-tab-btn shrink-0" data-tab="focus" role="tab">Focus</button>
+      <button type="button" class="session-tab-btn shrink-0" data-tab="cues" role="tab">Cues</button>
+      <button type="button" class="session-tab-btn shrink-0" data-tab="syllabus" role="tab">Syllabus</button>
+      <button type="button" class="session-tab-btn shrink-0" data-tab="month" role="tab">Month</button>
+    </div>
+
+    <div>
+      <!-- Checklist panel -->
+      <div class="session-tab-panel is-active" data-panel="checklist">
+        <section class="card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-gray-900 dark:text-white">Training Checklist</h3>
+            {% if can_submit_checklist %}<a href="{% url 'sessions:plan' selected_focus_session.pk %}" class="text-xs text-brand-500 hover:underline">Open planner</a>{% endif %}
+          </div>
+          <p class="text-xs uppercase tracking-wider text-gray-500">{{ selected_focus_session.title }}</p>
+          <h4 class="text-xl font-semibold text-gray-900 dark:text-white mt-1">{{ checklist_plan.plan_title }}</h4>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mt-2 leading-relaxed">{{ checklist_plan.summary }}</p>
+          {% if existing_checklist_report %}<p class="text-xs text-gray-500 mt-2">Last saved {{ existing_checklist_report.updated_at|date:"d M Y H:i" }} by {{ existing_checklist_report.coach|default:"Coach" }}.</p>{% endif %}
+
+          <form method="post" action="{% url 'sessions:checklist_save' selected_focus_session.pk %}" class="mt-4">
+            {% csrf_token %}
+            <div class="space-y-2">
+              {% for item in checklist_items %}
+              <label class="coach-checklist-item" for="coachChecklist{{ forloop.counter }}">
+                <input type="checkbox" name="checked_items" value="{{ item.title }}" id="coachChecklist{{ forloop.counter }}" {% if item.title in existing_checklist_checked %}checked{% endif %} {% if not can_submit_checklist %}disabled{% endif %}>
+                <div class="flex-1 min-w-0">
+                  <div class="flex flex-wrap items-center gap-2 mb-1">
+                    <strong class="text-gray-900 dark:text-white">{{ item.title }}</strong>
+                    <span class="badge badge-info">{{ item.duration }}</span>
+                  </div>
+                  <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{{ item.detail }}</p>
+                </div>
+              </label>
+              {% endfor %}
+            </div>
+
+            <div class="mt-5">
+              <label for="checklistFeedback" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Session feedback</label>
+              <textarea id="checklistFeedback" name="feedback_text" rows="5" placeholder="How did the session actually run? What needs adjusting next time? Admin will audit this." {% if not can_submit_checklist %}disabled{% endif %}>{{ existing_checklist_feedback }}</textarea>
+            </div>
+
+            {% if can_submit_checklist %}
+            <div class="flex justify-end mt-4">
+              <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i>Save Checklist</button>
+            </div>
             {% endif %}
-            <div class="filter-field">
-                <label>Coach</label>
-                <select name="coach">
-                    <option value="">All coaches</option>
-                    {% for coach in coaches %}
-                    <option value="{{ coach.id }}" {% if selected_coach == coach.id|stringformat:"s" %}selected{% endif %}>
-                        {{ coach.get_full_name|default:coach.username }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="filter-field">
-                <label>Member</label>
-                <select name="member">
-                    <option value="">All members</option>
-                    {% for member in members %}
-                    <option value="{{ member.id }}" {% if selected_member == member.id|stringformat:"s" %}selected{% endif %}>
-                        {{ member.full_name }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="filter-actions" style="margin-top:auto;">
-                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Apply</button>
-                <a href="{% url 'sessions:list' %}?month={{ selected_month }}{% if checklist_enabled %}&view=calendar{% endif %}" class="btn btn-ghost">Reset</a>
-            </div>
-        </form>
-    </div>
+          </form>
+        </section>
+      </div>
 
-    <div class="card">
-        <div class="calendar-toolbar">
-            <div>
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Responsive Calendar</p>
-                <p style="font-size:14px;color:var(--text);margin-top:4px;">Tap an event to open the session hub.</p>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <span class="badge badge-warning">Upcoming</span>
-                <span class="badge badge-neutral">Past</span>
-            </div>
-        </div>
-        <div class="calendar-shell" id="calendarShell">
-            <div class="calendar-status" id="calendarStatus" hidden aria-live="polite">
-                <div class="calendar-status-copy">
-                    <i class="fa-solid fa-spinner fa-spin"></i>
-                    <span id="calendarStatusText">Loading calendar...</span>
-                </div>
-                <button type="button" class="btn btn-ghost btn-xs" id="calendarRetryBtn" hidden>
-                    <i class="fa-solid fa-rotate-right"></i> Retry
-                </button>
-            </div>
-            <div id="sessionCalendar"></div>
-        </div>
-    </div>
+      <!-- Focus panel -->
+      <div class="session-tab-panel" data-panel="focus">
+        <section class="card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-gray-900 dark:text-white">Session Focus</h3>
+            {% if selected_focus_session.session_date == today %}<span class="badge badge-success">Today</span>
+            {% elif selected_focus_session.session_date > today %}<span class="badge badge-info">Upcoming</span>
+            {% else %}<span class="badge badge-muted">Reference</span>{% endif %}
+          </div>
+          <div class="grid gap-3 sm:grid-cols-2">
+            <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="text-[11px] uppercase tracking-wider text-gray-500">Window</p><p class="font-medium mt-1">{{ selected_focus_session.session_date|date:"l, d F Y" }}<br><span class="text-sm text-gray-500">{{ selected_focus_session.start_time|time:"H:i" }}–{{ selected_focus_session.end_time|time:"H:i" }}</span></p></div>
+            <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="text-[11px] uppercase tracking-wider text-gray-500">Assessment</p><p class="text-sm text-gray-700 dark:text-gray-300 mt-1 leading-relaxed">{{ checklist_plan.syllabus_reference.assessment_focus|default:"Observe the main session pattern." }}</p></div>
+            <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="text-[11px] uppercase tracking-wider text-gray-500">Success criteria</p><p class="text-sm text-gray-700 dark:text-gray-300 mt-1 leading-relaxed">{{ checklist_plan.syllabus_reference.success_criteria }}</p></div>
+            <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="text-[11px] uppercase tracking-wider text-gray-500">Homework</p><p class="text-sm text-gray-700 dark:text-gray-300 mt-1 leading-relaxed">{{ checklist_plan.syllabus_reference.homework }}</p></div>
+          </div>
+        </section>
+      </div>
 
-    <div class="grid-2">
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Monthly Session Agenda</span>
-                {% if can_plan %}
-                <a href="{% url 'sessions:create' %}" class="section-link">Plan another</a>
-                {% endif %}
-            </div>
-            <div class="space-y">
-                {% for session in sessions %}
-                <div class="card-inset">
-                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
-                        <div>
-                            <p style="font-weight:700;font-size:15px;color:var(--text);">{{ session.title }}</p>
-                            <p class="text-sm text-muted" style="margin-top:6px;">
-                                {{ session.session_date|date:"d M Y" }} &middot; {{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}<br>
-                                Coach: {{ session.coach|default:"Unassigned" }} &middot; Court {{ session.court }} &middot; {{ session.attendee_count }} player(s)
-                            </p>
-                        </div>
-                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                            <a href="{% url 'sessions:detail' session.pk %}" class="btn btn-ghost btn-xs">Open</a>
-                            {% if current_role == 'coach' or current_role == 'admin' %}
-                            <a href="{% url 'sessions:plan' session.pk %}" class="btn btn-xs" style="background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.25);border-radius:99px;padding:4px 12px;">Plan</a>
-                            {% endif %}
-                            {% if can_plan %}
-                            <a href="{% url 'sessions:edit' session.pk %}" class="btn btn-xs" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:99px;padding:4px 12px;">Edit</a>
-                            {% endif %}
-                            {% if can_mark_attendance %}
-                            <a href="{% url 'sessions:attendance' session.pk %}" class="btn btn-success btn-xs">Attendance</a>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% if is_parent_user %}
-                        {% with parent_record=parent_attendance_map|dictkey:session.pk %}
-                        {% if parent_record %}
-                        <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-                            {% if parent_record.status == 'present' or parent_record.status == 'late' %}
-                            <span class="badge badge-success">Completed</span>
-                            {% elif parent_record.status == 'absent' %}
-                            <span class="badge badge-danger">Missed</span>
-                            {% else %}
-                            <span class="badge badge-info">Scheduled</span>
-                            {% endif %}
-                            <span class="text-xs text-muted">Moved {{ parent_record.reschedule_count }} time(s). Parent quota: 2 / month.</span>
-                            {% if parent_record.status == 'scheduled' %}
-                            <form method="post" action="{% url 'sessions:parent_reschedule' parent_record.pk %}" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-                                {% csrf_token %}
-                                <input type="date" name="new_date" required style="padding:6px 10px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:12px;">
-                                <button type="submit" class="btn btn-ghost btn-xs"><i class="fa-solid fa-calendar-day"></i> Reschedule</button>
-                            </form>
-                            {% endif %}
-                        </div>
-                        {% endif %}
-                        {% endwith %}
-                    {% endif %}
-                </div>
-                {% empty %}
-                <div class="empty-state">
-                    <i class="fa-regular fa-calendar-xmark"></i>
-                    <p>No sessions are scheduled in this month yet.</p>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
+      <!-- Cues panel -->
+      <div class="session-tab-panel" data-panel="cues">
+        <section class="card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-gray-900 dark:text-white">Coach Cues</h3>
+            {% if can_mark_attendance %}<a href="{% url 'sessions:attendance' selected_focus_session.pk %}" class="text-xs text-brand-500 hover:underline">Attendance</a>{% endif %}
+          </div>
+          <ul class="space-y-2">
+            {% for cue in checklist_plan.coach_prompts %}
+            <li class="flex gap-2 text-sm text-gray-700 dark:text-gray-300"><span class="text-brand-500 mt-1">•</span><span class="leading-relaxed">{{ cue }}</span></li>
+            {% endfor %}
+          </ul>
+        </section>
+      </div>
 
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Scheduling Rules</span>
+      <!-- Syllabus panel -->
+      <div class="session-tab-panel" data-panel="syllabus">
+        <section class="card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-gray-900 dark:text-white">Syllabus Anchor</h3>
+            {% if checklist_plan.standard_reference.code %}<span class="badge badge-info">{{ checklist_plan.standard_reference.code }}</span>{% endif %}
+          </div>
+          <div class="space-y-3">
+            <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+              <p class="text-[11px] uppercase tracking-wider text-gray-500">Objective</p>
+              <p class="text-sm text-gray-700 dark:text-gray-300 mt-1 leading-relaxed">{{ checklist_plan.syllabus_reference.objective|default:"No active syllabus objective linked; using adaptive plan." }}</p>
             </div>
-            <div class="space-y">
-                <div class="card-inset">
-                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Admin-led planning</p>
-                    <p style="font-size:14px;color:var(--text);line-height:1.7;">Only admins can create or update the schedule. Coaches, parents, and headcount get the live calendar instantly after the plan is published.</p>
-                </div>
-                <div class="card-inset">
-                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Recurring sessions</p>
-                    <p style="font-size:14px;color:var(--text);line-height:1.7;">Choose "Repeat weekly for this month" inside the session form, then tick Friday, Saturday, or any weekday combination to generate the month schedule in one step.</p>
-                </div>
-                <div class="card-inset">
-                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Alerts</p>
-                    <p style="font-size:14px;color:var(--text);line-height:1.7;">Every scheduled session can push an in-system notification and Gmail SMTP email to the assigned coach and linked parent accounts.</p>
-                </div>
+            {% if checklist_plan.standard_reference.title %}
+            <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+              <p class="text-[11px] uppercase tracking-wider text-gray-500">Curriculum Standard</p>
+              <p class="text-sm mt-1">{{ checklist_plan.standard_reference.title }}</p>
             </div>
-        </div>
+            {% endif %}
+            {% if checklist_plan.standard_reference.learning_standards %}
+            <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+              <p class="text-[11px] uppercase tracking-wider text-gray-500 mb-2">Learning Standards</p>
+              <ul class="space-y-1">
+                {% for s in checklist_plan.standard_reference.learning_standards|slice:":3" %}<li class="flex gap-2 text-sm"><span class="text-brand-500">•</span>{{ s }}</li>{% endfor %}
+              </ul>
+            </div>
+            {% endif %}
+          </div>
+        </section>
+      </div>
+
+      <!-- Month panel -->
+      <div class="session-tab-panel" data-panel="month">
+        <section class="card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-gray-900 dark:text-white">This Month</h3>
+            <a href="{% url 'sessions:list' %}?{{ view_query_base }}&view=calendar" class="text-xs text-brand-500 hover:underline">Calendar</a>
+          </div>
+          <div class="space-y-2">
+            {% for s in sessions %}
+            <a href="{% url 'sessions:list' %}?{{ view_query_base }}&view=checklist&focus={{ s.pk }}" class="block rounded-lg border {% if selected_focus_session and selected_focus_session.pk == s.pk %}border-brand-300 bg-brand-50/40 dark:bg-brand-400/5{% else %}border-gray-200 dark:border-gray-800 hover:border-brand-300{% endif %} p-3 transition">
+              <p class="font-semibold text-sm text-gray-900 dark:text-white">{{ s.title }}</p>
+              <p class="text-xs text-gray-500 mt-1">{{ s.session_date|date:"d M Y" }} · {{ s.start_time|time:"H:i" }}–{{ s.end_time|time:"H:i" }} · Court {{ s.court }} · {{ s.attendee_count }} player(s)</p>
+            </a>
+            {% empty %}
+            <p class="text-sm text-gray-500 text-center py-6">No sessions this month.</p>
+            {% endfor %}
+          </div>
+        </section>
+      </div>
     </div>
+    {% else %}
+    <section class="card p-10 text-center">
+      <i class="fa-regular fa-calendar-xmark text-4xl text-gray-300 dark:text-gray-600"></i>
+      <p class="mt-3 text-gray-500 dark:text-gray-400">No coach sessions this month.</p>
+      <a href="{% url 'sessions:list' %}?{{ view_query_base }}&view=calendar" class="btn btn-primary mt-4 inline-flex">Open Calendar</a>
+    </section>
     {% endif %}
+  {% endif %}
+
+  {% if show_calendar_view %}
+    {% if is_parent_user %}
+    <section class="card p-5 flex flex-wrap items-center justify-between gap-4">
+      <div class="min-w-[200px]">
+        <p class="text-xs uppercase tracking-wider text-gray-500">Package progress</p>
+        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ parent_done_count }}/{{ parent_package_target }} done</h3>
+        <p class="text-xs text-gray-500 mt-1">Green = completed. Red = absences.</p>
+      </div>
+      <div class="flex-1 min-w-[220px]">
+        <div class="h-3 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div class="h-full bg-gradient-to-r from-green-500 to-green-400 transition-all duration-500" style="width: {{ parent_progress_percent }}%"></div>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">{{ parent_scheduled_count }} scheduled this month · Reschedule limit: 2 per month across all your children.</p>
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- Stat cards -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Sessions</p><p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{{ month_total_sessions }}</p></div>
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Player Slots</p><p class="mt-1 text-2xl font-bold text-blue-500">{{ month_total_players }}</p></div>
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Pending</p><p class="mt-1 text-2xl font-bold text-amber-500">{{ month_pending_attendance }}</p></div>
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Window</p><p class="mt-1 text-lg font-bold text-green-600">{{ month_start|date:"d M" }}–{{ month_end|date:"d M" }}</p></div>
+    </section>
+
+    <!-- Filter -->
+    <section class="card p-4">
+      <form method="get" class="grid gap-3 md:grid-cols-3 items-end">
+        <input type="hidden" name="month" value="{{ selected_month }}">
+        {% if checklist_enabled %}<input type="hidden" name="view" value="calendar">{% endif %}
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Coach</label>
+          <select name="coach">
+            <option value="">All coaches</option>
+            {% for coach in coaches %}<option value="{{ coach.id }}" {% if selected_coach == coach.id|stringformat:"s" %}selected{% endif %}>{{ coach.get_full_name|default:coach.username }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Member</label>
+          <select name="member">
+            <option value="">All members</option>
+            {% for m in members %}<option value="{{ m.id }}" {% if selected_member == m.id|stringformat:"s" %}selected{% endif %}>{{ m.full_name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="flex gap-2">
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i>Apply</button>
+          <a href="{% url 'sessions:list' %}?month={{ selected_month }}{% if checklist_enabled %}&view=calendar{% endif %}" class="btn btn-secondary">Reset</a>
+        </div>
+      </form>
+    </section>
+
+    <!-- Calendar -->
+    <section class="card p-4 sm:p-5">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div>
+          <p class="text-[11px] uppercase tracking-wider text-gray-500 font-semibold">Calendar</p>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mt-0.5">Tap an event to open the session hub.</p>
+        </div>
+        <div class="flex gap-1.5 flex-wrap">
+          <span class="badge badge-warning">Upcoming</span>
+          <span class="badge badge-muted">Past</span>
+        </div>
+      </div>
+      <div id="calendarShell" class="rounded-xl">
+        <div id="calendarStatus" hidden aria-live="polite" class="mb-3 flex items-center justify-between gap-3 flex-wrap rounded-lg border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 px-4 py-2.5 text-sm">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <span id="calendarStatusText">Loading calendar…</span>
+          </div>
+          <button type="button" id="calendarRetryBtn" hidden class="btn btn-secondary btn-sm"><i class="fa-solid fa-rotate-right"></i>Retry</button>
+        </div>
+        <div id="sessionCalendar" class="min-h-[320px]"></div>
+      </div>
+    </section>
+
+    <!-- Monthly agenda + rules -->
+    <section class="grid gap-5 lg:grid-cols-2">
+      <div class="card p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-gray-900 dark:text-white">Monthly Agenda</h3>
+          {% if can_plan %}<a href="{% url 'sessions:create' %}" class="text-xs text-brand-500 hover:underline">Plan another</a>{% endif %}
+        </div>
+        <div class="space-y-3">
+          {% for session in sessions %}
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+            <div class="flex items-start justify-between gap-3 flex-wrap">
+              <div class="min-w-0">
+                <p class="font-semibold text-sm text-gray-900 dark:text-white">{{ session.title }}</p>
+                <p class="text-xs text-gray-500 mt-1 leading-relaxed">
+                  {{ session.session_date|date:"d M Y" }} · {{ session.start_time|time:"H:i" }}–{{ session.end_time|time:"H:i" }}<br>
+                  Coach {{ session.coach|default:"Unassigned" }} · Court {{ session.court }} · {{ session.attendee_count }} player(s)
+                </p>
+              </div>
+              <div class="flex gap-1.5 flex-wrap">
+                <a href="{% url 'sessions:detail' session.pk %}" class="btn btn-secondary btn-sm">Open</a>
+                {% if current_role == 'coach' or current_role == 'admin' %}
+                <a href="{% url 'sessions:plan' session.pk %}" class="btn btn-sm bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400 hover:bg-green-200">Plan</a>
+                {% endif %}
+                {% if can_plan %}<a href="{% url 'sessions:edit' session.pk %}" class="btn btn-secondary btn-sm">Edit</a>{% endif %}
+                {% if can_mark_attendance %}<a href="{% url 'sessions:attendance' session.pk %}" class="btn btn-sm bg-green-500 hover:bg-green-600 text-white">Attendance</a>{% endif %}
+              </div>
+            </div>
+            {% if is_parent_user %}
+              {% with parent_record=parent_attendance_map|dictkey:session.pk %}
+              {% if parent_record %}
+              <div class="mt-3 flex flex-wrap items-center gap-2 pt-3 border-t border-gray-200 dark:border-gray-800">
+                {% if parent_record.status == 'present' or parent_record.status == 'late' %}<span class="badge badge-success">Completed</span>
+                {% elif parent_record.status == 'absent' %}<span class="badge badge-danger">Missed</span>
+                {% else %}<span class="badge badge-info">Scheduled</span>{% endif %}
+                <span class="text-xs text-gray-500">Moved {{ parent_record.reschedule_count }}x · Quota: 2/mo</span>
+                {% if parent_record.status == 'scheduled' %}
+                <form method="post" action="{% url 'sessions:parent_reschedule' parent_record.pk %}" class="flex gap-1.5 items-center flex-wrap">
+                  {% csrf_token %}
+                  <input type="date" name="new_date" required class="!py-1.5 !px-2 !text-xs !w-auto">
+                  <button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-calendar-day"></i>Reschedule</button>
+                </form>
+                {% endif %}
+              </div>
+              {% endif %}
+              {% endwith %}
+            {% endif %}
+          </div>
+          {% empty %}
+          <p class="text-sm text-gray-500 text-center py-10">No sessions this month.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="card p-5">
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Scheduling Rules</h3>
+        <div class="space-y-3">
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+            <p class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Admin-led planning</p>
+            <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">Only admins create or update sessions. Coaches, parents, and staff see the live schedule instantly after publish.</p>
+          </div>
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+            <p class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Recurring sessions</p>
+            <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">In the session form, pick "Repeat weekly for this month" then tick weekdays to generate the schedule in one step.</p>
+          </div>
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+            <p class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Alerts</p>
+            <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">Each scheduled session pushes in-app notifications and email to coach + linked parent accounts.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  {% endif %}
 </div>
 {% endblock %}
 
 {% block extra_js %}
 {% if show_checklist_view %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const tabs = document.querySelectorAll('.session-tab-btn');
-        const panels = document.querySelectorAll('.session-tab-panel');
-        if (!tabs.length) return;
-        tabs.forEach(function(tab) {
-            tab.addEventListener('click', function() {
-                const target = tab.dataset.tab;
-                tabs.forEach(function(t) { t.classList.toggle('is-active', t === tab); });
-                panels.forEach(function(p) { p.classList.toggle('is-active', p.dataset.panel === target); });
-            });
-        });
-
-        document.querySelectorAll('.coach-checklist-item input[type="checkbox"]').forEach(function(cb) {
-            const item = cb.closest('.coach-checklist-item');
-            if (!item) return;
-            const sync = function() { item.classList.toggle('is-checked', cb.checked); };
-            cb.addEventListener('change', sync);
-            sync();
-        });
+  (function () {
+    var tabs = document.querySelectorAll('.session-tab-btn[data-tab]');
+    var panels = document.querySelectorAll('.session-tab-panel');
+    if (!tabs.length) return;
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        var target = tab.dataset.tab;
+        tabs.forEach(function (t) { t.classList.toggle('is-active', t === tab); });
+        panels.forEach(function (p) { p.classList.toggle('is-active', p.dataset.panel === target); });
+      });
     });
+    document.querySelectorAll('.coach-checklist-item input[type="checkbox"]').forEach(function (cb) {
+      var item = cb.closest('.coach-checklist-item');
+      if (!item) return;
+      var sync = function () { item.classList.toggle('is-checked', cb.checked); };
+      cb.addEventListener('change', sync);
+      sync();
+    });
+  })();
 </script>
 {% endif %}
+
 {% if show_calendar_view %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const calendarEl = document.getElementById('sessionCalendar');
-        const calendarShell = document.getElementById('calendarShell');
-        const statusBox = document.getElementById('calendarStatus');
-        const statusText = document.getElementById('calendarStatusText');
-        const retryBtn = document.getElementById('calendarRetryBtn');
-        if (!calendarEl) return;
+  document.addEventListener('DOMContentLoaded', function () {
+    var el = document.getElementById('sessionCalendar');
+    var shell = document.getElementById('calendarShell');
+    var status = document.getElementById('calendarStatus');
+    var statusText = document.getElementById('calendarStatusText');
+    var retryBtn = document.getElementById('calendarRetryBtn');
+    if (!el) return;
 
-        let calendarInstance = null;
-        let assetPromise = null;
-        let lastTrackedWidth = window.innerWidth;
+    var instance = null;
+    var assetPromise = null;
+    var lastWidth = window.innerWidth;
 
-        function isCompactViewport() {
-            return window.innerWidth < 768;
-        }
+    function isCompact() { return window.innerWidth < 768; }
+    function header() {
+      return isCompact()
+        ? { left: 'title', center: 'prev,next', right: 'listMonth,dayGridMonth' }
+        : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' };
+    }
+    function setStatus(msg, tone) {
+      if (!status) return;
+      status.hidden = !msg;
+      statusText.textContent = msg || '';
+      if (retryBtn) retryBtn.hidden = tone !== 'error';
+      status.classList.toggle('border-red-200', tone === 'error');
+      status.classList.toggle('dark:border-red-500/30', tone === 'error');
+      status.classList.toggle('bg-red-50', tone === 'error');
+      status.classList.toggle('dark:bg-red-500/10', tone === 'error');
+      status.classList.toggle('text-red-700', tone === 'error');
+      status.classList.toggle('dark:text-red-300', tone === 'error');
+    }
 
-        function getHeaderToolbar() {
-            if (isCompactViewport()) {
-                return { left: 'title', center: 'prev,next', right: 'listMonth,dayGridMonth' };
+    async function ensureAssets() {
+      if (window.FullCalendar) return;
+      if (!assetPromise) {
+        var loader = window.nyoLoadScriptOnce || function (src) {
+          return new Promise(function (resolve, reject) {
+            var s = document.createElement('script'); s.src = src; s.async = true;
+            s.onload = resolve; s.onerror = reject;
+            document.body.appendChild(s);
+          });
+        };
+        assetPromise = loader('https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js');
+      }
+      await assetPromise;
+    }
+
+    async function build() {
+      setStatus('Loading calendar…', 'loading');
+      try {
+        await ensureAssets();
+        var view = isCompact() ? 'listMonth' : 'dayGridMonth';
+        if (!instance) {
+          instance = new FullCalendar.Calendar(el, {
+            initialView: view,
+            height: 'auto',
+            initialDate: '{{ calendar_initial_date }}',
+            headerToolbar: header(),
+            buttonText: { today: 'Today', dayGridMonth: 'Month', listMonth: 'Agenda' },
+            events: {{ calendar_events_json|safe }},
+            eventClick: function (info) {
+              if (info.event.url) { info.jsEvent.preventDefault(); window.location.href = info.event.url; }
+            },
+            windowResize: function () {
+              if (!instance || window.innerWidth === lastWidth) return;
+              lastWidth = window.innerWidth;
+              var v = isCompact() ? 'listMonth' : 'dayGridMonth';
+              instance.setOption('headerToolbar', header());
+              if (instance.view.type !== v) instance.changeView(v);
+              instance.updateSize();
             }
-            return { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' };
+          });
+          instance.render();
+        } else {
+          instance.setOption('headerToolbar', header());
+          if (instance.view.type !== view) instance.changeView(view);
+          instance.updateSize();
         }
+        setStatus('', 'ready');
+      } catch (e) {
+        assetPromise = null;
+        console.error('Failed to load calendar', e);
+        setStatus('Calendar could not load. Use the agenda list below.', 'error');
+      }
+    }
 
-        function setStatus(message, tone) {
-            if (!statusBox || !statusText) return;
-            statusBox.hidden = !message;
-            statusBox.dataset.tone = tone || 'info';
-            statusText.textContent = message || '';
-            if (calendarShell) {
-                calendarShell.classList.toggle('is-loading', Boolean(message) && tone !== 'error');
-            }
-            if (retryBtn) {
-                retryBtn.hidden = tone !== 'error';
-            }
-        }
-
-        async function ensureCalendarAssets() {
-            if (window.FullCalendar) return;
-            if (!assetPromise) {
-                assetPromise = window.nyoLoadScriptOnce('https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js');
-            }
-            await assetPromise;
-        }
-
-        async function buildCalendar() {
-            setStatus('Loading calendar...', 'loading');
-            try {
-                await ensureCalendarAssets();
-                const nextView = isCompactViewport() ? 'listMonth' : 'dayGridMonth';
-
-                if (!calendarInstance) {
-                    calendarInstance = new FullCalendar.Calendar(calendarEl, {
-                        initialView: nextView,
-                        height: 'auto',
-                        initialDate: '{{ calendar_initial_date }}',
-                        headerToolbar: getHeaderToolbar(),
-                        buttonText: {
-                            today: 'Today',
-                            dayGridMonth: 'Month',
-                            listMonth: 'Agenda'
-                        },
-                        events: {{ calendar_events_json|safe }},
-                        eventClick: function(info) {
-                            if (info.event.url) {
-                                info.jsEvent.preventDefault();
-                                window.location.href = info.event.url;
-                            }
-                        },
-                        windowResize: function() {
-                            if (!calendarInstance || window.innerWidth === lastTrackedWidth) return;
-                            lastTrackedWidth = window.innerWidth;
-                            const responsiveView = isCompactViewport() ? 'listMonth' : 'dayGridMonth';
-                            calendarInstance.setOption('headerToolbar', getHeaderToolbar());
-                            if (calendarInstance.view.type !== responsiveView) {
-                                calendarInstance.changeView(responsiveView);
-                            }
-                            calendarInstance.updateSize();
-                        }
-                    });
-                    calendarInstance.render();
-                } else {
-                    calendarInstance.setOption('headerToolbar', getHeaderToolbar());
-                    if (calendarInstance.view.type !== nextView) {
-                        calendarInstance.changeView(nextView);
-                    }
-                    calendarInstance.updateSize();
-                }
-
-                setStatus('', 'ready');
-            } catch (error) {
-                assetPromise = null;
-                console.error('Failed to initialize session calendar.', error);
-                setStatus('Calendar could not load. You can still use the monthly agenda list below.', 'error');
-            }
-        }
-
-        if (retryBtn) {
-            retryBtn.addEventListener('click', function() {
-                buildCalendar();
-            });
-        }
-
-        window.nyoRunDeferred(function() {
-            buildCalendar();
-        });
-    });
+    if (retryBtn) retryBtn.addEventListener('click', build);
+    var run = window.nyoRunDeferred || function (cb) { setTimeout(cb, 0); };
+    run(build);
+  });
 </script>
 {% endif %}
 {% endblock %}

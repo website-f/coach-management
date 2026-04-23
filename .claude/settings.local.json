@@ -11,7 +11,8 @@
       "Bash(grep -vE \"^\\(md|sm|lg|xl|2xl|flex|grid|w|h|text|bg|p|m|px|py|mx|my|mt|mb|ml|mr|gap|rounded|border|font|items|justify|absolute|relative|fixed|hidden|block|inline|space|min|max|overflow|cursor|transition|hover|focus|active|ring|shadow|opacity|translate|scale|rotate|top|left|right|bottom|z|col|row|align|text-xs|text-sm|text-base|text-lg|text-xl|text-gray-\\\\\\\\d+|text-white|text-black|hover:|dark:|sm:|md:|lg:|xl:|py-\\\\\\\\d+|px-\\\\\\\\d+|m-\\\\\\\\d+|gap-\\\\\\\\d+\\)$\")",
       "Read(//tmp/**)",
       "Bash(grep -E \"^\\\\s*\\(html|body\\)\\\\s*[{,]\" /tmp/legacy_css_only.css)",
-      "Bash(grep -n \"{% csrf\\\\|form.*required\\\\|form\\\\\\\\.\\\\\\\\.\\\\\\\\.\\\\\\\\|<form\\\\\\\\|{{ form\\\\\\\\.\\\\\\\\|submit\\\\\\\\|field in form\" templates/members/application_apply.html)"
+      "Bash(grep -n \"{% csrf\\\\|form.*required\\\\|form\\\\\\\\.\\\\\\\\.\\\\\\\\.\\\\\\\\|<form\\\\\\\\|{{ form\\\\\\\\.\\\\\\\\|submit\\\\\\\\|field in form\" templates/members/application_apply.html)",
+      "Bash(awk '/<body>/,0' templates/landing.html)"
     ]
   }
 }

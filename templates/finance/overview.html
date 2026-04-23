@@ -1,677 +1,446 @@
 {% extends "base.html" %}
 {% load ui_tags %}
 
-{% block title %}Finance | NYO Admin Dashboard{% endblock %}
+{% block title %}Finance | NYO{% endblock %}
 {% block page_heading %}Finance{% endblock %}
 
 {% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-/* ── Finance Tabs ── */
-.fin-tab-bar-shell {
-    position: sticky;
-    top: var(--header-h);
-    z-index: 90;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-    margin: 0 -24px;
-    padding: 0 24px;
-}
-@media (max-width: 1023px) {
-    .fin-tab-bar-shell { top: 56px; margin: 0 -16px; padding: 0 16px; }
-}
-.fin-tab-bar {
-    display: flex;
-    gap: 0;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    white-space: nowrap;
-}
-.fin-tab-bar::-webkit-scrollbar { display: none; }
-.fin-tab {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 14px 16px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--muted);
-    cursor: pointer;
-    border: none;
-    background: none;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
-    white-space: nowrap;
-    font-family: inherit;
-    transition: color var(--transition), border-color var(--transition);
-    flex-shrink: 0;
-}
-.fin-tab:hover { color: var(--text); }
-.fin-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-.fin-tab i { font-size: 12px; }
-.fin-panel { display: none; }
-.fin-panel.active { display: block; }
+  .fin-tab { padding: 10px 14px; font-size: 13px; font-weight: 500; color: rgb(107 114 128); border-bottom: 2px solid transparent; white-space: nowrap; cursor: pointer; background: none; border-top: none; border-left: none; border-right: none; margin-bottom: -1px; transition: all .15s; }
+  .fin-tab:hover { color: rgb(17 24 39); }
+  .dark .fin-tab:hover { color: rgb(243 244 246); }
+  .fin-tab.active { color: #f59e0b; border-bottom-color: #f59e0b; }
+  .fin-panel { display: none; }
+  .fin-panel.active { display: block; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div>
-    <!-- ── Page header (always visible) ── -->
-    <div class="card" style="margin-bottom:0;border-radius:var(--radius-lg) var(--radius-lg) 0 0;border-bottom:none;">
-        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
-            <div style="max-width:720px;">
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.14em;margin-bottom:8px;">Finance Workspace</p>
-                <h2 style="font-size:22px;font-weight:700;color:var(--text);letter-spacing:-.03em;">Revenue, collections, payroll, cashflow, forecasting, and compliance.</h2>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <a href="{% url 'finance:invoice_create' %}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> New Invoice</a>
-                <a href="{% url 'finance:expense_create' %}" class="btn btn-ghost btn-sm"><i class="fa-solid fa-receipt"></i> Expense</a>
-                <a href="{% url 'finance:payroll_create' %}" class="btn btn-ghost btn-sm"><i class="fa-solid fa-money-check-dollar"></i> Payroll</a>
-                <a href="{% url 'finance:export' %}" class="btn btn-ghost btn-sm"><i class="fa-solid fa-download"></i> Export</a>
-            </div>
-        </div>
+<div class="space-y-5">
+
+  <section class="card p-6">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div class="max-w-xl">
+        <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">Finance Workspace</p>
+        <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white leading-tight">Revenue, collections, payroll, cashflow, forecasting, compliance</h2>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        <a href="{% url 'finance:invoice_create' %}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i>New Invoice</a>
+        <a href="{% url 'finance:expense_create' %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-receipt"></i>Expense</a>
+        <a href="{% url 'finance:payroll_create' %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-money-check-dollar"></i>Payroll</a>
+        <a href="{% url 'finance:export' %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-download"></i>Export</a>
+      </div>
     </div>
+  </section>
 
-    <!-- ── Scrollable Tab Bar ── -->
-    <div class="fin-tab-bar-shell">
-        <div class="fin-tab-bar" role="tablist">
-            <button class="fin-tab active" data-tab="tab-overview" role="tab"><i class="fa-solid fa-chart-pie"></i> Overview</button>
-            <button class="fin-tab" data-tab="tab-revenue" role="tab"><i class="fa-solid fa-sack-dollar"></i> Revenue</button>
-            <button class="fin-tab" data-tab="tab-collections" role="tab"><i class="fa-solid fa-credit-card"></i> Collections</button>
-            <button class="fin-tab" data-tab="tab-expenses" role="tab"><i class="fa-solid fa-receipt"></i> Expenses</button>
-            <button class="fin-tab" data-tab="tab-payroll" role="tab"><i class="fa-solid fa-hand-holding-dollar"></i> Payroll</button>
-            <button class="fin-tab" data-tab="tab-pnl" role="tab"><i class="fa-solid fa-scale-balanced"></i> P&amp;L</button>
-            <button class="fin-tab" data-tab="tab-cashflow" role="tab"><i class="fa-solid fa-water"></i> Cashflow</button>
-            <button class="fin-tab" data-tab="tab-forecasting" role="tab"><i class="fa-solid fa-chart-line"></i> Forecasting</button>
-            <button class="fin-tab" data-tab="tab-compliance" role="tab"><i class="fa-solid fa-shield-check"></i> Compliance</button>
-        </div>
+  <div class="sticky top-[65px] z-10 bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 -mx-4 sm:-mx-6 px-4 sm:px-6">
+    <div class="flex overflow-x-auto gap-1" role="tablist">
+      <button class="fin-tab active" data-tab="tab-overview"><i class="fa-solid fa-chart-pie mr-1.5"></i>Overview</button>
+      <button class="fin-tab" data-tab="tab-revenue"><i class="fa-solid fa-sack-dollar mr-1.5"></i>Revenue</button>
+      <button class="fin-tab" data-tab="tab-collections"><i class="fa-solid fa-credit-card mr-1.5"></i>Collections</button>
+      <button class="fin-tab" data-tab="tab-expenses"><i class="fa-solid fa-receipt mr-1.5"></i>Expenses</button>
+      <button class="fin-tab" data-tab="tab-payroll"><i class="fa-solid fa-hand-holding-dollar mr-1.5"></i>Payroll</button>
+      <button class="fin-tab" data-tab="tab-pnl"><i class="fa-solid fa-scale-balanced mr-1.5"></i>P&amp;L</button>
+      <button class="fin-tab" data-tab="tab-cashflow"><i class="fa-solid fa-water mr-1.5"></i>Cashflow</button>
+      <button class="fin-tab" data-tab="tab-forecasting"><i class="fa-solid fa-chart-line mr-1.5"></i>Forecast</button>
+      <button class="fin-tab" data-tab="tab-compliance"><i class="fa-solid fa-shield-check mr-1.5"></i>Compliance</button>
     </div>
+  </div>
 
-    <!-- ══════════════════════════════════════════ -->
-    <!-- TAB: Overview                             -->
-    <!-- ══════════════════════════════════════════ -->
-    <div class="fin-panel active space-y" id="tab-overview" style="padding-top:20px;">
-        <div class="grid-3">
-            {% for card in answer_cards %}
-            <div class="card">
-            <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;">{{ card.question }}</p>
-            <p style="font-size:24px;font-weight:800;color:var(--text);margin-top:8px;">{{ card.answer }}</p>
-            <p class="text-sm text-muted" style="margin-top:10px;line-height:1.7;">{{ card.detail }}</p>
-        </div>
-        {% endfor %}
+  <!-- OVERVIEW -->
+  <div class="fin-panel active space-y-5" id="tab-overview">
+    <div class="grid gap-3 md:grid-cols-3">
+      {% for card in answer_cards %}
+      <div class="card p-5">
+        <p class="text-[11px] uppercase tracking-wider text-gray-500">{{ card.question }}</p>
+        <p class="text-2xl font-bold text-gray-900 dark:text-white mt-2">{{ card.answer }}</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">{{ card.detail }}</p>
+      </div>
+      {% endfor %}
     </div>
-
-    <div class="stat-cards">
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div><p class="stat-label">MRR</p><p class="stat-value">RM {{ monthly_recurring_revenue|floatformat:2 }}</p></div>
-                <div class="stat-icon"><i class="fa-solid fa-repeat"></i></div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div><p class="stat-label">Revenue This Month</p><p class="stat-value">RM {{ revenue_this_month|floatformat:2 }}</p></div>
-                <div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-sack-dollar"></i></div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div><p class="stat-label">Total Expenses</p><p class="stat-value">RM {{ total_expenses|floatformat:2 }}</p></div>
-                <div class="stat-icon" style="background:rgba(239,68,68,.12);color:#f87171;"><i class="fa-solid fa-arrow-trend-down"></i></div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div><p class="stat-label">Net Profit</p><p class="stat-value">RM {{ net_profit|floatformat:2 }}</p></div>
-                <div class="stat-icon" style="background:rgba(79,110,247,.12);color:#93c5fd;"><i class="fa-solid fa-scale-balanced"></i></div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div><p class="stat-label">Cash Balance</p><p class="stat-value">RM {{ cash_balance|floatformat:2 }}</p></div>
-                <div class="stat-icon" style="background:rgba(6,182,212,.12);color:#67e8f9;"><i class="fa-solid fa-wallet"></i></div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div><p class="stat-label">Break-even Students</p><p class="stat-value">{% if break_even_students %}{{ break_even_students }}{% else %}N/A{% endif %}</p></div>
-                <div class="stat-icon" style="background:rgba(168,85,247,.12);color:#d8b4fe;"><i class="fa-solid fa-users"></i></div>
-            </div>
-        </div>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">MRR</p><p class="mt-1 text-xl font-bold">RM {{ monthly_recurring_revenue|floatformat:2 }}</p></div>
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Revenue MTD</p><p class="mt-1 text-xl font-bold text-green-600">RM {{ revenue_this_month|floatformat:2 }}</p></div>
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Expenses</p><p class="mt-1 text-xl font-bold text-red-500">RM {{ total_expenses|floatformat:2 }}</p></div>
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Net Profit</p><p class="mt-1 text-xl font-bold text-blue-500">RM {{ net_profit|floatformat:2 }}</p></div>
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Cash</p><p class="mt-1 text-xl font-bold text-cyan-500">RM {{ cash_balance|floatformat:2 }}</p></div>
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Break-even</p><p class="mt-1 text-xl font-bold">{% if break_even_students %}{{ break_even_students }}{% else %}—{% endif %}</p></div>
     </div>
-    </div><!-- /tab-overview -->
+  </div>
 
-    <!-- ══════════════════════════════════════════ -->
-    <!-- TAB: Revenue                              -->
-    <!-- ══════════════════════════════════════════ -->
-    <div class="fin-panel space-y" id="tab-revenue" style="padding-top:20px;">
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Revenue</span>
-                <a href="{% url 'finance:invoice_list' %}" class="section-link">Open invoices</a>
-            </div>
+  <!-- REVENUE -->
+  <div class="fin-panel space-y-5" id="tab-revenue">
+    <div class="grid gap-5 lg:grid-cols-2">
+      <div class="card p-5">
+        <div class="flex items-center justify-between mb-3"><h3 class="font-semibold text-gray-900 dark:text-white">Revenue Trend</h3><a href="{% url 'finance:invoice_list' %}" class="text-xs text-brand-500 hover:underline">Invoices</a></div>
+        <div class="relative h-80"><canvas id="revenueChart"></canvas></div>
+      </div>
+      <div class="card p-5">
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Breakdown</h3>
+        <div class="space-y-2">
+          {% for label, amount in revenue_by_program|slice:":4" %}
+          <div class="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-800"><span class="font-medium text-sm">{{ label }}</span><span class="badge badge-info">RM {{ amount|floatformat:2 }}</span></div>
+          {% empty %}<p class="text-sm text-gray-500 text-center py-3">No revenue yet.</p>{% endfor %}
+          {% for label, amount in revenue_by_branch|slice:":4" %}
+          <div class="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-800"><span class="font-medium text-sm">{{ label }}</span><span class="badge badge-success">RM {{ amount|floatformat:2 }}</span></div>
+          {% endfor %}
         </div>
-        <div class="grid-2">
-            <div class="card">
-                <div class="section-header"><span class="section-title">Revenue Trend</span></div>
-                <div class="chart-wrap" style="height:320px;"><canvas id="revenueChart"></canvas></div>
-            </div>
-            <div class="card">
-                <div class="section-header"><span class="section-title">Revenue Breakdown</span></div>
-                <div class="space-y">
-                    {% for label, amount in revenue_by_program|slice:":4" %}
-                    <div class="card-inset"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;"><span style="font-weight:600;color:var(--text);">{{ label }}</span><span class="badge badge-info">RM {{ amount|floatformat:2 }}</span></div></div>
-                    {% empty %}
-                    <div class="empty-state"><i class="fa-regular fa-chart-bar"></i><p>No revenue captured yet.</p></div>
-                    {% endfor %}
-                    {% for label, amount in revenue_by_branch|slice:":4" %}
-                    <div class="card-inset"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;"><span style="font-weight:600;color:var(--text);">{{ label }}</span><span class="badge badge-success">RM {{ amount|floatformat:2 }}</span></div></div>
-                    {% endfor %}
-                </div>
-            </div>
+      </div>
+    </div>
+    <div class="grid gap-5 lg:grid-cols-2">
+      <div class="card p-5">
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-3">By Coach</h3>
+        <div class="space-y-2">
+          {% for label, amount in revenue_by_coach|slice:":6" %}
+          <div class="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-800"><span class="font-medium text-sm">{{ label }}</span><span class="badge badge-muted">RM {{ amount|floatformat:2 }}</span></div>
+          {% empty %}<p class="text-sm text-gray-500 text-center py-3">No coach revenue.</p>{% endfor %}
         </div>
-        <div class="grid-2">
-            <div class="card">
-                <div class="section-header"><span class="section-title">Revenue By Coach</span></div>
-                <div class="space-y">
-                    {% for label, amount in revenue_by_coach|slice:":6" %}
-                    <div class="card-inset"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;"><span style="font-weight:600;color:var(--text);">{{ label }}</span><span class="badge badge-neutral">RM {{ amount|floatformat:2 }}</span></div></div>
-                    {% empty %}
-                    <div class="empty-state"><i class="fa-regular fa-user"></i><p>No coach-linked revenue yet.</p></div>
-                    {% endfor %}
-                </div>
-            </div>
-            <div class="card">
-                <div class="section-header"><span class="section-title">Revenue By Student</span></div>
-                <div class="space-y">
-                    {% for label, amount in revenue_by_student|slice:":6" %}
-                    <div class="card-inset"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;"><span style="font-weight:600;color:var(--text);">{{ label }}</span><span class="badge badge-info">RM {{ amount|floatformat:2 }}</span></div></div>
-                    {% empty %}
-                    <div class="empty-state"><i class="fa-regular fa-id-card"></i><p>No student revenue yet.</p></div>
-                    {% endfor %}
-                </div>
-            </div>
+      </div>
+      <div class="card p-5">
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-3">By Student</h3>
+        <div class="space-y-2">
+          {% for label, amount in revenue_by_student|slice:":6" %}
+          <div class="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-800"><span class="font-medium text-sm">{{ label }}</span><span class="badge badge-info">RM {{ amount|floatformat:2 }}</span></div>
+          {% empty %}<p class="text-sm text-gray-500 text-center py-3">No student revenue.</p>{% endfor %}
         </div>
-    </div><!-- /tab-revenue -->
+      </div>
+    </div>
+  </div>
 
-    <!-- ══════════════ -->
-    <!-- TAB: Collections -->
-    <!-- ══════════════ -->
-    <div class="fin-panel space-y" id="tab-collections" style="padding-top:20px;">
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Payment and Collection</span>
-                <a href="{% url 'payments:pending_reviews' %}" class="section-link">Review queue</a>
-            </div>
+  <!-- COLLECTIONS -->
+  <div class="fin-panel space-y-5" id="tab-collections">
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Billed MTD</p><p class="mt-1 text-xl font-bold">RM {{ billed_this_month|floatformat:2 }}</p></div>
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Pending</p><p class="mt-1 text-xl font-bold text-amber-500">RM {{ pending_verification_total|floatformat:2 }}</p></div>
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Outstanding</p><p class="mt-1 text-xl font-bold text-red-500">RM {{ outstanding_total|floatformat:2 }}</p></div>
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Overdue</p><p class="mt-1 text-xl font-bold text-red-600">RM {{ overdue_total|floatformat:2 }}</p></div>
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Rate</p><p class="mt-1 text-xl font-bold text-green-600">{{ collection_rate }}%</p></div>
+    </div>
+    <div class="grid gap-5 lg:grid-cols-2">
+      <div class="card p-5">
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Payment Method Mix</h3>
+        <div class="relative h-80"><canvas id="paymentMethodChart"></canvas></div>
+      </div>
+      <div class="card overflow-hidden">
+        <div class="flex items-center justify-between p-5 pb-3">
+          <h3 class="font-semibold text-gray-900 dark:text-white">Outstanding Queue</h3>
+          <a href="{% url 'members:crm' %}" class="text-xs text-brand-500 hover:underline">CRM</a>
         </div>
-        <div class="stat-cards">
-            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Billed This Month</p><p class="stat-value">RM {{ billed_this_month|floatformat:2 }}</p></div><div class="stat-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div></div></div>
-            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Pending Verification</p><p class="stat-value">RM {{ pending_verification_total|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(245,158,11,.12);color:#fbbf24;"><i class="fa-solid fa-hourglass-half"></i></div></div></div>
-            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Outstanding</p><p class="stat-value">RM {{ outstanding_total|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(239,68,68,.12);color:#f87171;"><i class="fa-solid fa-triangle-exclamation"></i></div></div></div>
-            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Overdue</p><p class="stat-value">RM {{ overdue_total|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(239,68,68,.12);color:#f87171;"><i class="fa-solid fa-calendar-xmark"></i></div></div></div>
-            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Collection Rate</p><p class="stat-value">{{ collection_rate }}%</p></div><div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-percent"></i></div></div></div>
+        <div class="overflow-x-auto">
+          <table class="data-table">
+            <thead><tr><th>Student</th><th>Due</th><th>Outstanding</th><th>Status</th></tr></thead>
+            <tbody>
+              {% for invoice in outstanding_rows %}
+              <tr>
+                <td><p class="font-medium">{{ invoice.student_label }}</p><p class="text-xs text-gray-500">{{ invoice.branch_label }} · {{ invoice.program_label }}</p></td>
+                <td class="text-xs text-gray-500">{{ invoice.due_date }}</td>
+                <td class="font-semibold">RM {{ invoice.outstanding_amount|floatformat:2 }}</td>
+                <td><span class="badge {{ invoice.status|status_badge }}">{{ invoice.get_status_display }}</span></td>
+              </tr>
+              {% empty %}<tr><td colspan="4" class="text-center py-8 text-gray-500">No outstanding invoices.</td></tr>{% endfor %}
+            </tbody>
+          </table>
         </div>
-        <div class="grid-2">
-            <div class="card">
-                <div class="section-header"><span class="section-title">Payment Method Mix</span></div>
-                <div class="chart-wrap" style="height:320px;"><canvas id="paymentMethodChart"></canvas></div>
-            </div>
-            <div class="card">
-                <div class="section-header"><span class="section-title">Outstanding Queue</span><a href="{% url 'members:crm' %}" class="section-link">Open CRM</a></div>
-                <div class="table-wrap">
-                    <table class="tbl native-stack">
-                        <thead><tr><th>Student</th><th>Due Date</th><th>Outstanding</th><th>Status</th></tr></thead>
-                        <tbody>
-                            {% for invoice in outstanding_rows %}
-                            <tr>
-                                <td data-label="Student"><div class="tbl-name">{{ invoice.student_label }}</div><div class="tbl-sub">{{ invoice.branch_label }} - {{ invoice.program_label }}</div></td>
-                                <td data-label="Due Date" class="muted">{{ invoice.due_date }}</td>
-                                <td data-label="Outstanding">RM {{ invoice.outstanding_amount|floatformat:2 }}</td>
-                                <td data-label="Status"><span class="badge {{ invoice.status|status_badge }}">{{ invoice.get_status_display }}</span></td>
-                            </tr>
-                            {% empty %}
-                            <tr><td colspan="4"><div class="empty-state"><i class="fa-regular fa-circle-check"></i><p>No outstanding invoices right now.</p></div></td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+      </div>
+    </div>
+    <div class="grid gap-5 lg:grid-cols-2">
+      <div class="card overflow-hidden">
+        <div class="flex items-center justify-between p-5 pb-3"><h3 class="font-semibold text-gray-900 dark:text-white">Recent Receipts</h3><a href="{% url 'payments:payment_history' %}" class="text-xs text-brand-500 hover:underline">Full history</a></div>
+        <div class="overflow-x-auto">
+          <table class="data-table">
+            <thead><tr><th>Student</th><th>Method</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody>
+              {% for p in payment_rows %}
+              <tr>
+                <td><p class="font-medium">{{ p.invoice.member.full_name }}</p><p class="text-xs text-gray-500">{{ p.invoice.period|date:"F Y" }}</p></td>
+                <td><p>{{ p.get_payment_method_display }}</p><p class="text-xs text-gray-500">{{ p.receipt_reference|default:"—" }}</p></td>
+                <td class="font-semibold">RM {{ p.amount_received|floatformat:2 }}</td>
+                <td><span class="badge {{ p.status|status_badge }}">{{ p.get_status_display }}</span></td>
+              </tr>
+              {% empty %}<tr><td colspan="4" class="text-center py-8 text-gray-500">No payments yet.</td></tr>{% endfor %}
+            </tbody>
+          </table>
         </div>
+      </div>
+      <div class="card overflow-hidden">
+        <div class="flex items-center justify-between p-5 pb-3"><h3 class="font-semibold text-gray-900 dark:text-white">Latest Invoices</h3><a href="{% url 'finance:invoice_list' %}" class="text-xs text-brand-500 hover:underline">All</a></div>
+        <div class="overflow-x-auto">
+          <table class="data-table">
+            <thead><tr><th>Student</th><th>Due</th><th>Approved</th><th>Outstanding</th></tr></thead>
+            <tbody>
+              {% for inv in invoice_rows %}
+              <tr>
+                <td><p class="font-medium">{{ inv.student_label }}</p><p class="text-xs text-gray-500">{{ inv.get_invoice_type_display }} · {{ inv.branch_label }}</p></td>
+                <td class="text-xs text-gray-500">{{ inv.due_date }}</td>
+                <td>RM {{ inv.approved_amount|floatformat:2 }}</td>
+                <td><p class="font-semibold">RM {{ inv.outstanding_amount|floatformat:2 }}</p><p class="text-xs text-gray-500">{{ inv.payment_method_label }}</p></td>
+              </tr>
+              {% empty %}<tr><td colspan="4" class="text-center py-8 text-gray-500">No invoices.</td></tr>{% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        <div class="grid-2">
-            <div class="card">
-                <div class="section-header"><span class="section-title">Recent Receipts</span><a href="{% url 'payments:payment_history' %}" class="section-link">Full history</a></div>
-                <div class="table-wrap">
-                    <table class="tbl native-stack">
-                        <thead><tr><th>Student</th><th>Method</th><th>Amount</th><th>Status</th></tr></thead>
-                        <tbody>
-                            {% for payment in payment_rows %}
-                            <tr>
-                                <td data-label="Student"><div class="tbl-name">{{ payment.invoice.member.full_name }}</div><div class="tbl-sub">{{ payment.invoice.period|date:"F Y" }}</div></td>
-                                <td data-label="Method"><div class="tbl-name">{{ payment.get_payment_method_display }}</div><div class="tbl-sub">{{ payment.receipt_reference|default:"No reference" }}</div></td>
-                                <td data-label="Amount">RM {{ payment.amount_received|floatformat:2 }}</td>
-                                <td data-label="Status"><span class="badge {{ payment.status|status_badge }}">{{ payment.get_status_display }}</span></td>
-                            </tr>
-                            {% empty %}
-                            <tr><td colspan="4"><div class="empty-state"><i class="fa-regular fa-credit-card"></i><p>No payment submissions yet.</p></div></td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="card">
-                <div class="section-header"><span class="section-title">Latest Invoices</span><a href="{% url 'finance:invoice_list' %}" class="section-link">All invoices</a></div>
-                <div class="table-wrap">
-                    <table class="tbl native-stack">
-                        <thead><tr><th>Student</th><th>Due Date</th><th>Approved</th><th>Outstanding</th></tr></thead>
-                        <tbody>
-                            {% for invoice in invoice_rows %}
-                            <tr>
-                                <td data-label="Student"><div class="tbl-name">{{ invoice.student_label }}</div><div class="tbl-sub">{{ invoice.get_invoice_type_display }} - {{ invoice.branch_label }}</div></td>
-                                <td data-label="Due Date" class="muted">{{ invoice.due_date }}</td>
-                                <td data-label="Approved">RM {{ invoice.approved_amount|floatformat:2 }}</td>
-                                <td data-label="Outstanding">RM {{ invoice.outstanding_amount|floatformat:2 }}<div class="tbl-sub">{{ invoice.payment_method_label }}</div></td>
-                            </tr>
-                            {% empty %}
-                            <tr><td colspan="4"><div class="empty-state"><i class="fa-regular fa-file-lines"></i><p>No invoices recorded yet.</p></div></td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+  <!-- EXPENSES -->
+  <div class="fin-panel space-y-5" id="tab-expenses">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Fixed</p><p class="mt-1 text-2xl font-bold">RM {{ fixed_expenses|floatformat:2 }}</p></div>
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Variable</p><p class="mt-1 text-2xl font-bold text-amber-500">RM {{ variable_expenses|floatformat:2 }}</p></div>
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Risk Buffer</p><p class="mt-1 text-2xl font-bold text-blue-500">RM {{ target_buffer|floatformat:2 }}</p></div>
+    </div>
+    <div class="grid gap-5 lg:grid-cols-2">
+      <div class="card p-5">
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Categories</h3>
+        <div class="space-y-2">
+          {% for label, amount in expense_by_category|slice:":8" %}
+          <div class="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-800"><span class="font-medium text-sm">{{ label }}</span><span class="badge badge-warning">RM {{ amount|floatformat:2 }}</span></div>
+          {% empty %}<p class="text-sm text-gray-500 text-center py-3">No categories.</p>{% endfor %}
         </div>
-    </div><!-- /tab-collections -->
+      </div>
+      <div class="card p-5">
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-3">By Branch</h3>
+        <div class="space-y-2">
+          {% for label, amount in expense_by_branch|slice:":8" %}
+          <div class="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-800"><span class="font-medium text-sm">{{ label }}</span><span class="badge badge-danger">RM {{ amount|floatformat:2 }}</span></div>
+          {% empty %}<p class="text-sm text-gray-500 text-center py-3">No branch expenses.</p>{% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="card overflow-hidden">
+      <div class="p-5 pb-3"><h3 class="font-semibold text-gray-900 dark:text-white">Recent Expenses</h3></div>
+      <div class="overflow-x-auto">
+        <table class="data-table">
+          <thead><tr><th>Date</th><th>Title</th><th>Category</th><th>Branch</th><th>Amount</th></tr></thead>
+          <tbody>
+            {% for e in expense_rows %}
+            <tr>
+              <td class="text-xs text-gray-500">{{ e.expense_date }}</td>
+              <td><p class="font-medium">{{ e.title }}</p><p class="text-xs text-gray-500">{{ e.vendor_name|default:"—" }}</p></td>
+              <td>{{ e.get_expense_type_display }} · {{ e.get_category_tag_display }}</td>
+              <td>{{ e.branch_label }}</td>
+              <td class="font-semibold">RM {{ e.amount|floatformat:2 }}</td>
+            </tr>
+            {% empty %}<tr><td colspan="5" class="text-center py-8 text-gray-500">No expenses.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-    <!-- ══════════════ -->
-    <!-- TAB: Expenses -->
-    <!-- ══════════════ -->
-    <div class="fin-panel space-y" id="tab-expenses" style="padding-top:20px;">
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Expenses</span>
-                <a href="{% url 'finance:expense_list' %}" class="section-link">Manage expenses</a>
-            </div>
+  <!-- PAYROLL -->
+  <div class="fin-panel space-y-5" id="tab-payroll">
+    <div class="grid grid-cols-2 gap-3">
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Paid MTD</p><p class="mt-1 text-2xl font-bold">RM {{ payroll_total|floatformat:2 }}</p></div>
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Records</p><p class="mt-1 text-2xl font-bold text-blue-500">{{ all_payroll_rows|length }}</p></div>
+    </div>
+    <div class="grid gap-5 lg:grid-cols-2">
+      <div class="card p-5">
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-3">By Coach</h3>
+        <div class="space-y-2">
+          {% for label, amount in payroll_by_coach|slice:":8" %}<div class="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-800"><span class="font-medium text-sm">{{ label }}</span><span class="badge badge-info">RM {{ amount|floatformat:2 }}</span></div>{% empty %}<p class="text-sm text-gray-500 text-center py-3">No payroll.</p>{% endfor %}
         </div>
-        <div class="stat-cards">
-            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Fixed Expenses</p><p class="stat-value">RM {{ fixed_expenses|floatformat:2 }}</p></div><div class="stat-icon"><i class="fa-solid fa-building-circle-check"></i></div></div></div>
-            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Variable Expenses</p><p class="stat-value">RM {{ variable_expenses|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(245,158,11,.12);color:#fbbf24;"><i class="fa-solid fa-sliders"></i></div></div></div>
-            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Risk Buffer</p><p class="stat-value">RM {{ target_buffer|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(79,110,247,.12);color:#93c5fd;"><i class="fa-solid fa-shield-halved"></i></div></div></div>
+      </div>
+      <div class="card p-5">
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-3">By Branch</h3>
+        <div class="space-y-2">
+          {% for label, amount in payroll_by_branch|slice:":8" %}<div class="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-800"><span class="font-medium text-sm">{{ label }}</span><span class="badge badge-muted">RM {{ amount|floatformat:2 }}</span></div>{% empty %}<p class="text-sm text-gray-500 text-center py-3">No data.</p>{% endfor %}
         </div>
-        <div class="grid-2">
-            <div class="card">
-                <div class="section-header"><span class="section-title">Expense Categories</span></div>
-                <div class="space-y">
-                    {% for label, amount in expense_by_category|slice:":8" %}
-                    <div class="card-inset"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;"><span style="font-weight:600;color:var(--text);">{{ label }}</span><span class="badge badge-warning">RM {{ amount|floatformat:2 }}</span></div></div>
-                    {% empty %}
-                    <div class="empty-state"><i class="fa-regular fa-folder-open"></i><p>No expense categories yet.</p></div>
-                    {% endfor %}
-                </div>
-            </div>
-            <div class="card">
-                <div class="section-header"><span class="section-title">Expense By Branch</span></div>
-                <div class="space-y">
-                    {% for label, amount in expense_by_branch|slice:":8" %}
-                    <div class="card-inset"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;"><span style="font-weight:600;color:var(--text);">{{ label }}</span><span class="badge badge-danger">RM {{ amount|floatformat:2 }}</span></div></div>
-                    {% empty %}
-                    <div class="empty-state"><i class="fa-regular fa-building"></i><p>No branch-tagged expenses yet.</p></div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-        <div class="card">
-            <div class="section-header"><span class="section-title">Recent Expenses</span></div>
-            <div class="table-wrap">
-                <table class="tbl native-stack">
-                    <thead><tr><th>Date</th><th>Title</th><th>Category</th><th>Branch</th><th>Amount</th></tr></thead>
-                    <tbody>
-                        {% for expense in expense_rows %}
-                        <tr>
-                            <td data-label="Date" class="muted">{{ expense.expense_date }}</td>
-                            <td data-label="Title"><div class="tbl-name">{{ expense.title }}</div><div class="tbl-sub">{{ expense.vendor_name|default:"No vendor" }}</div></td>
-                            <td data-label="Category">{{ expense.get_expense_type_display }} - {{ expense.get_category_tag_display }}</td>
-                            <td data-label="Branch">{{ expense.branch_label }}</td>
-                            <td data-label="Amount">RM {{ expense.amount|floatformat:2 }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="5"><div class="empty-state"><i class="fa-regular fa-note-sticky"></i><p>No expenses added this month.</p></div></td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div><!-- /tab-expenses -->
+      </div>
+    </div>
+    <div class="card overflow-hidden">
+      <div class="p-5 pb-3"><h3 class="font-semibold text-gray-900 dark:text-white">Latest Payroll</h3></div>
+      <div class="overflow-x-auto">
+        <table class="data-table">
+          <thead><tr><th>Coach</th><th>Period</th><th>Sessions</th><th>Total</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for p in payroll_rows %}
+            <tr>
+              <td><p class="font-medium">{{ p.coach.get_full_name|default:p.coach.username }}</p><p class="text-xs text-gray-500">{{ p.branch_label }}</p></td>
+              <td class="text-xs text-gray-500">{{ p.period|date:"F Y" }}</td>
+              <td>{{ p.session_count }} / {{ p.sessions_delivered_actual }}</td>
+              <td class="font-semibold">RM {{ p.total_pay|floatformat:2 }}</td>
+              <td><span class="badge {% if p.status == 'paid' %}badge-success{% elif p.status == 'approved' %}badge-info{% else %}badge-warning{% endif %}">{{ p.get_status_display }}</span></td>
+            </tr>
+            {% empty %}<tr><td colspan="5" class="text-center py-8 text-gray-500">No payroll.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-    <!-- ══════════════ -->
-    <!-- TAB: Payroll -->
-    <!-- ══════════════ -->
-    <div class="fin-panel space-y" id="tab-payroll" style="padding-top:20px;">
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Payroll</span>
-                <a href="{% url 'finance:payroll' %}" class="section-link">Open payroll</a>
-            </div>
+  <!-- P&L -->
+  <div class="fin-panel space-y-5" id="tab-pnl">
+    <div class="grid grid-cols-3 gap-3">
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Gross</p><p class="mt-1 text-2xl font-bold">RM {{ gross_profit|floatformat:2 }}</p></div>
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Net</p><p class="mt-1 text-2xl font-bold text-green-600">RM {{ net_profit|floatformat:2 }}</p></div>
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Margin</p><p class="mt-1 text-2xl font-bold text-blue-500">{{ margin }}%</p></div>
+    </div>
+    <div class="grid gap-5 lg:grid-cols-2">
+      <div class="card overflow-hidden">
+        <div class="p-5 pb-3"><h3 class="font-semibold text-gray-900 dark:text-white">By Branch</h3></div>
+        <div class="overflow-x-auto">
+          <table class="data-table">
+            <thead><tr><th>Branch</th><th>Revenue</th><th>Expenses</th><th>Net</th></tr></thead>
+            <tbody>
+              {% for row in branch_pnl_rows %}
+              <tr><td><p class="font-medium">{{ row.label }}</p><p class="text-xs text-gray-500">Margin {{ row.margin }}%</p></td><td>RM {{ row.revenue|floatformat:2 }}</td><td>RM {{ row.expenses|floatformat:2 }}</td><td class="font-semibold">RM {{ row.net_profit|floatformat:2 }}</td></tr>
+              {% empty %}<tr><td colspan="4" class="text-center py-8 text-gray-500">No data.</td></tr>{% endfor %}
+            </tbody>
+          </table>
         </div>
-        <div class="stat-cards">
-            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Payroll Paid This Month</p><p class="stat-value">RM {{ payroll_total|floatformat:2 }}</p></div><div class="stat-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div></div></div>
-            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Payroll Records</p><p class="stat-value">{{ all_payroll_rows|length }}</p></div><div class="stat-icon" style="background:rgba(79,110,247,.12);color:#93c5fd;"><i class="fa-solid fa-clipboard-list"></i></div></div></div>
+      </div>
+      <div class="card overflow-hidden">
+        <div class="p-5 pb-3"><h3 class="font-semibold text-gray-900 dark:text-white">By Program</h3></div>
+        <div class="overflow-x-auto">
+          <table class="data-table">
+            <thead><tr><th>Program</th><th>Revenue</th><th>Expenses</th><th>Net</th></tr></thead>
+            <tbody>
+              {% for row in program_pnl_rows %}
+              <tr><td><p class="font-medium">{{ row.label }}</p><p class="text-xs text-gray-500">Margin {{ row.margin }}%</p></td><td>RM {{ row.revenue|floatformat:2 }}</td><td>RM {{ row.expenses|floatformat:2 }}</td><td class="font-semibold">RM {{ row.net_profit|floatformat:2 }}</td></tr>
+              {% empty %}<tr><td colspan="4" class="text-center py-8 text-gray-500">No data.</td></tr>{% endfor %}
+            </tbody>
+          </table>
         </div>
-        <div class="grid-2">
-            <div class="card">
-                <div class="section-header"><span class="section-title">Payroll By Coach</span></div>
-                <div class="space-y">
-                    {% for label, amount in payroll_by_coach|slice:":8" %}
-                    <div class="card-inset"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;"><span style="font-weight:600;color:var(--text);">{{ label }}</span><span class="badge badge-info">RM {{ amount|floatformat:2 }}</span></div></div>
-                    {% empty %}
-                    <div class="empty-state"><i class="fa-regular fa-user"></i><p>No payroll records yet.</p></div>
-                    {% endfor %}
-                </div>
-            </div>
-            <div class="card">
-                <div class="section-header"><span class="section-title">Payroll By Branch</span></div>
-                <div class="space-y">
-                    {% for label, amount in payroll_by_branch|slice:":8" %}
-                    <div class="card-inset"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;"><span style="font-weight:600;color:var(--text);">{{ label }}</span><span class="badge badge-neutral">RM {{ amount|floatformat:2 }}</span></div></div>
-                    {% empty %}
-                    <div class="empty-state"><i class="fa-regular fa-building"></i><p>No branch payroll data yet.</p></div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-        <div class="card">
-            <div class="section-header"><span class="section-title">Latest Payroll Records</span></div>
-            <div class="table-wrap">
-                <table class="tbl native-stack">
-                    <thead><tr><th>Coach</th><th>Period</th><th>Sessions</th><th>Total Pay</th><th>Status</th></tr></thead>
-                    <tbody>
-                        {% for payroll in payroll_rows %}
-                        <tr>
-                            <td data-label="Coach"><div class="tbl-name">{{ payroll.coach.get_full_name|default:payroll.coach.username }}</div><div class="tbl-sub">{{ payroll.branch_label }}</div></td>
-                            <td data-label="Period" class="muted">{{ payroll.period|date:"F Y" }}</td>
-                            <td data-label="Sessions">{{ payroll.session_count }} entered / {{ payroll.sessions_delivered_actual }} actual</td>
-                            <td data-label="Total Pay">RM {{ payroll.total_pay|floatformat:2 }}</td>
-                            <td data-label="Status"><span class="badge {% if payroll.status == 'paid' %}badge-success{% elif payroll.status == 'approved' %}badge-info{% else %}badge-warning{% endif %}">{{ payroll.get_status_display }}</span></td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="5"><div class="empty-state"><i class="fa-regular fa-money-bill-1"></i><p>No payroll records yet.</p></div></td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div><!-- /tab-payroll -->
+      </div>
+    </div>
+  </div>
 
-    <!-- ══════════════ -->
-    <!-- TAB: P&L -->
-    <!-- ══════════════ -->
-    <div class="fin-panel space-y" id="tab-pnl" style="padding-top:20px;">
-        <div class="card"><div class="section-header"><span class="section-title">Profit and Loss</span></div></div>
-        <div class="stat-cards">
-            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Gross Profit</p><p class="stat-value">RM {{ gross_profit|floatformat:2 }}</p></div><div class="stat-icon"><i class="fa-solid fa-chart-column"></i></div></div></div>
-            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Net Profit</p><p class="stat-value">RM {{ net_profit|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-chart-line"></i></div></div></div>
-            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Margin</p><p class="stat-value">{{ margin }}%</p></div><div class="stat-icon" style="background:rgba(79,110,247,.12);color:#93c5fd;"><i class="fa-solid fa-percent"></i></div></div></div>
+  <!-- CASHFLOW -->
+  <div class="fin-panel space-y-5" id="tab-cashflow">
+    <div class="grid gap-5 lg:grid-cols-2">
+      <div class="card p-5">
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Cashflow Trend</h3>
+        <div class="relative h-80"><canvas id="cashflowChart"></canvas></div>
+      </div>
+      <div class="card p-5">
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Cash Position</h3>
+        <div class="space-y-3">
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Cash balance</p><p class="text-2xl font-bold mt-2">RM {{ cash_balance|floatformat:2 }}</p></div>
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Runway</p><p class="text-xl font-bold mt-2">{% if forecast.runway_months %}{{ forecast.runway_months|floatformat:1 }} mo{% else %}Positive{% endif %}</p></div>
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Opening</p><p class="text-sm mt-2">RM {{ billing_configuration.opening_cash_balance|floatformat:2 }}</p></div>
         </div>
-        <div class="grid-2">
-            <div class="card">
-                <div class="section-header"><span class="section-title">P&amp;L By Branch</span></div>
-                <div class="table-wrap">
-                    <table class="tbl native-stack">
-                        <thead><tr><th>Branch</th><th>Revenue</th><th>Expenses</th><th>Net Profit</th></tr></thead>
-                        <tbody>
-                            {% for row in branch_pnl_rows %}
-                            <tr><td data-label="Branch"><div class="tbl-name">{{ row.label }}</div><div class="tbl-sub">Margin {{ row.margin }}%</div></td><td data-label="Revenue">RM {{ row.revenue|floatformat:2 }}</td><td data-label="Expenses">RM {{ row.expenses|floatformat:2 }}</td><td data-label="Net Profit">RM {{ row.net_profit|floatformat:2 }}</td></tr>
-                            {% empty %}
-                            <tr><td colspan="4"><div class="empty-state"><i class="fa-regular fa-building"></i><p>No branch P&amp;L data yet.</p></div></td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="card">
-                <div class="section-header"><span class="section-title">P&amp;L By Program</span></div>
-                <div class="table-wrap">
-                    <table class="tbl native-stack">
-                        <thead><tr><th>Program</th><th>Revenue</th><th>Expenses</th><th>Net Profit</th></tr></thead>
-                        <tbody>
-                            {% for row in program_pnl_rows %}
-                            <tr><td data-label="Program"><div class="tbl-name">{{ row.label }}</div><div class="tbl-sub">Margin {{ row.margin }}%</div></td><td data-label="Revenue">RM {{ row.revenue|floatformat:2 }}</td><td data-label="Expenses">RM {{ row.expenses|floatformat:2 }}</td><td data-label="Net Profit">RM {{ row.net_profit|floatformat:2 }}</td></tr>
-                            {% empty %}
-                            <tr><td colspan="4"><div class="empty-state"><i class="fa-regular fa-rectangle-list"></i><p>No program P&amp;L data yet.</p></div></td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div><!-- /tab-pnl -->
+      </div>
+    </div>
+  </div>
 
-    <!-- ══════════════ -->
-    <!-- TAB: Cashflow -->
-    <!-- ══════════════ -->
-    <div class="fin-panel space-y" id="tab-cashflow" style="padding-top:20px;">
-        <div class="card"><div class="section-header"><span class="section-title">Cashflow</span></div></div>
-        <div class="grid-2">
-            <div class="card">
-                <div class="section-header"><span class="section-title">Cashflow Trend</span></div>
-                <div class="chart-wrap" style="height:320px;"><canvas id="cashflowChart"></canvas></div>
-            </div>
-            <div class="card">
-                <div class="section-header"><span class="section-title">Cash Position</span></div>
-                <div class="space-y">
-                    <div class="card-inset"><p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Cash balance</p><p style="font-size:24px;font-weight:800;color:var(--text);margin-top:8px;">RM {{ cash_balance|floatformat:2 }}</p></div>
-                    <div class="card-inset"><p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Runway</p><p style="font-size:20px;font-weight:700;color:var(--text);margin-top:8px;">{% if forecast.runway_months %}{{ forecast.runway_months|floatformat:1 }} months{% else %}Cash-positive{% endif %}</p></div>
-                    <div class="card-inset"><p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Opening cash</p><p class="text-sm text-muted" style="margin-top:8px;">RM {{ billing_configuration.opening_cash_balance|floatformat:2 }}</p></div>
-                </div>
-            </div>
+  <!-- FORECASTING -->
+  <div class="fin-panel space-y-5" id="tab-forecasting">
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Scenario</p><p class="text-sm font-bold mt-1 truncate">{{ scenario.title|default:"Default" }}</p></div>
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Students</p><p class="text-xl font-bold mt-1 text-blue-500">{{ forecast.student_count|floatformat:0 }}</p></div>
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Revenue</p><p class="text-xl font-bold mt-1 text-green-600">RM {{ forecast.revenue|floatformat:2 }}</p></div>
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Expenses</p><p class="text-xl font-bold mt-1 text-red-500">RM {{ forecast.expenses|floatformat:2 }}</p></div>
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Net Profit</p><p class="text-xl font-bold mt-1 text-purple-500">RM {{ forecast.net_profit|floatformat:2 }}</p></div>
+      <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Branch Net</p><p class="text-xl font-bold mt-1 text-cyan-500">RM {{ forecast.new_branch_net|floatformat:2 }}</p></div>
+    </div>
+    <div class="grid gap-5 lg:grid-cols-2">
+      <div class="card p-5">
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Decision Signals</h3>
+        <div class="space-y-2">
+          <div class="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-800"><span class="font-medium text-sm">Hire one more coach?</span><span class="badge {% if forecast.can_hire_more_coach %}badge-success{% else %}badge-warning{% endif %}">{% if forecast.can_hire_more_coach %}Yes{% else %}Not yet{% endif %}</span></div>
+          <div class="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-800"><span class="font-medium text-sm">Open another branch?</span><span class="badge {% if forecast.can_open_new_branch %}badge-success{% else %}badge-warning{% endif %}">{% if forecast.can_open_new_branch %}Yes{% else %}Not yet{% endif %}</span></div>
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{% if scenario and scenario.notes %}{{ scenario.notes }}{% else %}Create multiple scenarios to stress test drops, hiring, and branch expansion.{% endif %}</p></div>
         </div>
-    </div><!-- /tab-cashflow -->
+      </div>
+      <div class="card p-5">
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Inputs</h3>
+        <div class="space-y-2">
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="font-semibold text-sm">Student count change</p><p class="text-xs text-gray-500 mt-1">{{ scenario.student_count_change_percent|default:0 }}%</p></div>
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="font-semibold text-sm">Revenue drop</p><p class="text-xs text-gray-500 mt-1">{{ scenario.revenue_drop_percent|default:0 }}%</p></div>
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="font-semibold text-sm">Salary increase</p><p class="text-xs text-gray-500 mt-1">{{ scenario.salary_increase_percent|default:0 }}%</p></div>
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="font-semibold text-sm">Risk buffer</p><p class="text-xs text-gray-500 mt-1">{{ scenario.risk_buffer_percent|default:0 }}%</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <!-- ══════════════ -->
-    <!-- TAB: Forecasting -->
-    <!-- ══════════════ -->
-    <div class="fin-panel space-y" id="tab-forecasting" style="padding-top:20px;">
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Forecasting</span>
-                <a href="{% url 'finance:forecasting' %}" class="section-link">Manage scenarios</a>
-            </div>
+  <!-- COMPLIANCE -->
+  <div class="fin-panel space-y-5" id="tab-compliance">
+    <div class="grid gap-5 lg:grid-cols-3">
+      <div class="card p-5">
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Tax Summary</h3>
+        <div class="space-y-2">
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="text-[11px] uppercase tracking-wider text-gray-500">YTD Revenue</p><p class="text-lg font-bold mt-1">RM {{ tax_summary.year_to_date_revenue|floatformat:2 }}</p></div>
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="text-[11px] uppercase tracking-wider text-gray-500">YTD Expenses</p><p class="text-lg font-bold mt-1">RM {{ tax_summary.year_to_date_deductible_expenses|floatformat:2 }}</p></div>
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="text-[11px] uppercase tracking-wider text-gray-500">YTD Payroll</p><p class="text-lg font-bold mt-1">RM {{ tax_summary.year_to_date_payroll|floatformat:2 }}</p></div>
         </div>
-        <div class="stat-cards">
-            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Scenario</p><p class="stat-value" style="font-size:18px;">{{ scenario.title|default:"Default" }}</p></div><div class="stat-icon"><i class="fa-solid fa-flask"></i></div></div></div>
-            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Forecast Students</p><p class="stat-value">{{ forecast.student_count|floatformat:0 }}</p></div><div class="stat-icon" style="background:rgba(79,110,247,.12);color:#93c5fd;"><i class="fa-solid fa-users"></i></div></div></div>
-            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Forecast Revenue</p><p class="stat-value">RM {{ forecast.revenue|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-arrow-trend-up"></i></div></div></div>
-            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Forecast Expenses</p><p class="stat-value">RM {{ forecast.expenses|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(239,68,68,.12);color:#f87171;"><i class="fa-solid fa-arrow-trend-down"></i></div></div></div>
-            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Forecast Net Profit</p><p class="stat-value">RM {{ forecast.net_profit|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(168,85,247,.12);color:#d8b4fe;"><i class="fa-solid fa-scale-balanced"></i></div></div></div>
-            <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">New Branch Net</p><p class="stat-value">RM {{ forecast.new_branch_net|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(6,182,212,.12);color:#67e8f9;"><i class="fa-solid fa-store"></i></div></div></div>
+      </div>
+      <div class="card overflow-hidden lg:col-span-2">
+        <div class="p-5 pb-3"><h3 class="font-semibold text-gray-900 dark:text-white">Monthly Reports</h3></div>
+        <div class="overflow-x-auto">
+          <table class="data-table">
+            <thead><tr><th>Month</th><th>Revenue</th><th>Expenses</th><th>Net</th><th>Lock</th></tr></thead>
+            <tbody>
+              {% for row in monthly_report_rows %}<tr><td>{{ row.period|date:"F Y" }}</td><td>RM {{ row.revenue|floatformat:2 }}</td><td>RM {{ row.expenses|floatformat:2 }}</td><td class="font-semibold">RM {{ row.net_profit|floatformat:2 }}</td><td><span class="badge {% if row.locked %}badge-success{% else %}badge-muted{% endif %}">{% if row.locked %}Locked{% else %}Open{% endif %}</span></td></tr>
+              {% empty %}<tr><td colspan="5" class="text-center py-8 text-gray-500">No data.</td></tr>{% endfor %}
+            </tbody>
+          </table>
         </div>
-        <div class="grid-2">
-            <div class="card">
-                <div class="section-header"><span class="section-title">Decision Signals</span></div>
-                <div class="space-y">
-                    <div class="card-inset"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;"><span style="font-weight:600;color:var(--text);">Can hire one more coach?</span><span class="badge {% if forecast.can_hire_more_coach %}badge-success{% else %}badge-warning{% endif %}">{% if forecast.can_hire_more_coach %}Yes{% else %}Not safely yet{% endif %}</span></div></div>
-                    <div class="card-inset"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;"><span style="font-weight:600;color:var(--text);">Can open another branch?</span><span class="badge {% if forecast.can_open_new_branch %}badge-success{% else %}badge-warning{% endif %}">{% if forecast.can_open_new_branch %}Yes{% else %}Not yet{% endif %}</span></div></div>
-                    <div class="card-inset"><p class="text-sm text-muted" style="line-height:1.7;">{% if scenario and scenario.notes %}{{ scenario.notes }}{% else %}Create multiple scenarios to stress test revenue drops, hiring, salary changes, and branch expansion before committing to a decision.{% endif %}</p></div>
-                </div>
-            </div>
-            <div class="card">
-                <div class="section-header"><span class="section-title">Scenario Inputs</span></div>
-                <div class="space-y">
-                    <div class="card-inset"><strong style="color:var(--text);">Student count change</strong><p class="text-sm text-muted" style="margin-top:6px;">{{ scenario.student_count_change_percent|default:0 }}%</p></div>
-                    <div class="card-inset"><strong style="color:var(--text);">Revenue drop</strong><p class="text-sm text-muted" style="margin-top:6px;">{{ scenario.revenue_drop_percent|default:0 }}%</p></div>
-                    <div class="card-inset"><strong style="color:var(--text);">Salary increase</strong><p class="text-sm text-muted" style="margin-top:6px;">{{ scenario.salary_increase_percent|default:0 }}%</p></div>
-                    <div class="card-inset"><strong style="color:var(--text);">Risk buffer</strong><p class="text-sm text-muted" style="margin-top:6px;">{{ scenario.risk_buffer_percent|default:0 }}%</p></div>
-                </div>
-            </div>
+      </div>
+    </div>
+    <div class="grid gap-5 lg:grid-cols-2">
+      <div class="card p-5">
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Audit Trail</h3>
+        <div class="space-y-2">
+          {% for a in audit_rows|slice:":8" %}<div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="font-medium text-sm">{{ a.source_model }} · {{ a.object_repr }}</p><p class="text-xs text-gray-500 mt-1">{{ a.get_action_display }} by {{ a.actor|default:"System" }} · {{ a.happened_at|date:"d M Y H:i" }}</p></div>
+          {% empty %}<p class="text-sm text-gray-500 text-center py-3">No entries.</p>{% endfor %}
         </div>
-    </div><!-- /tab-forecasting -->
-
-    <!-- ══════════════ -->
-    <!-- TAB: Compliance -->
-    <!-- ══════════════ -->
-    <div class="fin-panel space-y" id="tab-compliance" style="padding-top:20px;">
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Report and Compliance</span>
-                <a href="{% url 'finance:compliance' %}" class="section-link">Open compliance workspace</a>
-            </div>
+      </div>
+      <div class="card p-5">
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Latest Locks</h3>
+        <div class="space-y-2">
+          {% for lock in lock_rows|slice:":8" %}<div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="font-medium text-sm">{{ lock.period|date:"F Y" }}</p><p class="text-xs text-gray-500 mt-1">{{ lock.notes|default:"No note" }}</p><p class="text-xs text-gray-500 mt-1">Locked by {{ lock.locked_by|default:"System" }}{% if lock.locked_at %} · {{ lock.locked_at|date:"d M Y H:i" }}{% endif %}</p></div>
+          {% empty %}<p class="text-sm text-gray-500 text-center py-3">No locks.</p>{% endfor %}
         </div>
-        <div class="grid-3">
-            <div class="card">
-                <div class="section-header"><span class="section-title">Tax Summary</span></div>
-                <div class="space-y">
-                    <div class="card-inset"><p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">YTD Revenue</p><p style="font-size:20px;font-weight:700;color:var(--text);margin-top:8px;">RM {{ tax_summary.year_to_date_revenue|floatformat:2 }}</p></div>
-                    <div class="card-inset"><p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">YTD Deductible Expenses</p><p style="font-size:20px;font-weight:700;color:var(--text);margin-top:8px;">RM {{ tax_summary.year_to_date_deductible_expenses|floatformat:2 }}</p></div>
-                    <div class="card-inset"><p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">YTD Payroll</p><p style="font-size:20px;font-weight:700;color:var(--text);margin-top:8px;">RM {{ tax_summary.year_to_date_payroll|floatformat:2 }}</p></div>
-                </div>
-            </div>
-            <div class="card" style="grid-column:span 2;">
-                <div class="section-header"><span class="section-title">Monthly Reports and Locks</span></div>
-                <div class="table-wrap">
-                    <table class="tbl native-stack">
-                        <thead><tr><th>Month</th><th>Revenue</th><th>Expenses</th><th>Net Profit</th><th>Lock</th></tr></thead>
-                        <tbody>
-                            {% for row in monthly_report_rows %}
-                            <tr><td data-label="Month">{{ row.period|date:"F Y" }}</td><td data-label="Revenue">RM {{ row.revenue|floatformat:2 }}</td><td data-label="Expenses">RM {{ row.expenses|floatformat:2 }}</td><td data-label="Net Profit">RM {{ row.net_profit|floatformat:2 }}</td><td data-label="Lock"><span class="badge {% if row.locked %}badge-success{% else %}badge-neutral{% endif %}">{% if row.locked %}Locked{% else %}Open{% endif %}</span></td></tr>
-                            {% empty %}
-                            <tr><td colspan="5"><div class="empty-state"><i class="fa-regular fa-calendar"></i><p>No monthly report data yet.</p></div></td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        <div class="grid-2">
-            <div class="card">
-                <div class="section-header"><span class="section-title">Recent Audit Trail</span></div>
-                <div class="space-y">
-                    {% for audit in audit_rows|slice:":8" %}
-                    <div class="card-inset"><p style="font-weight:600;color:var(--text);">{{ audit.source_model }} - {{ audit.object_repr }}</p><p class="text-sm text-muted" style="margin-top:6px;">{{ audit.get_action_display }} by {{ audit.actor|default:"System" }} on {{ audit.happened_at|date:"d M Y H:i" }}</p></div>
-                    {% empty %}
-                    <div class="empty-state"><i class="fa-regular fa-clock"></i><p>No audit entries yet.</p></div>
-                    {% endfor %}
-                </div>
-            </div>
-            <div class="card">
-                <div class="section-header"><span class="section-title">Latest Locks</span></div>
-                <div class="space-y">
-                    {% for lock in lock_rows|slice:":8" %}
-                    <div class="card-inset"><p style="font-weight:600;color:var(--text);">{{ lock.period|date:"F Y" }}</p><p class="text-sm text-muted" style="margin-top:6px;">{{ lock.notes|default:"No note" }}</p><p class="text-sm text-muted" style="margin-top:6px;">Locked by {{ lock.locked_by|default:"System" }}{% if lock.locked_at %} on {{ lock.locked_at|date:"d M Y H:i" }}{% endif %}</p></div>
-                    {% empty %}
-                    <div class="empty-state"><i class="fa-regular fa-lock"></i><p>No historical locks yet.</p></div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-    </div><!-- /tab-compliance -->
-</div><!-- /finance outer -->
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    /* ── Finance Tab Switcher ── */
-    (function() {
-        var tabs    = document.querySelectorAll('.fin-tab');
-        var panels  = document.querySelectorAll('.fin-panel');
+  (function () {
+    var tabs = document.querySelectorAll('.fin-tab');
+    var panels = document.querySelectorAll('.fin-panel');
+    function activate(btn) {
+      var id = btn.dataset.tab;
+      tabs.forEach(function (t) { t.classList.toggle('active', t === btn); });
+      panels.forEach(function (p) { p.classList.toggle('active', p.id === id); });
+      history.replaceState(null, '', '#' + id);
+    }
+    tabs.forEach(function (b) { b.addEventListener('click', function () { activate(b); }); });
+    var hash = location.hash.replace('#', '');
+    if (hash) { var m = document.querySelector('.fin-tab[data-tab="' + hash + '"]'); if (m) activate(m); }
+  })();
 
-        function activateTab(tabBtn) {
-            var targetId = tabBtn.dataset.tab;
-            tabs.forEach(function(t)  { t.classList.toggle('active', t === tabBtn); });
-            panels.forEach(function(p){ p.classList.toggle('active', p.id === targetId); });
-            // Update URL hash without scrolling
-            history.replaceState(null, '', '#' + targetId);
+  document.addEventListener('DOMContentLoaded', function () {
+    if (!window.Chart) return;
+    var isDark = document.documentElement.classList.contains('dark');
+    var muted = isDark ? '#9ca3af' : '#6b7280';
+    function opts() {
+      return {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: muted, font: { family: 'Inter' } } } },
+        scales: {
+          y: { ticks: { color: muted }, grid: { color: isDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.05)' } },
+          x: { ticks: { color: muted }, grid: { display: false } }
         }
-
-        tabs.forEach(function(btn) {
-            btn.addEventListener('click', function() { activateTab(btn); });
-        });
-
-        // Restore tab from URL hash on load
-        var hash = location.hash.replace('#', '');
-        if (hash) {
-            var matchingBtn = document.querySelector('.fin-tab[data-tab="' + hash + '"]');
-            if (matchingBtn) activateTab(matchingBtn);
-        }
-    })();
-
-    document.addEventListener("DOMContentLoaded", function() {
-        const chartAnchor = document.getElementById("revenueChart");
-        if (!chartAnchor) return;
-
-        let chartsBooted = false;
-
-        function sharedOptions() {
-            const muted = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "#8a8a9a";
-            return {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: muted
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        ticks: { color: muted },
-                        grid: { color: "rgba(255,255,255,.08)" }
-                    },
-                    x: {
-                        ticks: { color: muted },
-                        grid: { display: false }
-                    }
-                }
-            };
-        }
-
-        async function bootCharts() {
-            if (chartsBooted) return;
-            chartsBooted = true;
-            await window.ensureChartJs();
-
-            new Chart(document.getElementById("revenueChart"), {
-                type: "line",
-                data: JSON.parse('{{ revenue_chart_data|escapejs }}'),
-                options: sharedOptions()
-            });
-
-            new Chart(document.getElementById("cashflowChart"), {
-                type: "line",
-                data: JSON.parse('{{ cashflow_chart_data|escapejs }}'),
-                options: sharedOptions()
-            });
-
-            new Chart(document.getElementById("paymentMethodChart"), {
-                type: "doughnut",
-                data: JSON.parse('{{ payment_method_chart_data|escapejs }}'),
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "#8a8a9a"
-                            }
-                        }
-                    },
-                    cutout: "62%"
-                }
-            });
-        }
-
-        if (window.nyoIsMobileViewport && "IntersectionObserver" in window) {
-            const observer = new IntersectionObserver(function(entries) {
-                if (entries.some(function(entry) { return entry.isIntersecting; })) {
-                    bootCharts();
-                    observer.disconnect();
-                }
-            }, { rootMargin: "120px 0px" });
-            observer.observe(chartAnchor);
-        } else if ("requestIdleCallback" in window) {
-            requestIdleCallback(bootCharts, { timeout: 1200 });
-        } else {
-            setTimeout(bootCharts, 0);
-        }
+      };
+    }
+    var revEl = document.getElementById('revenueChart');
+    if (revEl) new Chart(revEl, { type: 'line', data: JSON.parse('{{ revenue_chart_data|escapejs }}'), options: opts() });
+    var cashEl = document.getElementById('cashflowChart');
+    if (cashEl) new Chart(cashEl, { type: 'line', data: JSON.parse('{{ cashflow_chart_data|escapejs }}'), options: opts() });
+    var pmEl = document.getElementById('paymentMethodChart');
+    if (pmEl) new Chart(pmEl, {
+      type: 'doughnut',
+      data: JSON.parse('{{ payment_method_chart_data|escapejs }}'),
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: muted, font: { family: 'Inter' } } } }, cutout: '62%' }
     });
+  });
 </script>
 {% endblock %}
