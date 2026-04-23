@@ -69,22 +69,22 @@
         <tbody>
           {% for e in expenses %}
           <tr>
-            <td class="text-xs text-gray-500">{{ e.expense_date }}</td>
-            <td>
+            <td data-label="Date" class="text-xs text-gray-500">{{ e.expense_date }}</td>
+            <td data-label="Expense">
               <p class="font-medium text-gray-900 dark:text-white">{{ e.title }}</p>
               <p class="text-xs text-gray-500">{{ e.get_category_tag_display }}{% if e.vendor_name %} · {{ e.vendor_name }}{% endif %}</p>
             </td>
-            <td>{{ e.get_expense_type_display }}</td>
-            <td>{{ e.branch_label }}</td>
-            <td class="font-semibold">RM {{ e.amount|floatformat:2 }}</td>
-            <td>
+            <td data-label="Type">{{ e.get_expense_type_display }}</td>
+            <td data-label="Branch">{{ e.branch_label }}</td>
+            <td data-label="Amount" class="font-semibold">RM {{ e.amount|floatformat:2 }}</td>
+            <td data-label="Receipt">
               {% if e.receipt_upload %}<a href="{{ e.receipt_upload.url }}" target="_blank" class="btn btn-secondary btn-sm">Open</a>
               {% else %}<span class="text-xs text-gray-500">—</span>{% endif %}
             </td>
-            <td class="text-right"><a href="{% url 'finance:expense_edit' e.pk %}" class="btn btn-secondary btn-sm">Edit</a></td>
+            <td data-label="Action" class="text-right"><a href="{% url 'finance:expense_edit' e.pk %}" class="btn btn-secondary btn-sm">Edit</a></td>
           </tr>
           {% empty %}
-          <tr><td colspan="7" class="text-center py-10 text-gray-500">No expenses match.</td></tr>
+          <tr><td data-label="Date" colspan="7" class="text-center py-10 text-gray-500">No expenses match.</td></tr>
           {% endfor %}
         </tbody>
       </table>

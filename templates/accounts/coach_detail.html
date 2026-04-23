@@ -65,17 +65,17 @@
         <tbody>
           {% for m in assigned_members %}
           <tr>
-            <td>
+            <td data-label="Player">
               <p class="font-medium text-gray-900 dark:text-white">{{ m.full_name }}</p>
               <p class="text-xs text-gray-500">{{ m.contact_number }}</p>
             </td>
-            <td>{{ m.program_enrolled|default:m.syllabus_root|default:"—" }}</td>
-            <td>{{ m.package_label }}</td>
-            <td><span class="badge {% if m.status == 'active' %}badge-success{% elif m.status == 'trial' %}badge-warning{% else %}badge-muted{% endif %}">{{ m.get_status_display }}</span></td>
-            <td class="text-right"><a href="{% url 'members:detail' m.pk %}" class="btn btn-secondary btn-sm">Open</a></td>
+            <td data-label="Program">{{ m.program_enrolled|default:m.syllabus_root|default:"—" }}</td>
+            <td data-label="Package">{{ m.package_label }}</td>
+            <td data-label="Status"><span class="badge {% if m.status == 'active' %}badge-success{% elif m.status == 'trial' %}badge-warning{% else %}badge-muted{% endif %}">{{ m.get_status_display }}</span></td>
+            <td data-label="Action" class="text-right"><a href="{% url 'members:detail' m.pk %}" class="btn btn-secondary btn-sm">Open</a></td>
           </tr>
           {% empty %}
-          <tr><td colspan="5" class="text-center py-10 text-gray-500">No players assigned.</td></tr>
+          <tr><td data-label="Player" colspan="5" class="text-center py-10 text-gray-500">No players assigned.</td></tr>
           {% endfor %}
         </tbody>
       </table>

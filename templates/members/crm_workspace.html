@@ -57,25 +57,25 @@
         <tbody>
           {% for row in lead_rows %}
           <tr>
-            <td>
+            <td data-label="Student">
               <p class="font-medium text-gray-900 dark:text-white">{{ row.lead.student_name }}</p>
               <p class="text-xs text-gray-500">{{ row.lead.preferred_program }}</p>
             </td>
-            <td>{{ row.lead.guardian_name }}</td>
-            <td>
+            <td data-label="Parent">{{ row.lead.guardian_name }}</td>
+            <td data-label="Contact">
               <p>{{ row.lead.contact_number }}</p>
               <p class="text-xs text-gray-500">{{ row.lead.guardian_email|default:"—" }}</p>
             </td>
-            <td>{{ row.lead.get_source_display }}</td>
-            <td>{{ row.lead.assigned_staff|default:"Unassigned" }}</td>
-            <td><span class="badge {{ row.lead.status|status_badge }}">{{ row.lead.get_status_display }}</span></td>
-            <td class="text-right whitespace-nowrap">
+            <td data-label="Source">{{ row.lead.get_source_display }}</td>
+            <td data-label="Staff">{{ row.lead.assigned_staff|default:"Unassigned" }}</td>
+            <td data-label="Status"><span class="badge {{ row.lead.status|status_badge }}">{{ row.lead.get_status_display }}</span></td>
+            <td data-label="Action" class="text-right whitespace-nowrap">
               <a href="{% url 'members:application_review' row.lead.pk %}" class="btn btn-secondary btn-sm">Review</a>
               {% if row.lead.contact_number|whatsapp_url %}<a href="{{ row.lead.contact_number|whatsapp_url }}" target="_blank" class="btn btn-secondary btn-sm bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400"><i class="fa-brands fa-whatsapp"></i></a>{% endif %}
             </td>
           </tr>
           {% empty %}
-          <tr><td colspan="7" class="text-center py-10 text-gray-500">No leads match.</td></tr>
+          <tr><td data-label="Student" colspan="7" class="text-center py-10 text-gray-500">No leads match.</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -96,19 +96,19 @@
         <tbody>
           {% for row in trial_rows %}
           <tr>
-            <td>
+            <td data-label="Student">
               <a href="{% url 'members:detail' row.member.pk %}" class="font-medium text-gray-900 dark:text-white hover:text-brand-500">{{ row.member.full_name }}</a>
               <p class="text-xs text-gray-500">{{ row.member.program_enrolled|default:"—" }}</p>
             </td>
-            <td class="text-xs">{{ row.linked_date|date:"d M Y" }}</td>
-            <td class="text-xs">{{ row.trial_date|default:"—" }}</td>
-            <td>{{ row.member.assigned_coach|default:"Unassigned" }}</td>
-            <td>{{ row.attendance_summary }}</td>
-            <td><span class="badge {{ row.member.trial_outcome|status_badge }}">{{ row.member.get_trial_outcome_display }}</span></td>
-            <td class="max-w-xs text-xs text-gray-600 dark:text-gray-400">{{ row.latest_feedback.feedback_text|default:"—"|truncatechars:80 }}</td>
+            <td data-label="Linked" class="text-xs">{{ row.linked_date|date:"d M Y" }}</td>
+            <td data-label="Trial Date" class="text-xs">{{ row.trial_date|default:"—" }}</td>
+            <td data-label="Coach">{{ row.member.assigned_coach|default:"Unassigned" }}</td>
+            <td data-label="Attendance">{{ row.attendance_summary }}</td>
+            <td data-label="Outcome"><span class="badge {{ row.member.trial_outcome|status_badge }}">{{ row.member.get_trial_outcome_display }}</span></td>
+            <td data-label="Feedback" class="max-w-xs text-xs text-gray-600 dark:text-gray-400">{{ row.latest_feedback.feedback_text|default:"—"|truncatechars:80 }}</td>
           </tr>
           {% empty %}
-          <tr><td colspan="7" class="text-center py-10 text-gray-500">No trials match.</td></tr>
+          <tr><td data-label="Student" colspan="7" class="text-center py-10 text-gray-500">No trials match.</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -129,20 +129,20 @@
         <tbody>
           {% for row in active_rows %}
           <tr>
-            <td><a href="{% url 'members:detail' row.member.pk %}" class="font-medium text-gray-900 dark:text-white hover:text-brand-500">{{ row.member.full_name }}</a></td>
-            <td>{{ row.member.parent_user|default:"—" }}</td>
-            <td>{{ row.member.program_enrolled|default:"—" }}</td>
-            <td class="text-xs">{{ row.member.start_date|date:"d M Y" }}</td>
-            <td>{{ row.member.assigned_coach|default:"—" }}</td>
-            <td>{{ row.attendance_rate }}%</td>
-            <td><span class="badge {{ row.payment_status|status_badge }}">{{ row.payment_status }}</span></td>
-            <td>{{ row.retention_risk }}/100</td>
-            <td class="text-right">
+            <td data-label="Student"><a href="{% url 'members:detail' row.member.pk %}" class="font-medium text-gray-900 dark:text-white hover:text-brand-500">{{ row.member.full_name }}</a></td>
+            <td data-label="Parent">{{ row.member.parent_user|default:"—" }}</td>
+            <td data-label="Program">{{ row.member.program_enrolled|default:"—" }}</td>
+            <td data-label="Start" class="text-xs">{{ row.member.start_date|date:"d M Y" }}</td>
+            <td data-label="Coach">{{ row.member.assigned_coach|default:"—" }}</td>
+            <td data-label="Attend%">{{ row.attendance_rate }}%</td>
+            <td data-label="Payment"><span class="badge {{ row.payment_status|status_badge }}">{{ row.payment_status }}</span></td>
+            <td data-label="Risk">{{ row.retention_risk }}/100</td>
+            <td data-label="WA" class="text-right">
               {% if row.member.contact_number|whatsapp_url %}<a href="{{ row.member.contact_number|whatsapp_url }}" target="_blank" class="btn btn-secondary btn-sm bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400"><i class="fa-brands fa-whatsapp"></i></a>{% endif %}
             </td>
           </tr>
           {% empty %}
-          <tr><td colspan="9" class="text-center py-10 text-gray-500">No active students match.</td></tr>
+          <tr><td data-label="Student" colspan="9" class="text-center py-10 text-gray-500">No active students match.</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -157,15 +157,15 @@
         <tbody>
           {% for row in inactive_rows %}
           <tr>
-            <td><a href="{% url 'members:detail' row.member.pk %}" class="font-medium text-gray-900 dark:text-white hover:text-brand-500">{{ row.member.full_name }}</a></td>
-            <td>{{ row.member.program_enrolled|default:"—" }}</td>
-            <td>{{ row.member.assigned_coach|default:"—" }}</td>
-            <td><span class="badge {{ row.member.status|status_badge }}">{{ row.member.get_status_display }}</span></td>
-            <td class="text-xs max-w-xs">{{ row.why_left|default:"—"|truncatechars:100 }}</td>
-            <td class="text-xs max-w-xs">{{ row.member.next_action|default:"—"|truncatechars:100 }}</td>
+            <td data-label="Student"><a href="{% url 'members:detail' row.member.pk %}" class="font-medium text-gray-900 dark:text-white hover:text-brand-500">{{ row.member.full_name }}</a></td>
+            <td data-label="Program">{{ row.member.program_enrolled|default:"—" }}</td>
+            <td data-label="Coach">{{ row.member.assigned_coach|default:"—" }}</td>
+            <td data-label="Status"><span class="badge {{ row.member.status|status_badge }}">{{ row.member.get_status_display }}</span></td>
+            <td data-label="Why left?" class="text-xs max-w-xs">{{ row.why_left|default:"—"|truncatechars:100 }}</td>
+            <td data-label="Next step" class="text-xs max-w-xs">{{ row.member.next_action|default:"—"|truncatechars:100 }}</td>
           </tr>
           {% empty %}
-          <tr><td colspan="6" class="text-center py-10 text-gray-500">No inactive/churned students match.</td></tr>
+          <tr><td data-label="Student" colspan="6" class="text-center py-10 text-gray-500">No inactive/churned students match.</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -181,19 +181,19 @@
         <tbody>
           {% for log in communication_logs %}
           <tr>
-            <td class="text-xs">{{ log.happened_at|date:"d M Y H:i" }}</td>
-            <td>
+            <td data-label="Date" class="text-xs">{{ log.happened_at|date:"d M Y H:i" }}</td>
+            <td data-label="Account">
               {% if log.member %}<a href="{% url 'members:detail' log.member.pk %}" class="hover:text-brand-500">{{ log.member.full_name }}</a>
               {% elif log.lead %}<a href="{% url 'members:application_review' log.lead.pk %}" class="hover:text-brand-500">{{ log.lead.student_name }}</a>
               {% else %}Unknown{% endif %}
             </td>
-            <td>{{ log.get_channel_display }}</td>
-            <td>{{ log.get_message_type_display }}</td>
-            <td>{{ log.staff|default:"System" }}</td>
-            <td class="text-xs max-w-xs">{{ log.outcome|truncatechars:120 }}</td>
+            <td data-label="Channel">{{ log.get_channel_display }}</td>
+            <td data-label="Type">{{ log.get_message_type_display }}</td>
+            <td data-label="Staff">{{ log.staff|default:"System" }}</td>
+            <td data-label="Outcome" class="text-xs max-w-xs">{{ log.outcome|truncatechars:120 }}</td>
           </tr>
           {% empty %}
-          <tr><td colspan="6" class="text-center py-10 text-gray-500">No touches yet.</td></tr>
+          <tr><td data-label="Date" colspan="6" class="text-center py-10 text-gray-500">No touches yet.</td></tr>
           {% endfor %}
         </tbody>
       </table>

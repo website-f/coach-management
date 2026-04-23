@@ -248,7 +248,7 @@
           <h3 class="font-semibold text-gray-900 dark:text-white">Recent Payments</h3>
           <a href="{% url 'payments:payment_history' %}" class="text-xs text-brand-500 hover:underline">All payments</a>
         </div>
-        <div class="overflow-x-auto -mx-5">
+        <div class="overflow-x-auto">
           <table class="data-table">
             <thead>
               <tr><th>Member</th><th>Period</th><th>Amount</th><th>Method</th><th>Status</th></tr>
@@ -256,11 +256,11 @@
             <tbody>
               {% for p in recent_payments|slice:":8" %}
               <tr>
-                <td class="font-medium text-gray-900 dark:text-white">{{ p.invoice.member.full_name }}</td>
-                <td>{{ p.invoice.period|date:"F Y" }}</td>
-                <td>RM {{ p.amount_received }}</td>
-                <td>{{ p.get_payment_method_display }}</td>
-                <td><span class="badge {% if p.status == 'approved' %}badge-success{% elif p.status == 'pending' %}badge-warning{% else %}badge-danger{% endif %}">{{ p.get_status_display }}</span></td>
+                <td data-label="Member" class="font-medium text-gray-900 dark:text-white">{{ p.invoice.member.full_name }}</td>
+                <td data-label="Period">{{ p.invoice.period|date:"F Y" }}</td>
+                <td data-label="Amount">RM {{ p.amount_received }}</td>
+                <td data-label="Method">{{ p.get_payment_method_display }}</td>
+                <td data-label="Status"><span class="badge {% if p.status == 'approved' %}badge-success{% elif p.status == 'pending' %}badge-warning{% else %}badge-danger{% endif %}">{{ p.get_status_display }}</span></td>
               </tr>
               {% endfor %}
             </tbody>

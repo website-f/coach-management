@@ -59,32 +59,32 @@
         <tbody>
           {% for coach in coach_rows %}
           <tr>
-            <td>
+            <td data-label="Coach">
               <p class="font-medium text-gray-900 dark:text-white">{{ coach.get_full_name|default:coach.username }}</p>
               <p class="text-xs text-gray-500">@{{ coach.username }}</p>
             </td>
-            <td>
+            <td data-label="Contact">
               <p>{{ coach.email|default:"—" }}</p>
               <p class="text-xs text-gray-500">{{ coach.profile.phone_number|default:"—" }}</p>
             </td>
-            <td>
+            <td data-label="Players">
               <p>{{ coach.member_count }}</p>
               <p class="text-xs text-gray-500">{{ coach.active_member_count }} active</p>
             </td>
-            <td>
+            <td data-label="Sessions">
               <p>{{ coach.session_count }}</p>
               <p class="text-xs text-gray-500">{{ coach.upcoming_session_count }} upcoming</p>
             </td>
-            <td>{{ coach.report_count }}</td>
-            <td>{% if coach.profile.must_change_password %}<span class="badge badge-warning">Temp</span>{% else %}<span class="badge badge-success">Ready</span>{% endif %}</td>
-            <td class="text-xs text-gray-500">{{ coach.last_login|date:"d M Y H:i"|default:"Never" }}</td>
-            <td class="text-right whitespace-nowrap">
+            <td data-label="Reports">{{ coach.report_count }}</td>
+            <td data-label="Password">{% if coach.profile.must_change_password %}<span class="badge badge-warning">Temp</span>{% else %}<span class="badge badge-success">Ready</span>{% endif %}</td>
+            <td data-label="Last Login" class="text-xs text-gray-500">{{ coach.last_login|date:"d M Y H:i"|default:"Never" }}</td>
+            <td data-label="Action" class="text-right whitespace-nowrap">
               <a href="{% url 'accounts:coach_detail' coach.pk %}" class="btn btn-secondary btn-sm">Profile</a>
               <a href="{% url 'sessions:list' %}?coach={{ coach.pk }}" class="btn btn-secondary btn-sm">Sessions</a>
             </td>
           </tr>
           {% empty %}
-          <tr><td colspan="8" class="text-center py-10 text-gray-500">No coach accounts yet.</td></tr>
+          <tr><td data-label="Coach" colspan="8" class="text-center py-10 text-gray-500">No coach accounts yet.</td></tr>
           {% endfor %}
         </tbody>
       </table>

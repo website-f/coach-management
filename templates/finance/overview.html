@@ -133,12 +133,12 @@
             <tbody>
               {% for invoice in outstanding_rows %}
               <tr>
-                <td><p class="font-medium">{{ invoice.student_label }}</p><p class="text-xs text-gray-500">{{ invoice.branch_label }} · {{ invoice.program_label }}</p></td>
-                <td class="text-xs text-gray-500">{{ invoice.due_date }}</td>
-                <td class="font-semibold">RM {{ invoice.outstanding_amount|floatformat:2 }}</td>
-                <td><span class="badge {{ invoice.status|status_badge }}">{{ invoice.get_status_display }}</span></td>
+                <td data-label="Student"><p class="font-medium">{{ invoice.student_label }}</p><p class="text-xs text-gray-500">{{ invoice.branch_label }} · {{ invoice.program_label }}</p></td>
+                <td data-label="Due" class="text-xs text-gray-500">{{ invoice.due_date }}</td>
+                <td data-label="Outstanding" class="font-semibold">RM {{ invoice.outstanding_amount|floatformat:2 }}</td>
+                <td data-label="Status"><span class="badge {{ invoice.status|status_badge }}">{{ invoice.get_status_display }}</span></td>
               </tr>
-              {% empty %}<tr><td colspan="4" class="text-center py-8 text-gray-500">No outstanding invoices.</td></tr>{% endfor %}
+              {% empty %}<tr><td data-label="Student" colspan="4" class="text-center py-8 text-gray-500">No outstanding invoices.</td></tr>{% endfor %}
             </tbody>
           </table>
         </div>
@@ -153,12 +153,12 @@
             <tbody>
               {% for p in payment_rows %}
               <tr>
-                <td><p class="font-medium">{{ p.invoice.member.full_name }}</p><p class="text-xs text-gray-500">{{ p.invoice.period|date:"F Y" }}</p></td>
-                <td><p>{{ p.get_payment_method_display }}</p><p class="text-xs text-gray-500">{{ p.receipt_reference|default:"—" }}</p></td>
-                <td class="font-semibold">RM {{ p.amount_received|floatformat:2 }}</td>
-                <td><span class="badge {{ p.status|status_badge }}">{{ p.get_status_display }}</span></td>
+                <td data-label="Student"><p class="font-medium">{{ p.invoice.member.full_name }}</p><p class="text-xs text-gray-500">{{ p.invoice.period|date:"F Y" }}</p></td>
+                <td data-label="Method"><p>{{ p.get_payment_method_display }}</p><p class="text-xs text-gray-500">{{ p.receipt_reference|default:"—" }}</p></td>
+                <td data-label="Amount" class="font-semibold">RM {{ p.amount_received|floatformat:2 }}</td>
+                <td data-label="Status"><span class="badge {{ p.status|status_badge }}">{{ p.get_status_display }}</span></td>
               </tr>
-              {% empty %}<tr><td colspan="4" class="text-center py-8 text-gray-500">No payments yet.</td></tr>{% endfor %}
+              {% empty %}<tr><td data-label="Student" colspan="4" class="text-center py-8 text-gray-500">No payments yet.</td></tr>{% endfor %}
             </tbody>
           </table>
         </div>
@@ -171,12 +171,12 @@
             <tbody>
               {% for inv in invoice_rows %}
               <tr>
-                <td><p class="font-medium">{{ inv.student_label }}</p><p class="text-xs text-gray-500">{{ inv.get_invoice_type_display }} · {{ inv.branch_label }}</p></td>
-                <td class="text-xs text-gray-500">{{ inv.due_date }}</td>
-                <td>RM {{ inv.approved_amount|floatformat:2 }}</td>
-                <td><p class="font-semibold">RM {{ inv.outstanding_amount|floatformat:2 }}</p><p class="text-xs text-gray-500">{{ inv.payment_method_label }}</p></td>
+                <td data-label="Student"><p class="font-medium">{{ inv.student_label }}</p><p class="text-xs text-gray-500">{{ inv.get_invoice_type_display }} · {{ inv.branch_label }}</p></td>
+                <td data-label="Due" class="text-xs text-gray-500">{{ inv.due_date }}</td>
+                <td data-label="Approved">RM {{ inv.approved_amount|floatformat:2 }}</td>
+                <td data-label="Outstanding"><p class="font-semibold">RM {{ inv.outstanding_amount|floatformat:2 }}</p><p class="text-xs text-gray-500">{{ inv.payment_method_label }}</p></td>
               </tr>
-              {% empty %}<tr><td colspan="4" class="text-center py-8 text-gray-500">No invoices.</td></tr>{% endfor %}
+              {% empty %}<tr><td data-label="Student" colspan="4" class="text-center py-8 text-gray-500">No invoices.</td></tr>{% endfor %}
             </tbody>
           </table>
         </div>
@@ -217,13 +217,13 @@
           <tbody>
             {% for e in expense_rows %}
             <tr>
-              <td class="text-xs text-gray-500">{{ e.expense_date }}</td>
-              <td><p class="font-medium">{{ e.title }}</p><p class="text-xs text-gray-500">{{ e.vendor_name|default:"—" }}</p></td>
-              <td>{{ e.get_expense_type_display }} · {{ e.get_category_tag_display }}</td>
-              <td>{{ e.branch_label }}</td>
-              <td class="font-semibold">RM {{ e.amount|floatformat:2 }}</td>
+              <td data-label="Date" class="text-xs text-gray-500">{{ e.expense_date }}</td>
+              <td data-label="Title"><p class="font-medium">{{ e.title }}</p><p class="text-xs text-gray-500">{{ e.vendor_name|default:"—" }}</p></td>
+              <td data-label="Category">{{ e.get_expense_type_display }} · {{ e.get_category_tag_display }}</td>
+              <td data-label="Branch">{{ e.branch_label }}</td>
+              <td data-label="Amount" class="font-semibold">RM {{ e.amount|floatformat:2 }}</td>
             </tr>
-            {% empty %}<tr><td colspan="5" class="text-center py-8 text-gray-500">No expenses.</td></tr>{% endfor %}
+            {% empty %}<tr><td data-label="Date" colspan="5" class="text-center py-8 text-gray-500">No expenses.</td></tr>{% endfor %}
           </tbody>
         </table>
       </div>
@@ -258,13 +258,13 @@
           <tbody>
             {% for p in payroll_rows %}
             <tr>
-              <td><p class="font-medium">{{ p.coach.get_full_name|default:p.coach.username }}</p><p class="text-xs text-gray-500">{{ p.branch_label }}</p></td>
-              <td class="text-xs text-gray-500">{{ p.period|date:"F Y" }}</td>
-              <td>{{ p.session_count }} / {{ p.sessions_delivered_actual }}</td>
-              <td class="font-semibold">RM {{ p.total_pay|floatformat:2 }}</td>
-              <td><span class="badge {% if p.status == 'paid' %}badge-success{% elif p.status == 'approved' %}badge-info{% else %}badge-warning{% endif %}">{{ p.get_status_display }}</span></td>
+              <td data-label="Coach"><p class="font-medium">{{ p.coach.get_full_name|default:p.coach.username }}</p><p class="text-xs text-gray-500">{{ p.branch_label }}</p></td>
+              <td data-label="Period" class="text-xs text-gray-500">{{ p.period|date:"F Y" }}</td>
+              <td data-label="Sessions">{{ p.session_count }} / {{ p.sessions_delivered_actual }}</td>
+              <td data-label="Total" class="font-semibold">RM {{ p.total_pay|floatformat:2 }}</td>
+              <td data-label="Status"><span class="badge {% if p.status == 'paid' %}badge-success{% elif p.status == 'approved' %}badge-info{% else %}badge-warning{% endif %}">{{ p.get_status_display }}</span></td>
             </tr>
-            {% empty %}<tr><td colspan="5" class="text-center py-8 text-gray-500">No payroll.</td></tr>{% endfor %}
+            {% empty %}<tr><td data-label="Coach" colspan="5" class="text-center py-8 text-gray-500">No payroll.</td></tr>{% endfor %}
           </tbody>
         </table>
       </div>
@@ -286,8 +286,8 @@
             <thead><tr><th>Branch</th><th>Revenue</th><th>Expenses</th><th>Net</th></tr></thead>
             <tbody>
               {% for row in branch_pnl_rows %}
-              <tr><td><p class="font-medium">{{ row.label }}</p><p class="text-xs text-gray-500">Margin {{ row.margin }}%</p></td><td>RM {{ row.revenue|floatformat:2 }}</td><td>RM {{ row.expenses|floatformat:2 }}</td><td class="font-semibold">RM {{ row.net_profit|floatformat:2 }}</td></tr>
-              {% empty %}<tr><td colspan="4" class="text-center py-8 text-gray-500">No data.</td></tr>{% endfor %}
+              <tr><td data-label="Branch"><p class="font-medium">{{ row.label }}</p><p class="text-xs text-gray-500">Margin {{ row.margin }}%</p></td><td data-label="Revenue">RM {{ row.revenue|floatformat:2 }}</td><td data-label="Expenses">RM {{ row.expenses|floatformat:2 }}</td><td data-label="Net" class="font-semibold">RM {{ row.net_profit|floatformat:2 }}</td></tr>
+              {% empty %}<tr><td data-label="Branch" colspan="4" class="text-center py-8 text-gray-500">No data.</td></tr>{% endfor %}
             </tbody>
           </table>
         </div>
@@ -299,8 +299,8 @@
             <thead><tr><th>Program</th><th>Revenue</th><th>Expenses</th><th>Net</th></tr></thead>
             <tbody>
               {% for row in program_pnl_rows %}
-              <tr><td><p class="font-medium">{{ row.label }}</p><p class="text-xs text-gray-500">Margin {{ row.margin }}%</p></td><td>RM {{ row.revenue|floatformat:2 }}</td><td>RM {{ row.expenses|floatformat:2 }}</td><td class="font-semibold">RM {{ row.net_profit|floatformat:2 }}</td></tr>
-              {% empty %}<tr><td colspan="4" class="text-center py-8 text-gray-500">No data.</td></tr>{% endfor %}
+              <tr><td data-label="Program"><p class="font-medium">{{ row.label }}</p><p class="text-xs text-gray-500">Margin {{ row.margin }}%</p></td><td data-label="Revenue">RM {{ row.revenue|floatformat:2 }}</td><td data-label="Expenses">RM {{ row.expenses|floatformat:2 }}</td><td data-label="Net" class="font-semibold">RM {{ row.net_profit|floatformat:2 }}</td></tr>
+              {% empty %}<tr><td data-label="Program" colspan="4" class="text-center py-8 text-gray-500">No data.</td></tr>{% endfor %}
             </tbody>
           </table>
         </div>
@@ -374,8 +374,8 @@
           <table class="data-table">
             <thead><tr><th>Month</th><th>Revenue</th><th>Expenses</th><th>Net</th><th>Lock</th></tr></thead>
             <tbody>
-              {% for row in monthly_report_rows %}<tr><td>{{ row.period|date:"F Y" }}</td><td>RM {{ row.revenue|floatformat:2 }}</td><td>RM {{ row.expenses|floatformat:2 }}</td><td class="font-semibold">RM {{ row.net_profit|floatformat:2 }}</td><td><span class="badge {% if row.locked %}badge-success{% else %}badge-muted{% endif %}">{% if row.locked %}Locked{% else %}Open{% endif %}</span></td></tr>
-              {% empty %}<tr><td colspan="5" class="text-center py-8 text-gray-500">No data.</td></tr>{% endfor %}
+              {% for row in monthly_report_rows %}<tr><td data-label="Month">{{ row.period|date:"F Y" }}</td><td data-label="Revenue">RM {{ row.revenue|floatformat:2 }}</td><td data-label="Expenses">RM {{ row.expenses|floatformat:2 }}</td><td data-label="Net" class="font-semibold">RM {{ row.net_profit|floatformat:2 }}</td><td data-label="Lock"><span class="badge {% if row.locked %}badge-success{% else %}badge-muted{% endif %}">{% if row.locked %}Locked{% else %}Open{% endif %}</span></td></tr>
+              {% empty %}<tr><td data-label="Month" colspan="5" class="text-center py-8 text-gray-500">No data.</td></tr>{% endfor %}
             </tbody>
           </table>
         </div>

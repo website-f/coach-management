@@ -82,18 +82,18 @@
         <tbody>
           {% for plan in payment_plans %}
           <tr>
-            <td>
+            <td data-label="Package">
               <p class="font-medium text-gray-900 dark:text-white">{{ plan.name }}</p>
               <p class="text-xs text-gray-500">{{ plan.code }}</p>
             </td>
-            <td>RM {{ plan.monthly_fee|floatformat:2 }}</td>
-            <td>{{ plan.sessions_per_month }} / month</td>
-            <td><span class="badge {% if plan.is_active %}badge-success{% else %}badge-muted{% endif %}">{% if plan.is_active %}Active{% else %}Inactive{% endif %}</span></td>
-            <td><span class="badge {% if plan.is_default %}badge-info{% else %}badge-muted{% endif %}">{% if plan.is_default %}Default{% else %}Optional{% endif %}</span></td>
-            <td class="text-right"><a href="{% url 'finance:payment_plan_edit' plan.pk %}" class="btn btn-secondary btn-sm">Edit</a></td>
+            <td data-label="Amount">RM {{ plan.monthly_fee|floatformat:2 }}</td>
+            <td data-label="Sessions">{{ plan.sessions_per_month }} / month</td>
+            <td data-label="Status"><span class="badge {% if plan.is_active %}badge-success{% else %}badge-muted{% endif %}">{% if plan.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+            <td data-label="Default"><span class="badge {% if plan.is_default %}badge-info{% else %}badge-muted{% endif %}">{% if plan.is_default %}Default{% else %}Optional{% endif %}</span></td>
+            <td data-label="Action" class="text-right"><a href="{% url 'finance:payment_plan_edit' plan.pk %}" class="btn btn-secondary btn-sm">Edit</a></td>
           </tr>
           {% empty %}
-          <tr><td colspan="6" class="text-center py-10 text-gray-500">No packages yet.</td></tr>
+          <tr><td data-label="Package" colspan="6" class="text-center py-10 text-gray-500">No packages yet.</td></tr>
           {% endfor %}
         </tbody>
       </table>

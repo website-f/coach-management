@@ -157,25 +157,25 @@
                 {% if not row.needs_feedback %}<i class="fa-solid fa-check"></i>{% elif feedback_is_open %}<i class="fa-regular fa-clock"></i>{% else %}<i class="fa-regular fa-calendar"></i>{% endif %}
               </span>
             </td>
-            <td>
+            <td data-label="Player">
               <div class="flex items-center gap-2 flex-wrap">
                 <p class="font-medium text-gray-900 dark:text-white">{{ row.record.member.full_name }}</p>
                 {% if can_feedback and feedback_is_open and next_feedback_member and row.record.member_id == next_feedback_member.pk and row.needs_feedback %}<span class="badge badge-warning">Start Here</span>{% endif %}
               </div>
               <p class="text-xs text-gray-500">Coach {{ row.record.member.assigned_coach|default:"Unassigned" }}</p>
             </td>
-            <td><span class="badge {{ row.record.status|status_badge }}">{{ row.record.get_status_display }}</span></td>
-            <td>
+            <td data-label="Attendance"><span class="badge {{ row.record.status|status_badge }}">{{ row.record.get_status_display }}</span></td>
+            <td data-label="Report">
               <span class="badge badge-{{ row.feedback_status_tone }}">{{ row.feedback_status_label }}</span>
               {% if row.feedback %}<p class="text-xs text-gray-500 mt-1">Updated {{ row.feedback.updated_at|date:"d M Y H:i" }}</p>
               {% elif feedback_is_open %}<p class="text-xs text-gray-500 mt-1">Needs completion</p>
               {% else %}<p class="text-xs text-gray-500 mt-1">Unlocks on session date</p>{% endif %}
             </td>
-            <td>
+            <td data-label="Video">
               {% if row.feedback and row.feedback.video_proof %}<a href="{{ row.feedback.video_proof.url }}" target="_blank" class="btn btn-secondary btn-sm"><i class="fa-solid fa-video"></i>Open</a>
               {% else %}<span class="text-xs text-gray-500">—</span>{% endif %}
             </td>
-            <td class="text-right whitespace-nowrap">
+            <td data-label="Action" class="text-right whitespace-nowrap">
               {% if can_feedback %}
                 {% if feedback_is_open %}
                 <a href="{% url 'sessions:feedback' training_session.pk row.record.member.pk %}" class="btn {% if row.needs_feedback %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">

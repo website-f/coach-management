@@ -35,14 +35,14 @@
           <tbody>
             {% for row in monthly_report_rows %}
             <tr>
-              <td>{{ row.period|date:"F Y" }}</td>
-              <td>RM {{ row.revenue|floatformat:2 }}</td>
-              <td>RM {{ row.expenses|floatformat:2 }}</td>
-              <td class="font-semibold">RM {{ row.net_profit|floatformat:2 }}</td>
-              <td><span class="badge {% if row.locked %}badge-success{% else %}badge-muted{% endif %}">{% if row.locked %}Locked{% else %}Open{% endif %}</span></td>
+              <td data-label="Month">{{ row.period|date:"F Y" }}</td>
+              <td data-label="Revenue">RM {{ row.revenue|floatformat:2 }}</td>
+              <td data-label="Expenses">RM {{ row.expenses|floatformat:2 }}</td>
+              <td data-label="Net" class="font-semibold">RM {{ row.net_profit|floatformat:2 }}</td>
+              <td data-label="Lock"><span class="badge {% if row.locked %}badge-success{% else %}badge-muted{% endif %}">{% if row.locked %}Locked{% else %}Open{% endif %}</span></td>
             </tr>
             {% empty %}
-            <tr><td colspan="5" class="text-center py-10 text-gray-500">No data.</td></tr>
+            <tr><td data-label="Month" colspan="5" class="text-center py-10 text-gray-500">No data.</td></tr>
             {% endfor %}
           </tbody>
         </table>

@@ -126,6 +126,35 @@
       table.data-table tbody tr:hover { background:#f9fafb; }
       html.dark table.data-table tbody tr:hover { background:rgba(31,41,55,.55); }
 
+      /* Responsive stacked layout — any cell with data-label stacks on narrow screens */
+      @media (max-width: 640px) {
+        table.data-table thead { display: none; }
+        table.data-table, table.data-table tbody, table.data-table tr, table.data-table td {
+          display: block; width: 100%;
+        }
+        table.data-table tr {
+          border: 1px solid #e5e7eb; border-radius: .75rem; padding: .75rem 1rem;
+          margin-bottom: .625rem; background: #fff !important;
+        }
+        html.dark table.data-table tr {
+          border-color: #1f2937; background: #111827 !important;
+        }
+        table.data-table td {
+          padding: .375rem 0; border: none;
+          display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
+          text-align: right;
+        }
+        table.data-table td[data-label]::before {
+          content: attr(data-label);
+          font-size: .6875rem; font-weight: 600;
+          text-transform: uppercase; letter-spacing: .05em;
+          color: #6b7280; text-align: left; flex-shrink: 0;
+        }
+        html.dark table.data-table td[data-label]::before { color: #9ca3af; }
+        /* hide cells without data-label on mobile (usually blank spacer cells) */
+        table.data-table td:not([data-label]):empty { display: none; }
+      }
+
       /* Custom scrollbar for table wrappers */
       .overflow-x-auto { scrollbar-width: thin; scrollbar-color:#d1d5db transparent; }
       .overflow-x-auto::-webkit-scrollbar { height:6px; width:6px; }
