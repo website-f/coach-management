@@ -1,20 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}Delete Product | NYO Admin Dashboard{% endblock %}
+{% block title %}Delete Product | NYO{% endblock %}
 {% block page_heading %}Delete Product{% endblock %}
 
 {% block content %}
-<div class="card" style="max-width:720px;margin:0 auto;">
-    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;">Inventory Control</p>
-    <h2 style="font-size:28px;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1.1;">Remove {{ object.name }} from the store?</h2>
-    <p class="text-sm text-muted" style="margin-top:12px;line-height:1.8;">This will permanently delete the product record and remove it from the browsing catalog.</p>
-
-    <form method="post" style="margin-top:22px;">
-        {% csrf_token %}
-        <div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;">
-            <a href="{% url 'finance:product_list' %}" class="btn btn-ghost">Cancel</a>
-            <button type="submit" class="btn btn-danger"><i class="fa-solid fa-trash"></i> Delete Product</button>
-        </div>
+<div class="max-w-xl mx-auto">
+  <section class="card p-6 border-red-200 dark:border-red-500/30">
+    <p class="text-xs uppercase tracking-wider text-red-600 font-semibold mb-1">Inventory</p>
+    <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Remove {{ object.name }}?</h2>
+    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">This permanently deletes the product and removes it from the catalog.</p>
+    <form method="post" class="mt-5 flex flex-col sm:flex-row gap-3">
+      {% csrf_token %}
+      <a href="{% url 'finance:product_list' %}" class="btn btn-secondary flex-1 justify-center">Cancel</a>
+      <button type="submit" class="btn btn-danger flex-1 justify-center"><i class="fa-solid fa-trash"></i>Delete</button>
     </form>
+  </section>
 </div>
 {% endblock %}

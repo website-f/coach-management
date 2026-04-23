@@ -1,60 +1,53 @@
 {% extends "base.html" %}
 {% load ui_tags %}
 
-{% block title %}Review Payment | NYO Admin Dashboard{% endblock %}
+{% block title %}Review Payment | NYO{% endblock %}
 {% block page_heading %}Review Payment{% endblock %}
 
 {% block content %}
-<div class="grid-2">
-    <div class="card">
-        <div class="section-header"><span class="section-title">Submitted Proof</span></div>
-        <div style="margin-bottom:14px;">
-            <p style="font-size:18px;font-weight:700;color:var(--text);">{{ payment.invoice.member.full_name }}</p>
-            <p class="text-sm text-muted" style="margin-top:6px;">{{ payment.invoice.period|date:"F Y" }} - {{ payment.invoice.get_invoice_type_display }}</p>
-        </div>
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:8px;overflow:hidden;">
-            <img src="{{ payment.proof_image.url }}" alt="Payment proof" style="width:100%;border-radius:8px;object-fit:contain;max-height:420px;display:block;">
-        </div>
-        <div class="table-wrap" style="margin-top:18px;">
-            <table class="tbl native-stack">
-                <tbody>
-                    <tr><th>Submitted By</th><td>{{ payment.paid_by|default:"Unknown" }}</td></tr>
-                    <tr><th>Submitted At</th><td>{{ payment.submitted_at|date:"d M Y H:i" }}</td></tr>
-                    <tr><th>Method</th><td>{{ payment.get_payment_method_display }}</td></tr>
-                    <tr><th>Amount Received</th><td>RM {{ payment.amount_received|floatformat:2 }}</td></tr>
-                    <tr><th>Receipt Reference</th><td>{{ payment.receipt_reference|default:"-" }}</td></tr>
-                    <tr><th>Invoice Outstanding Now</th><td>RM {{ payment.invoice.outstanding_amount|floatformat:2 }}</td></tr>
-                    <tr><th>Outstanding After Approval</th><td>RM {{ projected_outstanding_after_approval|floatformat:2 }}</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+<div class="grid gap-5 lg:grid-cols-2">
 
-    <div class="card" style="height:fit-content;">
-        <div class="section-header"><span class="section-title">Verification Actions</span></div>
-        <p class="text-sm text-muted" style="margin-bottom:18px;line-height:1.7;">Approve to move the invoice toward paid status. If the invoice becomes fully paid and it is a monthly fee, the student will move from trial to active automatically.</p>
-        <form method="post" class="space-y">
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="id_rejection_reason">Rejection Reason</label>
-                {{ review_form.rejection_reason }}
-                <p class="text-sm text-muted" style="margin-top:6px;">Required only if you reject the proof.</p>
-            </div>
-            <div class="card-inset">
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Approval outcome</p>
-                <p class="text-sm text-muted" style="margin-top:8px;">
-                    {% if projected_outstanding_after_approval <= 0 %}
-                    This approval will fully settle the invoice.
-                    {% else %}
-                    This approval will keep the invoice open with RM {{ projected_outstanding_after_approval|floatformat:2 }} still outstanding.
-                    {% endif %}
-                </p>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;">
-                <button type="submit" name="action" value="approve" class="btn btn-solid-success" style="justify-content:center;"><i class="fa-solid fa-check"></i> Approve</button>
-                <button type="submit" name="action" value="reject" class="btn btn-solid-danger" style="justify-content:center;"><i class="fa-solid fa-xmark"></i> Reject</button>
-            </div>
-        </form>
+  <section class="card p-5">
+    <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Submitted Proof</h3>
+    <div class="mb-4">
+      <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ payment.invoice.member.full_name }}</p>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ payment.invoice.period|date:"F Y" }} · {{ payment.invoice.get_invoice_type_display }}</p>
     </div>
+    <div class="rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/30 p-2">
+      <img src="{{ payment.proof_image.url }}" alt="Payment proof" class="w-full rounded-lg object-contain max-h-96 mx-auto block">
+    </div>
+    <dl class="mt-4 divide-y divide-gray-100 dark:divide-gray-800 text-sm">
+      <div class="flex justify-between py-2"><dt class="text-gray-500">Submitted by</dt><dd>{{ payment.paid_by|default:"Unknown" }}</dd></div>
+      <div class="flex justify-between py-2"><dt class="text-gray-500">Submitted at</dt><dd>{{ payment.submitted_at|date:"d M Y H:i" }}</dd></div>
+      <div class="flex justify-between py-2"><dt class="text-gray-500">Method</dt><dd>{{ payment.get_payment_method_display }}</dd></div>
+      <div class="flex justify-between py-2"><dt class="text-gray-500">Amount</dt><dd class="font-semibold">RM {{ payment.amount_received|floatformat:2 }}</dd></div>
+      <div class="flex justify-between py-2"><dt class="text-gray-500">Reference</dt><dd>{{ payment.receipt_reference|default:"—" }}</dd></div>
+      <div class="flex justify-between py-2"><dt class="text-gray-500">Outstanding now</dt><dd>RM {{ payment.invoice.outstanding_amount|floatformat:2 }}</dd></div>
+      <div class="flex justify-between py-2"><dt class="text-gray-500">After approval</dt><dd class="font-semibold">RM {{ projected_outstanding_after_approval|floatformat:2 }}</dd></div>
+    </dl>
+  </section>
+
+  <section class="card p-5 h-fit">
+    <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Verification</h3>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4 leading-relaxed">Approving marks the invoice as paid/partial and activates the student (any approved payment unlocks the account).</p>
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      <div>
+        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Rejection Reason</label>
+        {{ review_form.rejection_reason }}
+        <p class="text-xs text-gray-500 mt-1">Required only if rejecting.</p>
+      </div>
+      <div class="rounded-lg bg-gray-50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-800 p-3">
+        <p class="text-[11px] uppercase tracking-wider text-gray-500">Outcome</p>
+        <p class="text-sm text-gray-700 dark:text-gray-300 mt-1">
+          {% if projected_outstanding_after_approval <= 0 %}This fully settles the invoice.{% else %}Invoice stays open with RM {{ projected_outstanding_after_approval|floatformat:2 }} outstanding.{% endif %}
+        </p>
+      </div>
+      <div class="grid grid-cols-2 gap-2 pt-2">
+        <button type="submit" name="action" value="approve" class="btn bg-green-500 hover:bg-green-600 text-white justify-center"><i class="fa-solid fa-check"></i>Approve</button>
+        <button type="submit" name="action" value="reject" class="btn btn-danger justify-center"><i class="fa-solid fa-xmark"></i>Reject</button>
+      </div>
+    </form>
+  </section>
 </div>
 {% endblock %}

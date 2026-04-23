@@ -41,7 +41,12 @@ from sessions.models import (
     TrainingSession,
     WeeklySyllabus,
 )
-from sessions.services import auto_assign_monthly_sessions, build_session_plan, ensure_default_syllabus
+from sessions.services import (
+    auto_assign_monthly_sessions,
+    build_session_plan,
+    ensure_default_syllabus,
+    expire_trial_if_needed,
+)
 from sessions.video_utils import compress_session_feedback_video
 
 User = get_user_model()
@@ -1005,23 +1010,47 @@ class AutoAssignSessionsView(AdminRequiredMixin, View):
 
 
 class ParentRescheduleView(LoginRequiredMixin, View):
-    MAX_RESCHEDULES = 2
+    # Per-parent monthly quota — applies across all their children combined.
+    MONTHLY_QUOTA = 2
 
     def post(self, request, *args, **kwargs):
         if not has_role(request.user, ROLE_PARENT):
             messages.error(request, "Only parent accounts can reschedule sessions.")
             return redirect("sessions:list")
+        # Block inactive parents from requesting reschedules.
+        if not Member.objects.filter(
+            parent_user=request.user, status=Member.STATUS_ACTIVE
+        ).exists() and not Member.objects.filter(
+            parent_user=request.user, status=Member.STATUS_TRIAL
+        ).exists():
+            messages.error(
+                request,
+                "Your account is inactive. Pay a monthly plan to unlock reschedules.",
+            )
+            return redirect("payments:my_payments")
         record = get_object_or_404(
             AttendanceRecord.objects.select_related("training_session", "member"),
             pk=kwargs["pk"],
             member__parent_user=request.user,
         )
-        if record.reschedule_count >= self.MAX_RESCHEDULES:
-            messages.error(request, "You have used both reschedule slots for this session.")
-            return redirect("sessions:list")
         if record.status != AttendanceRecord.STATUS_SCHEDULED:
             messages.error(request, "Only upcoming sessions can be rescheduled.")
             return redirect("sessions:list")
+
+        now = timezone.now()
+        month_start_dt = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        used_this_month = AttendanceRecord.objects.filter(
+            member__parent_user=request.user,
+            last_rescheduled_at__gte=month_start_dt,
+        ).count()
+        if used_this_month >= self.MONTHLY_QUOTA:
+            messages.error(
+                request,
+                f"You've used all {self.MONTHLY_QUOTA} reschedules for {now:%B}. "
+                "The quota resets next month.",
+            )
+            return redirect("sessions:list")
+
         new_date_raw = (request.POST.get("new_date") or "").strip()
         try:
             new_date = date.fromisoformat(new_date_raw)
@@ -1066,10 +1095,13 @@ class ParentRescheduleView(LoginRequiredMixin, View):
         )
         record.training_session = new_session
         record.reschedule_count = record.reschedule_count + 1
+        record.last_rescheduled_at = now
         record.save()
+        remaining = max(self.MONTHLY_QUOTA - (used_this_month + 1), 0)
         messages.success(
             request,
-            f"Rescheduled to {new_date:%d %b %Y}. {self.MAX_RESCHEDULES - record.reschedule_count} reschedule slot(s) left.",
+            f"Rescheduled to {new_date:%d %b %Y}. "
+            f"{remaining} reschedule(s) left this month.",
         )
         return redirect("sessions:list")
 
@@ -1190,13 +1222,28 @@ class AttendanceUpdateView(HeadcountOrAboveRequiredMixin, View):
         queryset = training_session.attendance_records.select_related("member", "member__payment_plan").order_by("member__full_name")
         formset = AttendanceFormSet(request.POST, queryset=queryset)
         if formset.is_valid():
+            touched_members = []
             for form in formset.forms:
                 if form.has_changed():
                     record = form.save(commit=False)
                     record.marked_by = request.user
                     record.marked_at = timezone.now()
                     record.save()
+                    touched_members.append(record.member)
+            # Trial members deactivate as soon as their lifetime trial quota is hit.
+            expired_names = []
+            for member in touched_members:
+                member.refresh_from_db(fields=["status"])
+                if expire_trial_if_needed(member):
+                    expired_names.append(member.full_name)
             messages.success(request, "Attendance updated successfully.")
+            if expired_names:
+                messages.info(
+                    request,
+                    "Trial complete for: "
+                    + ", ".join(expired_names)
+                    + ". Account(s) marked inactive until a plan is paid.",
+                )
             return redirect("sessions:detail", pk=training_session.pk)
         return self.render_page(request, training_session, formset)
 

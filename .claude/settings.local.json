@@ -6,7 +6,12 @@
       "Bash(find /c/Users/admin/Desktop/coach-management/templates -name \"base.html\" -exec head -50 {} \\\\;)",
       "Bash(DJANGO_SETTINGS_MODULE=nyo_dashboard.settings python -c \"import django; django.setup\\(\\); from django.template.loader import get_template; [get_template\\(n\\) for n in ['sessions/session_list.html','sessions/feedback_form.html','sessions/checklist_audit.html','sessions/session_detail.html']]; print\\('templates ok'\\)\")",
       "Bash(DJANGO_SETTINGS_MODULE=nyo_dashboard.settings python -c \"import django; django.setup\\(\\); from django.template.loader import get_template; [get_template\\(n\\) for n in ['sessions/session_list.html','members/report_detail.html']]; print\\('templates ok'\\)\")",
-      "Bash(DJANGO_SETTINGS_MODULE=nyo_dashboard.settings python -c \"import django; django.setup\\(\\); from django.template.loader import get_template; [get_template\\(n\\) for n in ['accounts/dashboard.html','accounts/partials/coach_dashboard.html','sessions/session_list.html']]; print\\('templates ok'\\)\")"
+      "Bash(DJANGO_SETTINGS_MODULE=nyo_dashboard.settings python -c \"import django; django.setup\\(\\); from django.template.loader import get_template; [get_template\\(n\\) for n in ['accounts/dashboard.html','accounts/partials/coach_dashboard.html','sessions/session_list.html']]; print\\('templates ok'\\)\")",
+      "Bash(awk '/<body>/,/^<\\\\/html>/' templates/base.html)",
+      "Bash(grep -vE \"^\\(md|sm|lg|xl|2xl|flex|grid|w|h|text|bg|p|m|px|py|mx|my|mt|mb|ml|mr|gap|rounded|border|font|items|justify|absolute|relative|fixed|hidden|block|inline|space|min|max|overflow|cursor|transition|hover|focus|active|ring|shadow|opacity|translate|scale|rotate|top|left|right|bottom|z|col|row|align|text-xs|text-sm|text-base|text-lg|text-xl|text-gray-\\\\\\\\d+|text-white|text-black|hover:|dark:|sm:|md:|lg:|xl:|py-\\\\\\\\d+|px-\\\\\\\\d+|m-\\\\\\\\d+|gap-\\\\\\\\d+\\)$\")",
+      "Read(//tmp/**)",
+      "Bash(grep -E \"^\\\\s*\\(html|body\\)\\\\s*[{,]\" /tmp/legacy_css_only.css)",
+      "Bash(grep -n \"{% csrf\\\\|form.*required\\\\|form\\\\\\\\.\\\\\\\\.\\\\\\\\.\\\\\\\\|<form\\\\\\\\|{{ form\\\\\\\\.\\\\\\\\|submit\\\\\\\\|field in form\" templates/members/application_apply.html)"
     ]
   }
 }

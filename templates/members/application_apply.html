@@ -1,461 +1,181 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% if is_parent_portal %}Add Child | NYO Dashboard{% else %}Apply for Membership | NYO Dashboard{% endif %}</title>
-  <script>(function(){var t=localStorage.getItem('nyo-theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+{% extends "base.html" %}
 
-    :root, [data-theme="dark"] {
-      --bg:       #111114;
-      --surface:  #1c1c20;
-      --surface2: #242428;
-      --border:   rgba(255,255,255,0.07);
-      --border2:  rgba(255,255,255,0.11);
-      --text:     #f0f0f4;
-      --text-2:   #c4c4d0;
-      --muted:    #8a8a9a;
-      --accent:   #4f6ef7;
-      --accent-h: #3b5bdb;
-      --success-bg:  rgba(34,197,94,0.08);
-      --success-br:  rgba(34,197,94,0.18);
-      --success-c:   #86efac;
-      --danger-bg:   rgba(239,68,68,0.08);
-      --danger-br:   rgba(239,68,68,0.18);
-      --danger-c:    #fca5a5;
-    }
-    [data-theme="light"] {
-      --bg:       #f5f5f7;
-      --surface:  #ffffff;
-      --surface2: #f0f0f3;
-      --border:   rgba(0,0,0,0.07);
-      --border2:  rgba(0,0,0,0.11);
-      --text:     #111114;
-      --text-2:   #3a3a4a;
-      --muted:    #6b6b82;
-      --accent:   #4f6ef7;
-      --accent-h: #3b5bdb;
-      --success-bg:  rgba(34,197,94,0.07);
-      --success-br:  rgba(34,197,94,0.18);
-      --success-c:   #15803d;
-      --danger-bg:   rgba(239,68,68,0.07);
-      --danger-br:   rgba(239,68,68,0.18);
-      --danger-c:    #b91c1c;
-    }
+{% block title %}{% if is_parent_portal %}Add Child{% else %}Apply for Membership{% endif %} | NYO{% endblock %}
+{% block page_heading %}{% if is_parent_portal %}Add Child{% else %}Apply{% endif %}{% endblock %}
 
-    html, body {
-      min-height: 100%; background: var(--bg); color: var(--text);
-      font-family: 'Inter', system-ui, sans-serif;
-      font-size: 14px; line-height: 1.6;
-      -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%;
-      transition: background .2s, color .2s;
-    }
-    a { color: inherit; text-decoration: none; }
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-5">
 
-    /* ── Nav ── */
-    .nav {
-      position: sticky; top: 0; z-index: 50;
-      background: var(--surface); border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 12px; padding: 0 24px; height: 56px;
-    }
-    .nav-brand { display: flex; align-items: center; gap: 10px; }
-    .nav-logo {
-      width: 32px; height: 32px; border-radius: 8px;
-      background: var(--accent); color: #fff;
-      display: flex; align-items: center; justify-content: center; font-size: 13px;
-    }
-    .nav-name { font-size: 14px; font-weight: 700; letter-spacing: -.02em; }
-    .nav-right { display: flex; align-items: center; gap: 8px; }
-    .nav-link {
-      font-size: 13px; color: var(--muted); padding: 6px 12px;
-      border-radius: 7px; transition: color .18s;
-    }
-    .nav-link:hover { color: var(--text); }
-    .theme-btn {
-      width: 32px; height: 32px; border-radius: 7px;
-      background: var(--surface2); border: 1px solid var(--border2);
-      color: var(--muted); cursor: pointer; font-size: 13px;
-      display: flex; align-items: center; justify-content: center; transition: all .18s;
-    }
-    .theme-btn:hover { color: var(--text); background: var(--border); }
-    .btn-nav {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 7px 14px; border-radius: 7px; font-size: 13px; font-weight: 600;
-      cursor: pointer; border: none; text-decoration: none; transition: all .18s;
-    }
-    .btn-nav-ghost { background: var(--surface2); border: 1px solid var(--border2); color: var(--text); }
-    .btn-nav-ghost:hover { background: var(--border); }
-    .btn-nav-primary { background: var(--accent); color: #fff; }
-    .btn-nav-primary:hover { background: var(--accent-h); }
+  <section class="card p-6">
+    <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">{% if is_parent_portal %}Child intake{% else %}Public application{% endif %}</p>
+    <h2 class="text-2xl font-semibold text-gray-900 dark:text-white leading-tight">{% if is_parent_portal %}Add a new child{% else %}Apply for membership{% endif %}</h2>
+    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+      {% if is_parent_portal %}Each child gets their own profile, reports, attendance, and invoices — all under one parent login. Staff reviews the intake before the profile appears.{% else %}Fill in the details below. Our team reviews applications within 1-2 working days.{% endif %}
+    </p>
+  </section>
 
-    /* ── Layout ── */
-    .wrap { width: min(1100px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0 56px; }
-    .page-grid {
-      display: grid; grid-template-columns: 1fr 340px;
-      gap: 24px; align-items: start;
-    }
-
-    /* ── Page header ── */
-    .page-header { margin-bottom: 24px; }
-    .page-eyebrow {
-      font-size: 11px; font-weight: 700; letter-spacing: .1em;
-      text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
-    }
-    .page-header h1 {
-      font-size: clamp(22px, 3vw, 30px); font-weight: 700;
-      letter-spacing: -.03em; color: var(--text); margin-bottom: 6px;
-    }
-    .page-header p { font-size: 14px; color: var(--muted); line-height: 1.7; max-width: 600px; }
-
-    /* ── Card ── */
-    .card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; padding: 24px;
-    }
-    .card + .card { margin-top: 16px; }
-    .card-title {
-      font-size: 13px; font-weight: 700; color: var(--text);
-      text-transform: uppercase; letter-spacing: .06em; margin-bottom: 18px;
-      padding-bottom: 12px; border-bottom: 1px solid var(--border);
-    }
-
-    /* ── Form ── */
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .form-group { display: flex; flex-direction: column; gap: 6px; }
-    .form-group.full { grid-column: 1 / -1; }
-    .form-group label {
-      font-size: 11.5px; font-weight: 700; color: var(--muted);
-      text-transform: uppercase; letter-spacing: .07em;
-    }
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-      background: var(--surface2); border: 1px solid var(--border2);
-      border-radius: 8px; color: var(--text); font: inherit;
-      font-size: 13.5px; padding: 10px 12px; outline: none; width: 100%;
-      transition: border-color .18s, box-shadow .18s; appearance: none;
-    }
-    .form-group select {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238a8a9a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 10px center;
-      padding-right: 32px; cursor: pointer;
-    }
-    .form-group textarea { min-height: 90px; resize: vertical; }
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(79,110,247,.12);
-    }
-    .field-help { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.5; }
-    .field-error { font-size: 12px; color: var(--danger-c); margin-top: 3px; }
-    .errorlist { list-style: none; }
-    .errorlist li { font-size: 12px; color: var(--danger-c); margin-top: 3px; }
-
-    /* ── Submit button ── */
-    .btn-submit {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: var(--accent); color: #fff; border: none;
-      border-radius: 8px; padding: 11px 24px;
-      font: inherit; font-size: 14px; font-weight: 600;
-      cursor: pointer; transition: background .18s;
-    }
-    .btn-submit:hover { background: var(--accent-h); }
-    .submit-row { display: flex; justify-content: flex-end; margin-top: 20px; }
-
-    /* ── Alert banners ── */
-    .alert {
-      border-radius: 8px; padding: 12px 14px; font-size: 13px;
-      line-height: 1.6; margin-bottom: 20px; border: 1px solid;
-    }
-    .alert-success { background: var(--success-bg); border-color: var(--success-br); color: var(--success-c); }
-    .alert-error   { background: var(--danger-bg);  border-color: var(--danger-br);  color: var(--danger-c); }
-
-    /* ── Info sidebar ── */
-    .sidebar { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 72px; }
-    .info-block { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
-    .info-block-title {
-      font-size: 12px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .07em; color: var(--muted); margin-bottom: 10px;
-    }
-    .info-block p { font-size: 13.5px; color: var(--text-2); line-height: 1.75; }
-    .pill-row { display: flex; flex-wrap: wrap; gap: 7px; }
-    .pill {
-      padding: 5px 11px; border-radius: 6px;
-      background: var(--surface2); border: 1px solid var(--border2);
-      font-size: 12.5px; color: var(--text-2);
-    }
-    .step-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
-    .step-item { display: flex; gap: 12px; align-items: flex-start; }
-    .step-num {
-      width: 24px; height: 24px; border-radius: 6px;
-      background: var(--surface2); border: 1px solid var(--border2);
-      color: var(--muted); font-size: 11px; font-weight: 700;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .step-text { font-size: 13px; color: var(--text-2); line-height: 1.6; }
-    .contact-link { color: var(--accent); font-size: 13.5px; }
-    .contact-link:hover { text-decoration: underline; }
-
-    /* ── Section separator ── */
-    .form-section-label {
-      font-size: 11px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .1em; color: var(--muted);
-      padding-bottom: 10px; border-bottom: 1px solid var(--border);
-      margin-bottom: 16px; grid-column: 1 / -1;
-    }
-
-    /* ── Responsive ── */
-    @media (max-width: 900px) {
-      .page-grid { grid-template-columns: 1fr; }
-      .sidebar { position: static; }
-    }
-    @media (max-width: 600px) {
-      .form-grid { grid-template-columns: 1fr; }
-      .form-group.full { grid-column: 1; }
-      .nav { padding: 0 16px; }
-      .wrap { padding: 20px 0 40px; }
-    }
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 10px; }
-  </style>
-</head>
-<body>
-
-<!-- Nav -->
-<header class="nav">
-  <a href="{% if is_parent_portal %}{% url 'accounts:dashboard' %}{% else %}/{% endif %}" class="nav-brand">
-    <div class="nav-logo"><i class="fa-solid fa-shuttlecock"></i></div>
-    <span class="nav-name">NYO Dashboard</span>
-  </a>
-  <div class="nav-right">
-    <a href="{{ back_url }}" class="nav-link"><i class="fa-solid fa-arrow-left" style="font-size:11px;margin-right:3px;"></i>{% if is_parent_portal %}Back to Children{% else %}Back{% endif %}</a>
-    <button class="theme-btn" id="themeBtn" aria-label="Toggle theme"><i class="fa-solid fa-sun" id="themeIco"></i></button>
-    {% if is_parent_portal %}
-    <a href="{% url 'members:list' %}" class="btn-nav btn-nav-primary">My Children</a>
-    {% else %}
-    <a href="/accounts/login/" class="btn-nav btn-nav-ghost">Sign In</a>
-    {% endif %}
+  {% if submitted %}
+  <div class="rounded-xl border border-green-200 dark:border-green-500/30 bg-green-50 dark:bg-green-500/10 p-4 text-sm text-green-800 dark:text-green-300">
+    <strong>Application received.</strong> Your application is now in review. We'll follow up shortly.
   </div>
-</header>
+  {% endif %}
 
-<div class="wrap">
-  <!-- Page header -->
-  <div class="page-header">
-    <p class="page-eyebrow">{% if is_parent_portal %}Add Child{% else %}Membership Application{% endif %}</p>
-    <h1>{% if is_parent_portal %}Add a child to your parent account{% else %}Apply to join {{ landing_content.hero_title }}{% endif %}</h1>
-    <p>{% if is_parent_portal %}Each child gets their own profile, reports, attendance, and invoices, but everything stays under your single parent login. Fill in this child intake and staff will review it before the profile appears in your portal.{% else %}Fill in the details below. Our staff will review your application and follow up within one to two working days.{% endif %}</p>
+  {% if form.non_field_errors %}
+  <div class="rounded-xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300">
+    {{ form.non_field_errors|join:", " }}
   </div>
+  {% endif %}
 
-  <div class="page-grid">
-    <!-- Form column -->
-    <div>
-      {% if submitted %}
-      <div class="alert alert-success">
-        <strong>Application received.</strong> Your application is now in the staff review queue. We will contact you with next steps shortly.
-      </div>
-      {% endif %}
-
-      {% if form.non_field_errors %}
-      <div class="alert alert-error">
-        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
-      </div>
-      {% endif %}
-
-      <form method="post" autocomplete="on">
+  <div class="grid gap-5 lg:grid-cols-3">
+    <div class="lg:col-span-2 space-y-5">
+      <form method="post" autocomplete="on" class="space-y-5">
         {% csrf_token %}
 
-        <!-- Student info -->
-        <div class="card">
-          <div class="card-title">Student Information</div>
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="{{ form.student_name.id_for_label }}">Student full name <span style="color:var(--danger-c)">*</span></label>
+        <section class="card p-6">
+          <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Student Information</h3>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label class="block text-xs font-medium mb-1">Student full name <span class="text-red-500">*</span></label>
               {{ form.student_name }}
-              {% if form.student_name.errors %}<ul class="errorlist">{% for e in form.student_name.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+              {% if form.student_name.errors %}<p class="text-xs text-red-600 mt-1">{{ form.student_name.errors|join:", " }}</p>{% endif %}
             </div>
-            <div class="form-group">
-              <label for="{{ form.date_of_birth.id_for_label }}">Date of birth <span style="color:var(--danger-c)">*</span></label>
+            <div>
+              <label class="block text-xs font-medium mb-1">Date of birth <span class="text-red-500">*</span></label>
               {{ form.date_of_birth }}
-              {% if form.date_of_birth.errors %}<ul class="errorlist">{% for e in form.date_of_birth.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+              {% if form.date_of_birth.errors %}<p class="text-xs text-red-600 mt-1">{{ form.date_of_birth.errors|join:", " }}</p>{% endif %}
             </div>
           </div>
-        </div>
+        </section>
 
-        <!-- Parent / guardian contact -->
-        <div class="card">
-          <div class="card-title">Parent / Guardian Contact</div>
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="{{ form.guardian_name.id_for_label }}">Parent / guardian name <span style="color:var(--danger-c)">*</span></label>
+        <section class="card p-6">
+          <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Parent / Guardian</h3>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label class="block text-xs font-medium mb-1">Parent name <span class="text-red-500">*</span></label>
               {{ form.guardian_name }}
-              {% if form.guardian_name.errors %}<ul class="errorlist">{% for e in form.guardian_name.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+              {% if form.guardian_name.errors %}<p class="text-xs text-red-600 mt-1">{{ form.guardian_name.errors|join:", " }}</p>{% endif %}
             </div>
-            <div class="form-group">
-              <label for="{{ form.guardian_email.id_for_label }}">Parent email address <span style="color:var(--danger-c)">*</span></label>
+            <div>
+              <label class="block text-xs font-medium mb-1">Parent email <span class="text-red-500">*</span></label>
               {{ form.guardian_email }}
-              {% if form.guardian_email.errors %}<ul class="errorlist">{% for e in form.guardian_email.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+              {% if form.guardian_email.errors %}<p class="text-xs text-red-600 mt-1">{{ form.guardian_email.errors|join:", " }}</p>{% endif %}
             </div>
-            <div class="form-group">
-              <label for="{{ form.contact_number.id_for_label }}">Contact number <span style="color:var(--danger-c)">*</span></label>
+            <div>
+              <label class="block text-xs font-medium mb-1">Contact number <span class="text-red-500">*</span></label>
               {{ form.contact_number }}
-              {% if form.contact_number.errors %}<ul class="errorlist">{% for e in form.contact_number.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+              {% if form.contact_number.errors %}<p class="text-xs text-red-600 mt-1">{{ form.contact_number.errors|join:", " }}</p>{% endif %}
             </div>
             {% if not is_parent_portal %}
-            <div class="form-group">
-              <label for="{{ form.desired_username.id_for_label }}">Preferred portal username</label>
+            <div>
+              <label class="block text-xs font-medium mb-1">Preferred portal username</label>
               {{ form.desired_username }}
-              <p class="field-help">This will be used for the parent login account once approved.</p>
-              {% if form.desired_username.errors %}<ul class="errorlist">{% for e in form.desired_username.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+              <p class="text-xs text-gray-500 mt-1">Used for the parent login once approved.</p>
+              {% if form.desired_username.errors %}<p class="text-xs text-red-600 mt-1">{{ form.desired_username.errors|join:", " }}</p>{% endif %}
             </div>
             {% endif %}
           </div>
-        </div>
+        </section>
 
-        <!-- Program preferences -->
-        <div class="card">
-          <div class="card-title">Program Preferences</div>
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="{{ form.preferred_program.id_for_label }}">Preferred program <span style="color:var(--danger-c)">*</span></label>
+        <section class="card p-6">
+          <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Program Preferences</h3>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label class="block text-xs font-medium mb-1">Preferred program <span class="text-red-500">*</span></label>
               {{ form.preferred_program }}
-              {% if form.preferred_program.errors %}<ul class="errorlist">{% for e in form.preferred_program.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+              {% if form.preferred_program.errors %}<p class="text-xs text-red-600 mt-1">{{ form.preferred_program.errors|join:", " }}</p>{% endif %}
             </div>
-            <div class="form-group">
-              <label for="{{ form.preferred_location.id_for_label }}">Preferred location <span style="color:var(--danger-c)">*</span></label>
+            <div>
+              <label class="block text-xs font-medium mb-1">Preferred location <span class="text-red-500">*</span></label>
               {{ form.preferred_location }}
-              {% if form.preferred_location.errors %}<ul class="errorlist">{% for e in form.preferred_location.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+              {% if form.preferred_location.errors %}<p class="text-xs text-red-600 mt-1">{{ form.preferred_location.errors|join:", " }}</p>{% endif %}
             </div>
-            <div class="form-group">
-              <label for="{{ form.source.id_for_label }}">How did you hear about us?</label>
+            <div>
+              <label class="block text-xs font-medium mb-1">How did you hear about us?</label>
               {{ form.source }}
-              {% if form.source.errors %}<ul class="errorlist">{% for e in form.source.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
             </div>
           </div>
-        </div>
+        </section>
 
-        <!-- Skill assessment -->
-        <div class="card">
-          <div class="card-title">Skill Level Assessment</div>
-          <p style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.7;">
-            We use these answers to recommend the right starting group — Basic, Intermediate, or Advanced. Please answer honestly for the best fit.
-          </p>
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="{{ form.playing_experience.id_for_label }}">Playing experience</label>
+        <section class="card p-6">
+          <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Skill Level Assessment</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">We use these answers to recommend a starting group — Basic, Intermediate, or Advanced.</p>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label class="block text-xs font-medium mb-1">Playing experience</label>
               {{ form.playing_experience }}
-              {% if form.playing_experience.errors %}<ul class="errorlist">{% for e in form.playing_experience.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
             </div>
-            <div class="form-group">
-              <label for="{{ form.training_frequency.id_for_label }}">Training frequency</label>
+            <div>
+              <label class="block text-xs font-medium mb-1">Training frequency</label>
               {{ form.training_frequency }}
-              {% if form.training_frequency.errors %}<ul class="errorlist">{% for e in form.training_frequency.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
             </div>
-            <div class="form-group full">
-              <label for="{{ form.primary_goal.id_for_label }}">Main training goal</label>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium mb-1">Main training goal</label>
               {{ form.primary_goal }}
-              {% if form.primary_goal.errors %}<ul class="errorlist">{% for e in form.primary_goal.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
             </div>
-            <div class="form-group full">
-              <label for="{{ form.notes.id_for_label }}">Extra notes <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium mb-1">Extra notes <span class="text-gray-500 font-normal">(optional)</span></label>
               {{ form.notes }}
-              <p class="field-help">Anything else the coach should know — previous injuries, competitions, or special requirements.</p>
-              {% if form.notes.errors %}<ul class="errorlist">{% for e in form.notes.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+              <p class="text-xs text-gray-500 mt-1">Injuries, competitions, special requirements.</p>
             </div>
           </div>
 
-          <div class="submit-row">
-            <button type="submit" class="btn-submit">
-              <i class="fa-solid fa-paper-plane"></i> {% if is_parent_portal %}Submit Child Application{% else %}Submit Application{% endif %}
-            </button>
+          <div class="pt-4 flex justify-end">
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i>{% if is_parent_portal %}Submit Child{% else %}Submit Application{% endif %}</button>
           </div>
-        </div>
+        </section>
       </form>
     </div>
 
-    <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside class="space-y-4">
       {% if landing_content.available_programs %}
-      <div class="info-block">
-        <div class="info-block-title">Available Programs</div>
-        <div class="pill-row">
-          {% for program in landing_content.available_programs %}
-          <span class="pill">{{ program }}</span>
-          {% endfor %}
+      <section class="card p-5">
+        <h4 class="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-2">Programs</h4>
+        <div class="flex flex-wrap gap-1.5">
+          {% for program in landing_content.available_programs %}<span class="badge badge-muted">{{ program }}</span>{% endfor %}
         </div>
-      </div>
+      </section>
       {% endif %}
 
       {% if landing_content.available_locations %}
-      <div class="info-block">
-        <div class="info-block-title">Training Locations</div>
-        <div class="pill-row">
-          {% for location in landing_content.available_locations %}
-          <span class="pill">{{ location }}</span>
-          {% endfor %}
+      <section class="card p-5">
+        <h4 class="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-2">Locations</h4>
+        <div class="flex flex-wrap gap-1.5">
+          {% for loc in landing_content.available_locations %}<span class="badge badge-muted">{{ loc }}</span>{% endfor %}
         </div>
-      </div>
+      </section>
       {% endif %}
 
-      <div class="info-block">
-        <div class="info-block-title">What Happens Next</div>
-        <ul class="step-list">
-          <li class="step-item">
-            <div class="step-num">1</div>
-            <div class="step-text">{% if is_parent_portal %}Staff reviews the new child request and keeps it tied to your parent account.{% else %}Staff reviews your application and assigns a coach for follow-up.{% endif %}</div>
+      <section class="card p-5">
+        <h4 class="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-3">Next Steps</h4>
+        <ol class="space-y-3">
+          {% for step in "1234" %}
+          <li class="flex gap-3 items-start">
+            <div class="w-6 h-6 rounded-full bg-brand-50 dark:bg-brand-400/10 text-brand-500 grid place-items-center text-xs font-semibold shrink-0">{{ forloop.counter }}</div>
+            <div class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+              {% if forloop.counter == 1 %}{% if is_parent_portal %}Staff reviews the child request, keeping it under your parent account.{% else %}Staff reviews your application and assigns a coach.{% endif %}
+              {% elif forloop.counter == 2 %}Your skill-level answers recommend the right starting group.
+              {% elif forloop.counter == 3 %}{% if is_parent_portal %}Once approved, the child profile appears in your portal.{% else %}Approved students get login credentials + enrollment invoice.{% endif %}
+              {% else %}{% if is_parent_portal %}Continue payments and onboarding in the portal.{% else %}Pay the enrollment fee via QR code and you're in.{% endif %}{% endif %}
+            </div>
           </li>
-          <li class="step-item">
-            <div class="step-num">2</div>
-            <div class="step-text">Your skill level answers are used to recommend the best starting group.</div>
-          </li>
-          <li class="step-item">
-            <div class="step-num">3</div>
-            <div class="step-text">{% if is_parent_portal %}Once approved, the child profile appears in your portal with real reports, attendance, and payment records.{% else %}Approved students receive login credentials and an enrollment invoice.{% endif %}</div>
-          </li>
-          <li class="step-item">
-            <div class="step-num">4</div>
-            <div class="step-text">{% if is_parent_portal %}Payment and onboarding continue in the same parent portal after approval.{% else %}Pay the enrollment fee via QR code in the parent portal, and you're in.{% endif %}</div>
-          </li>
-        </ul>
-      </div>
+          {% endfor %}
+        </ol>
+      </section>
 
-      <div class="info-block">
-        <div class="info-block-title">Current Intake</div>
-        <p>{{ landing_content.announcement_text }}</p>
-      </div>
+      {% if landing_content.announcement_text %}
+      <section class="card p-5">
+        <h4 class="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-2">Current Intake</h4>
+        <p class="text-sm text-gray-700 dark:text-gray-300">{{ landing_content.announcement_text }}</p>
+      </section>
+      {% endif %}
 
-      <div class="info-block">
-        <div class="info-block-title">Need Help?</div>
-        {% if landing_content.contact_email %}
-        <p>Contact us at <a href="mailto:{{ landing_content.contact_email }}" class="contact-link">{{ landing_content.contact_email }}</a> for assistance with your application or portal access.</p>
-        {% else %}
-        <p>Reach the club administrator for assistance with intake and portal setup.</p>
-        {% endif %}
-      </div>
+      {% if landing_content.contact_email %}
+      <section class="card p-5">
+        <h4 class="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-2">Need Help?</h4>
+        <p class="text-sm text-gray-700 dark:text-gray-300">Contact us at <a href="mailto:{{ landing_content.contact_email }}" class="text-brand-500 hover:underline">{{ landing_content.contact_email }}</a></p>
+      </section>
+      {% endif %}
     </aside>
   </div>
 </div>
-
-<script>
-  var html = document.documentElement;
-  var btn  = document.getElementById('themeBtn');
-  var ico  = document.getElementById('themeIco');
-  function syncIco(t){ ico.className = t==='dark'?'fa-solid fa-sun':'fa-solid fa-moon'; }
-  syncIco(html.getAttribute('data-theme')||'dark');
-  btn.addEventListener('click', function(){
-    var n = html.getAttribute('data-theme')==='dark'?'light':'dark';
-    html.setAttribute('data-theme', n);
-    localStorage.setItem('nyo-theme', n);
-    syncIco(n);
-  });
-</script>
-</body>
-</html>
+{% endblock %}

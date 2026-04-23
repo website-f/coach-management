@@ -268,16 +268,16 @@ class PaymentReviewView(AdminRequiredMixin, DetailView):
             invoice.refresh_status_from_payments()
             member = invoice.member
             member_update_fields = []
-            if invoice.invoice_type == Invoice.TYPE_MONTHLY and invoice.status == Invoice.STATUS_PAID:
-                if member.status != Member.STATUS_ACTIVE:
-                    member.status = Member.STATUS_ACTIVE
-                    member_update_fields.append("status")
-                if not member.subscription_started_at:
-                    member.subscription_started_at = timezone.localdate()
-                    member_update_fields.append("subscription_started_at")
-                if member.trial_outcome != Member.TRIAL_OUTCOME_CONVERTED:
-                    member.trial_outcome = Member.TRIAL_OUTCOME_CONVERTED
-                    member_update_fields.append("trial_outcome")
+            # Any approved payment activates the member (promotes trial/inactive to active).
+            if member.status != Member.STATUS_ACTIVE:
+                member.status = Member.STATUS_ACTIVE
+                member_update_fields.append("status")
+            if not member.subscription_started_at:
+                member.subscription_started_at = timezone.localdate()
+                member_update_fields.append("subscription_started_at")
+            if member.trial_outcome != Member.TRIAL_OUTCOME_CONVERTED:
+                member.trial_outcome = Member.TRIAL_OUTCOME_CONVERTED
+                member_update_fields.append("trial_outcome")
             if member_update_fields:
                 member.save(update_fields=member_update_fields + ["updated_at"])
 

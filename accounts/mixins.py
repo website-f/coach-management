@@ -2,7 +2,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
 
-from accounts.utils import ROLE_ADMIN, ROLE_COACH, ROLE_HEADCOUNT, ROLE_PARENT, has_role
+from accounts.utils import ROLE_ADMIN, ROLE_COACH, ROLE_PARENT, ROLE_SUPERADMIN, has_role
 
 
 class RoleRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -19,19 +19,25 @@ class RoleRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
 
 
 class AdminRequiredMixin(RoleRequiredMixin):
+    # has_role auto-passes superadmin when ROLE_ADMIN is in the allowed set.
     allowed_roles = (ROLE_ADMIN,)
+
+
+class SuperadminRequiredMixin(RoleRequiredMixin):
+    allowed_roles = (ROLE_SUPERADMIN,)
 
 
 class AdminOrCoachRequiredMixin(RoleRequiredMixin):
     allowed_roles = (ROLE_ADMIN, ROLE_COACH)
 
 
-class SalesOrAdminRequiredMixin(RoleRequiredMixin):
-    allowed_roles = (ROLE_ADMIN, ROLE_HEADCOUNT)
+# Back-compat aliases — headcount was merged into admin.
+class SalesOrAdminRequiredMixin(AdminRequiredMixin):
+    pass
 
 
-class HeadcountOrAboveRequiredMixin(RoleRequiredMixin):
-    allowed_roles = (ROLE_ADMIN, ROLE_COACH, ROLE_HEADCOUNT)
+class HeadcountOrAboveRequiredMixin(AdminOrCoachRequiredMixin):
+    pass
 
 
 class ParentRequiredMixin(RoleRequiredMixin):

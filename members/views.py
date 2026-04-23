@@ -542,14 +542,35 @@ class AdmissionApplicationCreateView(FormView):
 
     def form_valid(self, form):
         if self.is_parent_portal():
-            form.instance.linked_parent_user = self.request.user
-            form.instance.desired_username = self.request.user.username
-            self.object = form.save()
+            parent_user = self.request.user
+            # Block inactive parents from submitting new applications until
+            # they reactivate via a paid plan. Used-up trial or churned family.
+            any_child = Member.objects.filter(parent_user=parent_user).exists()
+            live_child = Member.objects.filter(
+                parent_user=parent_user,
+                status__in=[Member.STATUS_ACTIVE, Member.STATUS_TRIAL],
+            ).exists()
+            if any_child and not live_child:
+                messages.error(
+                    self.request,
+                    "Your account is inactive. Pay a monthly plan to add another child.",
+                )
+                return redirect("payments:my_payments")
+            form.instance.linked_parent_user = parent_user
+            form.instance.desired_username = parent_user.username
+            # Auto-approve parent self-submissions so the onboarding invoice is
+            # generated immediately — parent sees it in the payment hub on
+            # redirect and can start paying without waiting for staff review.
+            form.instance.status = AdmissionApplication.STATUS_APPROVED
+            form.instance.reviewed_at = timezone.now()
+            with transaction.atomic():
+                self.object = form.save()
+                self._provision_member_for_parent(self.object)
             messages.success(
                 self.request,
-                f"Child application submitted successfully. Recommended starting level: {self.object.get_recommended_level_display()}.",
+                "Child application submitted. Please complete the onboarding payment to confirm the trial session.",
             )
-            return redirect(reverse_lazy("members:list") + "?application_submitted=1")
+            return redirect(reverse_lazy("payments:my_payments") + "?onboarding=1")
 
         user = form.save()
         authenticated_user = authenticate(
@@ -564,6 +585,40 @@ class AdmissionApplicationCreateView(FormView):
             "Parent account created successfully. You can now add your first child from the parent portal.",
         )
         return redirect("members:list")
+
+    def _provision_member_for_parent(self, application):
+        """Create a TRIAL member + onboarding invoices from a self-submitted
+        parent application so the payment flow is live immediately.
+        """
+        if application.linked_member_id:
+            return application.linked_member
+        parent_user = application.linked_parent_user
+        assigned_coach = pick_best_available_coach(preferred_level=application.recommended_level)
+        member = Member.objects.create(
+            full_name=application.student_name,
+            date_of_birth=application.date_of_birth or timezone.localdate(),
+            contact_number=application.contact_number,
+            email=application.guardian_email,
+            emergency_contact_name=application.guardian_name,
+            emergency_contact_phone=application.contact_number,
+            program_enrolled=application.preferred_program,
+            syllabus_root=SyllabusRoot.get_default(),
+            payment_plan=get_default_payment_plan(),
+            skill_level=application.recommended_level,
+            assigned_coach=assigned_coach,
+            parent_user=parent_user,
+            status=Member.STATUS_TRIAL,
+            joined_at=timezone.localdate(),
+            trial_linked_date=timezone.localdate(),
+            trial_date=timezone.localdate(),
+            next_action="Complete onboarding payment to confirm the trial slot.",
+            notes=f"Self-registered via parent portal. Preferred program: {application.preferred_program}.",
+            created_by=parent_user,
+        )
+        create_initial_invoices_for_member(member, created_by=parent_user)
+        application.linked_member = member
+        application.save(update_fields=["linked_member", "status", "reviewed_at"])
+        return member
 
 
 class AdmissionApplicationListView(SalesOrAdminRequiredMixin, ListView):

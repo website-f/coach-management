@@ -1092,6 +1092,25 @@ def _member_has_clash(member_schedule, candidate_date, slot):
 
 
 @transaction.atomic
+def expire_trial_if_needed(member):
+    """If a trial member has hit the lifetime trial_session_limit on
+    counted attendance, flip them to INACTIVE. Returns True if flipped.
+    """
+    from finance.models import BillingConfiguration
+
+    if member.status != Member.STATUS_TRIAL:
+        return False
+    limit = BillingConfiguration.get_solo().trial_session_limit or 1
+    counted = member.attendance_records.exclude(
+        status=AttendanceRecord.STATUS_SCHEDULED
+    ).count()
+    if counted < limit:
+        return False
+    member.status = Member.STATUS_INACTIVE
+    member.save(update_fields=["status"])
+    return True
+
+
 def auto_assign_monthly_sessions(month_anchor: date, *, members=None, dry_run: bool = False):
     """Auto-assign sessions for the given month for every active member.
 
@@ -1103,7 +1122,9 @@ def auto_assign_monthly_sessions(month_anchor: date, *, members=None, dry_run: b
 
     start, end = _month_bounds(month_anchor)
     if members is None:
-        members = Member.objects.filter(status__in=[Member.STATUS_ACTIVE, Member.STATUS_TRIAL])
+        # Trial members are NOT auto-assigned — their one lifetime trial session
+        # is manually scheduled. Inactive/churned members are also excluded.
+        members = Member.objects.filter(status=Member.STATUS_ACTIVE)
     members = list(members.select_related("assigned_coach", "payment_plan"))
 
     existing_sessions = list(

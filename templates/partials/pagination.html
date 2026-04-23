@@ -1,16 +1,14 @@
 {% load ui_tags %}
 {% if is_paginated %}
-<div class="pagination">
-    <span class="page-info">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-    {% if page_obj.has_previous %}
-    <a href="?{% querystring page=page_obj.previous_page_number %}" class="page-btn">
-        <i class="fa-solid fa-chevron-left" style="font-size:11px;"></i> Prev
-    </a>
-    {% endif %}
-    {% if page_obj.has_next %}
-    <a href="?{% querystring page=page_obj.next_page_number %}" class="page-btn">
-        Next <i class="fa-solid fa-chevron-right" style="font-size:11px;"></i>
-    </a>
-    {% endif %}
+<div class="flex items-center justify-between gap-3 pt-2 flex-wrap">
+    <span class="text-xs text-gray-500 dark:text-gray-400">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    <div class="flex gap-2">
+      {% if page_obj.has_previous %}
+      <a href="?{% querystring page=page_obj.previous_page_number %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-chevron-left text-xs"></i>Prev</a>
+      {% endif %}
+      {% if page_obj.has_next %}
+      <a href="?{% querystring page=page_obj.next_page_number %}" class="btn btn-secondary btn-sm">Next<i class="fa-solid fa-chevron-right text-xs"></i></a>
+      {% endif %}
+    </div>
 </div>
 {% endif %}

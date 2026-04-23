@@ -1,133 +1,100 @@
 {% extends "base.html" %}
 {% load ui_tags %}
 
-{% block title %}Store | NYO Admin Dashboard{% endblock %}
+{% block title %}Store | NYO{% endblock %}
 {% block page_heading %}Store{% endblock %}
 
 {% block content %}
-<div class="space-y">
-    <div class="card">
-        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
-            <div style="max-width:760px;">
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;">Merchandise & Inventory</p>
-                <h2 style="font-size:28px;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1.1;">Club storefront and product catalog.</h2>
-                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">This is the live ecommerce-style browse page for all uploaded products. Staff can manage inventory here, and every logged-in user can open each product card to see the full details.</p>
-            </div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                {% if can_manage %}
-                <a href="{% url 'finance:product_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Product</a>
-                {% endif %}
-                <a href="#catalog-grid" class="btn btn-ghost"><i class="fa-solid fa-store"></i> Browse Catalog</a>
-            </div>
-        </div>
+<div class="space-y-5">
 
-        <div class="grid-3 mt-3">
-            <div class="card-inset">
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Visible Products</p>
-                <p style="font-size:24px;font-weight:700;color:var(--text);">{{ total_products }}</p>
-            </div>
-            <div class="card-inset">
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Ready Stock</p>
-                <p style="font-size:24px;font-weight:700;color:var(--text);">{{ ready_products }}</p>
-            </div>
-            <div class="card-inset">
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Preorder</p>
-                <p style="font-size:24px;font-weight:700;color:var(--text);">{{ preorder_products }}</p>
-            </div>
-        </div>
+  <section class="card p-6">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div class="max-w-xl">
+        <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">Merchandise &amp; Inventory</p>
+        <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white leading-tight">Club storefront</h2>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Live ecommerce-style browse page. Staff manage inventory, everyone can open each product.</p>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        {% if can_manage %}<a href="{% url 'finance:product_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i>Add Product</a>{% endif %}
+        <a href="#catalog" class="btn btn-secondary"><i class="fa-solid fa-store"></i>Browse</a>
+      </div>
     </div>
-
-    <div class="filter-bar">
-        <form method="get" class="filter-fields">
-            <div class="filter-field">
-                <label>Search</label>
-                <input type="text" name="q" value="{{ search_query }}" placeholder="Search product name">
-            </div>
-            <div class="filter-field">
-                <label>Availability</label>
-                <select name="availability">
-                    <option value="">All availability</option>
-                    {% for value, label in availability_choices %}
-                    <option value="{{ value }}" {% if selected_availability == value %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="filter-actions" style="margin-top:auto;">
-                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filter</button>
-                {% if search_query or selected_availability %}
-                <a href="{% url 'finance:product_list' %}" class="btn btn-ghost">Clear</a>
-                {% endif %}
-            </div>
-        </form>
+    <div class="grid gap-3 sm:grid-cols-3 mt-5">
+      <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="text-[11px] uppercase tracking-wider text-gray-500">Visible</p><p class="text-2xl font-bold text-gray-900 dark:text-white mt-1">{{ total_products }}</p></div>
+      <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="text-[11px] uppercase tracking-wider text-gray-500">Ready</p><p class="text-2xl font-bold text-green-600 mt-1">{{ ready_products }}</p></div>
+      <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="text-[11px] uppercase tracking-wider text-gray-500">Preorder</p><p class="text-2xl font-bold text-amber-500 mt-1">{{ preorder_products }}</p></div>
     </div>
+  </section>
 
-    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
-        <p class="text-sm text-muted">Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} product{{ page_obj.paginator.count|pluralize }}.</p>
-        {% if page_obj.has_other_pages %}
-        <p class="text-sm text-muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</p>
+  <section class="card p-4">
+    <form method="get" class="grid gap-3 md:grid-cols-4 items-end">
+      <div class="md:col-span-2">
+        <label class="block text-xs font-medium text-gray-500 mb-1">Search</label>
+        <input type="text" name="q" value="{{ search_query }}" placeholder="Search product name">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Availability</label>
+        <select name="availability">
+          <option value="">All</option>
+          {% for value, label in availability_choices %}<option value="{{ value }}" {% if selected_availability == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="flex gap-2">
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i>Filter</button>
+        {% if search_query or selected_availability %}<a href="{% url 'finance:product_list' %}" class="btn btn-secondary">Clear</a>{% endif %}
+      </div>
+    </form>
+  </section>
+
+  <div class="flex justify-between text-xs text-gray-500 flex-wrap gap-2">
+    <span>Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</span>
+    {% if page_obj.has_other_pages %}<span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>{% endif %}
+  </div>
+
+  <section id="catalog" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    {% for product in products %}
+    <div class="card overflow-hidden flex flex-col">
+      <a href="{% url 'finance:product_detail' product.pk %}" class="block">
+        {% if product.image %}
+        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-full h-52 object-cover">
+        {% else %}
+        <div class="h-52 bg-gradient-to-br from-brand-100 to-blue-100 dark:from-brand-400/20 dark:to-blue-500/10 grid place-items-center text-4xl text-brand-500">
+          <i class="fa-solid fa-bag-shopping"></i>
+        </div>
         {% endif %}
-    </div>
-
-    <div class="grid-3" id="catalog-grid">
-        {% for product in products %}
-        <div class="card" style="padding:0;overflow:hidden;">
-            <a href="{% url 'finance:product_detail' product.pk %}" style="display:block;text-decoration:none;">
-                {% if product.image %}
-                <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width:100%;height:210px;object-fit:cover;">
-                {% else %}
-                <div style="height:210px;background:linear-gradient(135deg, rgba(245,166,35,.18), rgba(79,110,247,.12));display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:42px;">
-                    <i class="fa-solid fa-bag-shopping"></i>
-                </div>
-                {% endif %}
-            </a>
-            <div style="padding:18px;">
-                <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
-                    <div>
-                        <a href="{% url 'finance:product_detail' product.pk %}" style="text-decoration:none;">
-                            <h3 style="font-size:20px;font-weight:700;letter-spacing:-.03em;color:var(--text);">{{ product.name }}</h3>
-                        </a>
-                        <p class="text-sm text-muted" style="margin-top:6px;line-height:1.8;">{{ product.description|default:"Official club merchandise."|truncatechars:110 }}</p>
-                    </div>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
-                        <span class="badge {{ product.availability|status_badge }}">{{ product.get_availability_display }}</span>
-                        {% if can_manage and not product.is_active %}
-                        <span class="badge badge-neutral">Hidden</span>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div class="grid-2 mt-3">
-                    <div class="card-inset">
-                        <p class="text-xs text-muted" style="margin-bottom:4px;">Price</p>
-                        <p style="font-size:22px;font-weight:700;color:var(--text);">RM {{ product.price }}</p>
-                    </div>
-                    <div class="card-inset">
-                        <p class="text-xs text-muted" style="margin-bottom:4px;">Stock</p>
-                        <p style="font-size:22px;font-weight:700;color:var(--text);">{{ product.stock }}</p>
-                    </div>
-                </div>
-
-                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
-                    <a href="{% url 'finance:product_detail' product.pk %}" class="btn btn-primary"><i class="fa-solid fa-eye"></i> View Product</a>
-                    {% if can_manage %}
-                    <a href="{% url 'finance:product_edit' product.pk %}" class="btn btn-ghost">Edit</a>
-                    <a href="{% url 'finance:product_delete' product.pk %}" class="btn btn-danger">Delete</a>
-                    {% endif %}
-                </div>
-            </div>
+      </a>
+      <div class="p-5 flex-1 flex flex-col">
+        <div class="flex items-start justify-between gap-2 flex-wrap">
+          <a href="{% url 'finance:product_detail' product.pk %}" class="min-w-0">
+            <h3 class="font-semibold text-gray-900 dark:text-white">{{ product.name }}</h3>
+          </a>
+          <div class="flex gap-1 flex-wrap">
+            <span class="badge {{ product.availability|status_badge }}">{{ product.get_availability_display }}</span>
+            {% if can_manage and not product.is_active %}<span class="badge badge-muted">Hidden</span>{% endif %}
+          </div>
         </div>
-        {% empty %}
-        <div class="card" style="grid-column:1 / -1;">
-            <div class="empty-state">
-                <i class="fa-regular fa-bag-shopping"></i>
-                <p>No products match the current filters.</p>
-            </div>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 leading-relaxed line-clamp-2">{{ product.description|default:"Official club merchandise."|truncatechars:120 }}</p>
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-2"><p class="text-[11px] uppercase tracking-wider text-gray-500">Price</p><p class="text-lg font-bold text-gray-900 dark:text-white">RM {{ product.price }}</p></div>
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-2"><p class="text-[11px] uppercase tracking-wider text-gray-500">Stock</p><p class="text-lg font-bold text-gray-900 dark:text-white">{{ product.stock }}</p></div>
         </div>
-        {% endfor %}
+        <div class="mt-4 flex gap-2 flex-wrap mt-auto pt-3">
+          <a href="{% url 'finance:product_detail' product.pk %}" class="btn btn-primary btn-sm flex-1 justify-center"><i class="fa-solid fa-eye"></i>View</a>
+          {% if can_manage %}
+          <a href="{% url 'finance:product_edit' product.pk %}" class="btn btn-secondary btn-sm">Edit</a>
+          <a href="{% url 'finance:product_delete' product.pk %}" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i></a>
+          {% endif %}
+        </div>
+      </div>
     </div>
+    {% empty %}
+    <div class="card p-10 text-center md:col-span-2 xl:col-span-3">
+      <i class="fa-regular fa-bag-shopping text-4xl text-gray-300 dark:text-gray-600"></i>
+      <p class="mt-3 text-gray-500 dark:text-gray-400">No products match.</p>
+    </div>
+    {% endfor %}
+  </section>
 
-    {% if page_obj.has_other_pages %}
-    {% include "partials/pagination.html" %}
-    {% endif %}
+  {% if page_obj.has_other_pages %}{% include "partials/pagination.html" %}{% endif %}
 </div>
 {% endblock %}

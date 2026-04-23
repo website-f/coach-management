@@ -3,17 +3,20 @@ from django.db import models
 
 
 class UserProfile(models.Model):
+    ROLE_SUPERADMIN = "superadmin"
     ROLE_ADMIN = "admin"
     ROLE_COACH = "coach"
-    ROLE_HEADCOUNT = "headcount"
     ROLE_PARENT = "parent"
 
     ROLE_CHOICES = [
+        (ROLE_SUPERADMIN, "Superadmin"),
         (ROLE_ADMIN, "Admin"),
         (ROLE_COACH, "Coach"),
-        (ROLE_HEADCOUNT, "Sales/Admin"),
         (ROLE_PARENT, "Parent"),
     ]
+
+    # Deprecated alias (headcount merged into admin). Kept for legacy refs.
+    ROLE_HEADCOUNT = ROLE_ADMIN
 
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,

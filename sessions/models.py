@@ -328,6 +328,7 @@ class AttendanceRecord(models.Model):
     marked_at = models.DateTimeField(null=True, blank=True)
     reschedule_count = models.PositiveSmallIntegerField(default=0)
     original_session_date = models.DateField(null=True, blank=True)
+    last_rescheduled_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -1,181 +1,79 @@
 {% extends "base.html" %}
 
-{% block title %}{% if is_edit %}Edit Session Feedback{% else %}Session Feedback{% endif %} | NYO Admin Dashboard{% endblock %}
-{% block page_heading %}{% if is_edit %}Edit Session Feedback{% else %}Session Feedback{% endif %}{% endblock %}
-
-{% block extra_head %}
-<style>
-    .fb-shell { display: grid; gap: 16px; max-width: 820px; margin: 0 auto; }
-    .fb-head {
-        display: flex;
-        justify-content: space-between;
-        gap: 16px;
-        align-items: flex-start;
-        flex-wrap: wrap;
-        padding: 20px 22px;
-    }
-    .fb-kicker {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 10.5px;
-        font-weight: 700;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        color: var(--success);
-    }
-    .fb-title {
-        font-size: 22px;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        color: var(--text);
-        margin-top: 6px;
-    }
-    .fb-meta {
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-        margin-top: 10px;
-        font-size: 12px;
-        color: var(--muted);
-    }
-    .fb-meta span + span::before { content: "·"; margin: 0 6px; color: var(--border2); }
-    .fb-note {
-        padding: 12px 14px;
-        border-radius: 12px;
-        border: 1px dashed var(--border2);
-        background: var(--surface2);
-        color: var(--muted);
-        font-size: 13px;
-        line-height: 1.7;
-    }
-    .fb-panel {
-        border: 1px solid var(--border);
-        border-radius: 18px;
-        background: var(--surface);
-        padding: 22px;
-    }
-    .fb-panel h3 {
-        font-size: 15px;
-        font-weight: 700;
-        color: var(--text);
-        margin: 0 0 6px;
-    }
-    .fb-textarea {
-        width: 100%;
-        min-height: 180px;
-        padding: 14px 16px;
-        border-radius: 14px;
-        border: 1px solid var(--border);
-        background: var(--surface2);
-        color: var(--text);
-        font-size: 14px;
-        line-height: 1.7;
-        resize: vertical;
-    }
-    .fb-actions {
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-top: 18px;
-    }
-    .fb-actions-right { display: flex; gap: 8px; flex-wrap: wrap; }
-    .current-proof {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        margin-top: 8px;
-        color: var(--accent);
-        text-decoration: none;
-        font-weight: 600;
-        font-size: 13px;
-    }
-</style>
-{% endblock %}
+{% block title %}{% if is_edit %}Edit Feedback{% else %}Session Feedback{% endif %} | NYO{% endblock %}
+{% block page_heading %}{% if is_edit %}Edit Feedback{% else %}Session Feedback{% endif %}{% endblock %}
 
 {% block content %}
-<div class="fb-shell">
-    <div class="card">
-        <div class="fb-head">
-            <div>
-                <span class="fb-kicker">Session Feedback</span>
-                <h2 class="fb-title">
-                    {% if is_edit %}Update feedback for {{ member.full_name }}{% else %}Feedback for {{ member.full_name }}{% endif %}
-                </h2>
-                <div class="fb-meta">
-                    <span><i class="fa-regular fa-calendar"></i>{{ training_session.session_date|date:"d M Y" }}</span>
-                    <span><i class="fa-regular fa-clock"></i>{{ training_session.start_time|time:"H:i" }}–{{ training_session.end_time|time:"H:i" }}</span>
-                    {% if current_member_position %}
-                    <span><i class="fa-solid fa-list-ol"></i>{{ current_member_position }}/{{ feedback_total_count }}</span>
-                    {% endif %}
-                </div>
-            </div>
-            <a href="{% url 'sessions:detail' training_session.pk %}" class="btn btn-ghost" style="white-space:nowrap;">
-                <i class="fa-solid fa-arrow-left"></i> Back
-            </a>
+<div class="max-w-3xl mx-auto space-y-4">
+
+  <section class="card p-6">
+    <div class="flex items-start justify-between gap-4 flex-wrap">
+      <div>
+        <p class="text-xs uppercase tracking-wider text-green-600 font-semibold">Session Feedback</p>
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mt-1">{% if is_edit %}Update{% else %}Feedback for{% endif %} {{ member.full_name }}</h2>
+        <div class="flex flex-wrap gap-3 text-xs text-gray-500 mt-2">
+          <span><i class="fa-regular fa-calendar mr-1"></i>{{ training_session.session_date|date:"d M Y" }}</span>
+          <span><i class="fa-regular fa-clock mr-1"></i>{{ training_session.start_time|time:"H:i" }}–{{ training_session.end_time|time:"H:i" }}</span>
+          {% if current_member_position %}<span><i class="fa-solid fa-list-ol mr-1"></i>{{ current_member_position }}/{{ feedback_total_count }}</span>{% endif %}
         </div>
+      </div>
+      <a href="{% url 'sessions:detail' training_session.pk %}" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i>Back</a>
     </div>
+  </section>
 
-    <form method="post" enctype="multipart/form-data" novalidate>
-        {% csrf_token %}
+  <form method="post" enctype="multipart/form-data" novalidate class="space-y-4">
+    {% csrf_token %}
 
-        <div class="fb-panel">
-            <h3>Session feedback</h3>
-            <p class="fb-note" style="margin-bottom:14px;">Skill grading only runs once every six months inside the progress report. After each session you only write what the student needs to hear next. Keep it clear and specific.</p>
+    <section class="card p-6 space-y-4">
+      <div>
+        <h3 class="font-semibold text-gray-900 dark:text-white">Session feedback</h3>
+        <p class="text-xs text-gray-500 mt-1">Skill grading runs once every six months in the progress report. Per-session feedback should stay clear and specific.</p>
+      </div>
 
-            <div class="form-group full">
-                <label for="{{ form.feedback_text.id_for_label }}" style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;">Write feedback</label>
-                <textarea name="{{ form.feedback_text.html_name }}" id="{{ form.feedback_text.id_for_label }}" class="fb-textarea" placeholder="Strongest point today, the biggest issue, and the next focus.">{{ form.feedback_text.value|default:"" }}</textarea>
-                {% if form.feedback_text.errors %}<p class="text-sm" style="color:var(--danger);margin-top:6px;">{{ form.feedback_text.errors|join:", " }}</p>{% endif %}
-            </div>
+      <div>
+        <label class="block text-[11px] uppercase tracking-wider text-gray-500 font-semibold mb-1">Write feedback</label>
+        <textarea name="{{ form.feedback_text.html_name }}" id="{{ form.feedback_text.id_for_label }}" rows="7" placeholder="Strongest point today, biggest issue, next focus.">{{ form.feedback_text.value|default:"" }}</textarea>
+        {% if form.feedback_text.errors %}<p class="text-xs text-red-600 mt-1">{{ form.feedback_text.errors|join:", " }}</p>{% endif %}
+      </div>
 
-            <div class="form-group full" style="margin-top:18px;">
-                <label for="{{ form.video_proof.id_for_label }}" style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;">Video proof (optional)</label>
-                {{ form.video_proof }}
-                {% if feedback and feedback.video_proof %}
-                <a href="{{ feedback.video_proof.url }}" target="_blank" class="current-proof">
-                    <i class="fa-solid fa-video"></i> Current video
-                </a>
-                {% endif %}
-                {% if form.video_proof.errors %}<p class="text-sm" style="color:var(--danger);margin-top:6px;">{{ form.video_proof.errors|join:", " }}</p>{% endif %}
-            </div>
+      <div>
+        <label class="block text-[11px] uppercase tracking-wider text-gray-500 font-semibold mb-1">Video proof (optional)</label>
+        {{ form.video_proof }}
+        {% if feedback and feedback.video_proof %}
+        <a href="{{ feedback.video_proof.url }}" target="_blank" class="inline-flex items-center gap-2 mt-2 text-sm text-brand-500 hover:underline"><i class="fa-solid fa-video"></i>Current video</a>
+        {% endif %}
+        {% if form.video_proof.errors %}<p class="text-xs text-red-600 mt-1">{{ form.video_proof.errors|join:", " }}</p>{% endif %}
+      </div>
 
-            {% if form.non_field_errors %}
-            <div style="margin-top:14px;padding:10px 12px;border-radius:12px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.06);">
-                <p class="text-sm" style="color:var(--danger);">{{ form.non_field_errors|join:", " }}</p>
-            </div>
-            {% endif %}
-        </div>
+      {% if form.non_field_errors %}
+      <div class="rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-300 text-sm p-3">{{ form.non_field_errors|join:", " }}</div>
+      {% endif %}
+    </section>
 
-        <div class="fb-actions">
-            <a href="{% url 'sessions:detail' training_session.pk %}" class="btn btn-ghost">Cancel</a>
-            <div class="fb-actions-right">
-                {% if next_feedback_member %}
-                <button type="submit" name="save_and_next" value="1" class="btn btn-success">
-                    <i class="fa-solid fa-forward-step"></i> Save &amp; Next
-                </button>
-                {% endif %}
-                <button type="submit" class="btn btn-primary">
-                    <i class="fa-solid fa-floppy-disk"></i> Save Feedback
-                </button>
-            </div>
-        </div>
-    </form>
-
-    {% if recent_feedback_entries %}
-    <div class="fb-panel">
-        <h3>Recent feedback for {{ member.full_name }}</h3>
-        <div style="display:grid;gap:10px;margin-top:10px;">
-            {% for prior in recent_feedback_entries|slice:":3" %}
-            <div style="border:1px solid var(--border);border-radius:12px;background:var(--surface2);padding:12px 14px;">
-                <strong style="font-size:13px;color:var(--text);">{{ prior.training_session.title }}</strong>
-                <small style="display:block;color:var(--muted);font-size:11.5px;margin-top:2px;">{{ prior.training_session.session_date|date:"d M Y" }}</small>
-                <p style="margin-top:6px;color:var(--text);font-size:13px;line-height:1.7;">{{ prior.feedback_text|truncatechars:240 }}</p>
-            </div>
-            {% endfor %}
-        </div>
+    <div class="flex flex-col sm:flex-row gap-2 justify-between">
+      <a href="{% url 'sessions:detail' training_session.pk %}" class="btn btn-secondary">Cancel</a>
+      <div class="flex gap-2 flex-wrap">
+        {% if next_feedback_member %}
+        <button type="submit" name="save_and_next" value="1" class="btn bg-green-500 hover:bg-green-600 text-white"><i class="fa-solid fa-forward-step"></i>Save &amp; Next</button>
+        {% endif %}
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i>Save</button>
+      </div>
     </div>
-    {% endif %}
+  </form>
+
+  {% if recent_feedback_entries %}
+  <section class="card p-6">
+    <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Recent feedback for {{ member.full_name }}</h3>
+    <div class="space-y-3">
+      {% for prior in recent_feedback_entries|slice:":3" %}
+      <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+        <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ prior.training_session.title }}</p>
+        <p class="text-xs text-gray-500 mt-0.5">{{ prior.training_session.session_date|date:"d M Y" }}</p>
+        <p class="text-sm text-gray-700 dark:text-gray-300 mt-2 leading-relaxed">{{ prior.feedback_text|truncatechars:240 }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 </div>
 {% endblock %}

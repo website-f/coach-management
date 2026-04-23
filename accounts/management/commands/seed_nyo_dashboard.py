@@ -14,6 +14,7 @@ from accounts.utils import (
     ROLE_COACH,
     ROLE_HEADCOUNT,
     ROLE_PARENT,
+    ROLE_SUPERADMIN,
     bootstrap_groups,
 )
 from finance.models import BillingConfiguration, Invoice, PaymentPlan, Product
@@ -65,10 +66,10 @@ class Command(BaseCommand):
         admin_user = self.create_user(
             username="admin",
             password=os.environ.get("SEED_ADMIN_PASSWORD", "Admin123!"),
-            role=ROLE_ADMIN,
+            role=ROLE_SUPERADMIN,
             email="admin@nyo.local",
             first_name="NYO",
-            last_name="Admin",
+            last_name="Superadmin",
             is_superuser=True,
         )
         coach_user = self.create_user(
@@ -545,7 +546,7 @@ class Command(BaseCommand):
             "first_name": first_name,
             "last_name": last_name,
             "is_superuser": is_superuser,
-            "is_staff": is_superuser or role in {ROLE_ADMIN, ROLE_COACH, ROLE_HEADCOUNT},
+            "is_staff": is_superuser or role in {ROLE_SUPERADMIN, ROLE_ADMIN, ROLE_COACH},
         }
         user, created = User.objects.get_or_create(username=username, defaults=defaults)
         if created:

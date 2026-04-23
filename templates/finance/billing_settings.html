@@ -1,109 +1,103 @@
 {% extends "base.html" %}
 
-{% block title %}Billing Setup | NYO Admin Dashboard{% endblock %}
+{% block title %}Billing Setup | NYO{% endblock %}
 {% block page_heading %}Billing Setup{% endblock %}
 
 {% block content %}
-<div class="space-y">
-    <div class="card">
-        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
-            <div style="max-width:760px;">
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.14em;margin-bottom:8px;">Billing controls</p>
-                <h2 style="font-size:28px;font-weight:700;color:var(--text);letter-spacing:-.03em;">Control trial limits, registration fees, monthly plans, payment page notes, and opening cash balance from one screen.</h2>
-                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">These settings flow into registration, trial handling, finance reporting, and the parent payment journey.</p>
-            </div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                <a href="{% url 'finance:payment_plan_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Package</a>
-                <a href="{% url 'finance:overview' %}" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Back to Finance</a>
-            </div>
-        </div>
+<div class="space-y-5">
+
+  <section class="card p-6">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div class="max-w-2xl">
+        <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">Billing controls</p>
+        <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white leading-tight">Trial limits, registration fee, plans, portal notes</h2>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">These settings drive registration, trial handling, and the parent payment flow.</p>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        <a href="{% url 'finance:payment_plan_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i>Add Package</a>
+        <a href="{% url 'finance:overview' %}" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i>Finance</a>
+      </div>
     </div>
+  </section>
 
-    <div class="grid-2">
-        <div class="card">
-            <div class="section-header"><span class="section-title">Billing Configuration</span></div>
-            <form method="post" class="form-grid" style="margin-top:18px;">
-                {% csrf_token %}
-                {% for field in form %}
-                <div class="form-group {% if field.name == 'registration_description' or field.name == 'payment_portal_note' %}full{% endif %}">
-                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.errors %}<p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ field.errors|join:", " }}</p>{% endif %}
-                </div>
-                {% endfor %}
-                <div class="full" style="display:flex;justify-content:flex-end;gap:10px;">
-                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Billing Settings</button>
-                </div>
-            </form>
+  <div class="grid gap-5 lg:grid-cols-2">
+    <section class="card p-5">
+      <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Billing Configuration</h3>
+      <form method="post" class="grid gap-4 sm:grid-cols-2">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="{% if field.name == 'registration_description' or field.name == 'payment_portal_note' %}sm:col-span-2{% endif %}">
+          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<p class="text-xs text-red-600 mt-1">{{ field.errors|join:", " }}</p>{% endif %}
         </div>
-
-        <div class="space-y">
-            <div class="card">
-                <div class="section-header"><span class="section-title">Live Summary</span></div>
-                <div class="card-inset">
-                    <p style="font-weight:700;font-size:18px;color:var(--text);">{{ billing_configuration.registration_fee_name }}</p>
-                    <p class="text-sm text-muted" style="margin-top:8px;">RM {{ billing_configuration.registration_fee_amount|floatformat:2 }}{% if billing_configuration.registration_bonus_text %} - Includes {{ billing_configuration.registration_bonus_text }}{% endif %}</p>
-                    <p class="text-sm text-muted" style="margin-top:8px;">{{ billing_configuration.registration_description }}</p>
-                </div>
-                <div class="card-inset" style="margin-top:12px;">
-                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Trial limit</p>
-                    <p class="text-sm text-muted" style="margin-top:8px;">Trial students can attend {{ billing_configuration.trial_session_limit }} class{{ billing_configuration.trial_session_limit|pluralize }} before conversion is required.</p>
-                </div>
-                <div class="card-inset" style="margin-top:12px;">
-                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Opening cash balance</p>
-                    <p class="text-sm text-muted" style="margin-top:8px;">RM {{ billing_configuration.opening_cash_balance|floatformat:2 }}</p>
-                </div>
-                <div class="card-inset" style="margin-top:12px;">
-                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Parent payment note</p>
-                    <p class="text-sm text-muted" style="margin-top:8px;">{{ billing_configuration.payment_portal_note }}</p>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="section-header"><span class="section-title">Current Package Copy</span></div>
-                <div class="card-inset">
-                    <p class="text-sm text-muted">{{ billing_overview_text }}</p>
-                </div>
-            </div>
+        {% endfor %}
+        <div class="sm:col-span-2 flex justify-end">
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i>Save</button>
         </div>
+      </form>
+    </section>
+
+    <section class="space-y-4">
+      <div class="card p-5">
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Live Summary</h3>
+        <div class="space-y-3">
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+            <p class="font-semibold">{{ billing_configuration.registration_fee_name }}</p>
+            <p class="text-sm text-gray-500 mt-1">RM {{ billing_configuration.registration_fee_amount|floatformat:2 }}{% if billing_configuration.registration_bonus_text %} · {{ billing_configuration.registration_bonus_text }}{% endif %}</p>
+            <p class="text-xs text-gray-500 mt-1">{{ billing_configuration.registration_description }}</p>
+          </div>
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+            <p class="text-[11px] uppercase tracking-wider text-gray-500">Trial limit</p>
+            <p class="text-sm mt-1">{{ billing_configuration.trial_session_limit }} class{{ billing_configuration.trial_session_limit|pluralize }} before conversion required.</p>
+          </div>
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+            <p class="text-[11px] uppercase tracking-wider text-gray-500">Opening cash</p>
+            <p class="text-sm mt-1">RM {{ billing_configuration.opening_cash_balance|floatformat:2 }}</p>
+          </div>
+          <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+            <p class="text-[11px] uppercase tracking-wider text-gray-500">Parent note</p>
+            <p class="text-sm mt-1">{{ billing_configuration.payment_portal_note }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card p-5">
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Current Package Copy</h3>
+        <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{{ billing_overview_text }}</p>
+      </div>
+    </section>
+  </div>
+
+  <section class="card overflow-hidden">
+    <div class="flex items-center justify-between p-5 pb-3">
+      <h3 class="font-semibold text-gray-900 dark:text-white">Monthly Packages</h3>
+      <a href="{% url 'finance:payment_plan_create' %}" class="text-xs text-brand-500 hover:underline">Create package</a>
     </div>
-
-    <div class="card">
-        <div class="section-header">
-            <span class="section-title">Monthly Packages</span>
-            <a href="{% url 'finance:payment_plan_create' %}" class="section-link">Create package</a>
-        </div>
-        <div class="table-wrap" style="margin-top:14px;">
-            <table class="tbl native-stack">
-                <thead>
-                    <tr>
-                        <th>Package</th>
-                        <th>Amount</th>
-                        <th>Sessions</th>
-                        <th>Status</th>
-                        <th>Default</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for plan in payment_plans %}
-                    <tr>
-                        <td data-label="Package">
-                            <div class="tbl-name">{{ plan.name }}</div>
-                            <div class="tbl-sub">{{ plan.code }}{% if plan.description %} - {{ plan.description|truncatechars:90 }}{% endif %}</div>
-                        </td>
-                        <td data-label="Amount">RM {{ plan.monthly_fee|floatformat:2 }}</td>
-                        <td data-label="Sessions">{{ plan.sessions_per_month }} / month</td>
-                        <td data-label="Status"><span class="badge {% if plan.is_active %}badge-success{% else %}badge-neutral{% endif %}">{% if plan.is_active %}Active{% else %}Inactive{% endif %}</span></td>
-                        <td data-label="Default"><span class="badge {% if plan.is_default %}badge-info{% else %}badge-neutral{% endif %}">{% if plan.is_default %}Default{% else %}Optional{% endif %}</span></td>
-                        <td data-label="Action"><a href="{% url 'finance:payment_plan_edit' plan.pk %}" class="btn btn-ghost btn-xs">Edit</a></td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="6"><div class="empty-state"><i class="fa-regular fa-rectangle-list"></i><p>No payment plans available yet.</p></div></td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <div class="overflow-x-auto">
+      <table class="data-table">
+        <thead>
+          <tr><th>Package</th><th>Amount</th><th>Sessions</th><th>Status</th><th>Default</th><th class="text-right">Action</th></tr>
+        </thead>
+        <tbody>
+          {% for plan in payment_plans %}
+          <tr>
+            <td>
+              <p class="font-medium text-gray-900 dark:text-white">{{ plan.name }}</p>
+              <p class="text-xs text-gray-500">{{ plan.code }}</p>
+            </td>
+            <td>RM {{ plan.monthly_fee|floatformat:2 }}</td>
+            <td>{{ plan.sessions_per_month }} / month</td>
+            <td><span class="badge {% if plan.is_active %}badge-success{% else %}badge-muted{% endif %}">{% if plan.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+            <td><span class="badge {% if plan.is_default %}badge-info{% else %}badge-muted{% endif %}">{% if plan.is_default %}Default{% else %}Optional{% endif %}</span></td>
+            <td class="text-right"><a href="{% url 'finance:payment_plan_edit' plan.pk %}" class="btn btn-secondary btn-sm">Edit</a></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="text-center py-10 text-gray-500">No packages yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+  </section>
 </div>
 {% endblock %}

@@ -1,88 +1,82 @@
 {% extends "base.html" %}
 
-{% block title %}{% if object %}Edit Product{% else %}New Product{% endif %} | NYO Admin Dashboard{% endblock %}
+{% block title %}{% if object %}Edit Product{% else %}New Product{% endif %} | NYO{% endblock %}
 {% block page_heading %}{% if object %}Edit Product{% else %}Add Product{% endif %}{% endblock %}
 
 {% block content %}
-<div class="space-y">
-    <div class="card">
-        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
-            <div style="max-width:740px;">
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;">Store Management</p>
-                <h2 style="font-size:28px;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1.1;">{% if object %}Update the product catalog entry.{% else %}Add a new item to the club store.{% endif %}</h2>
-                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">Use this form to control visibility, pricing, stock, and the product image shown to parents and staff.</p>
-            </div>
-            <a href="{% url 'finance:product_list' %}" class="btn btn-ghost">Back to store</a>
-        </div>
+<div class="space-y-5">
+
+  <section class="card p-6 flex flex-wrap items-start justify-between gap-4">
+    <div class="max-w-xl">
+      <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">Store</p>
+      <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white leading-tight">{% if object %}Update product{% else %}Add a product{% endif %}</h2>
+      <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Pricing, stock, visibility, and image shown to parents.</p>
     </div>
+    <a href="{% url 'finance:product_list' %}" class="btn btn-secondary">Back to store</a>
+  </section>
 
-    <form method="post" enctype="multipart/form-data" class="space-y">
-        {% csrf_token %}
-        <div class="grid-2">
-            <div class="card">
-                <div class="form-grid">
-                    <div class="form-group" style="grid-column:1 / -1;">
-                        <label for="{{ form.name.id_for_label }}">Product name</label>
-                        {{ form.name }}
-                        {% if form.name.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.name.errors|join:", " }}</p>{% endif %}
-                    </div>
-                    <div class="form-group">
-                        <label for="{{ form.price.id_for_label }}">Price</label>
-                        {{ form.price }}
-                    </div>
-                    <div class="form-group">
-                        <label for="{{ form.stock.id_for_label }}">Stock</label>
-                        {{ form.stock }}
-                    </div>
-                    <div class="form-group">
-                        <label for="{{ form.availability.id_for_label }}">Availability</label>
-                        {{ form.availability }}
-                    </div>
-                    <div class="form-group">
-                        <label for="{{ form.is_active.id_for_label }}">Visible in store</label>
-                        {{ form.is_active }}
-                    </div>
-                    <div class="form-group" style="grid-column:1 / -1;">
-                        <label for="{{ form.description.id_for_label }}">Description</label>
-                        {{ form.description }}
-                    </div>
-                    <div class="form-group" style="grid-column:1 / -1;">
-                        <label for="{{ form.image.id_for_label }}">Product image</label>
-                        {{ form.image }}
-                        {% if form.image.errors %}<p class="text-sm" style="color:var(--danger);">{{ form.image.errors|join:", " }}</p>{% endif %}
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="section-header">
-                    <span class="section-title">Preview</span>
-                </div>
-                {% if object and object.image %}
-                <img src="{{ object.image.url }}" alt="{{ object.name }}" style="width:100%;height:260px;object-fit:cover;border-radius:18px;margin-top:14px;">
-                {% else %}
-                <div style="height:260px;border-radius:18px;margin-top:14px;background:linear-gradient(135deg, rgba(245,166,35,.18), rgba(79,110,247,.12));display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:44px;">
-                    <i class="fa-solid fa-bag-shopping"></i>
-                </div>
-                {% endif %}
-                <div class="card-inset mt-3">
-                    <p class="text-xs text-muted" style="margin-bottom:4px;">Store visibility</p>
-                    <p style="font-weight:600;color:var(--text);">{% if object and not object.is_active %}Hidden from non-admin users{% else %}Visible to authenticated users{% endif %}</p>
-                    <p class="text-sm text-muted" style="margin-top:6px;">Products marked inactive stay editable for admins but disappear from the browsing catalog.</p>
-                </div>
-            </div>
+  <form method="post" enctype="multipart/form-data" class="space-y-5">
+    {% csrf_token %}
+    <div class="grid gap-5 lg:grid-cols-3">
+      <section class="card p-5 lg:col-span-2 space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Product name</label>
+          {{ form.name }}
+          {% if form.name.errors %}<p class="text-xs text-red-600 mt-1">{{ form.name.errors|join:", " }}</p>{% endif %}
         </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Price</label>
+            {{ form.price }}
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Stock</label>
+            {{ form.stock }}
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Availability</label>
+            {{ form.availability }}
+          </div>
+          <div class="flex items-center gap-2 pt-6">
+            <label class="flex items-center gap-2 text-sm">{{ form.is_active }} Visible in store</label>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Description</label>
+          {{ form.description }}
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Product image</label>
+          {{ form.image }}
+          {% if form.image.errors %}<p class="text-xs text-red-600 mt-1">{{ form.image.errors|join:", " }}</p>{% endif %}
+        </div>
+      </section>
 
-        {% if form.non_field_errors %}
-        <div class="card" style="border-color:rgba(239,68,68,.35);">
-            <p class="text-sm" style="color:var(--danger);">{{ form.non_field_errors|join:", " }}</p>
+      <section class="card p-5">
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Preview</h3>
+        {% if object and object.image %}
+        <img src="{{ object.image.url }}" alt="{{ object.name }}" class="w-full h-56 object-cover rounded-xl">
+        {% else %}
+        <div class="w-full h-56 rounded-xl bg-gradient-to-br from-brand-100 to-blue-100 dark:from-brand-400/20 dark:to-blue-500/10 grid place-items-center text-4xl text-brand-500">
+          <i class="fa-solid fa-bag-shopping"></i>
         </div>
         {% endif %}
-
-        <div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;">
-            <a href="{% url 'finance:product_list' %}" class="btn btn-ghost">Cancel</a>
-            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Product</button>
+        <div class="mt-4 rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+          <p class="text-[11px] uppercase tracking-wider text-gray-500">Visibility</p>
+          <p class="font-medium text-sm mt-1">{% if object and not object.is_active %}Hidden from non-admin{% else %}Visible to authenticated users{% endif %}</p>
+          <p class="text-xs text-gray-500 mt-1">Inactive products stay editable but hide from catalog.</p>
         </div>
-    </form>
+      </section>
+    </div>
+
+    {% if form.non_field_errors %}
+    <div class="rounded-xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-red-700 text-sm p-3">{{ form.non_field_errors|join:", " }}</div>
+    {% endif %}
+
+    <div class="flex justify-end gap-2 flex-wrap">
+      <a href="{% url 'finance:product_list' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i>Save</button>
+    </div>
+  </form>
 </div>
 {% endblock %}

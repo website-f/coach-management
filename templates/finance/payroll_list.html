@@ -1,105 +1,84 @@
 {% extends "base.html" %}
 {% load ui_tags %}
 
-{% block title %}{% if is_coach_view %}My Payroll{% else %}Payroll{% endif %} | NYO Admin Dashboard{% endblock %}
+{% block title %}{% if is_coach_view %}My Payroll{% else %}Payroll{% endif %} | NYO{% endblock %}
 {% block page_heading %}{% if is_coach_view %}My Payroll{% else %}Payroll{% endif %}{% endblock %}
 
 {% block content %}
-<div class="space-y">
-    <div class="card">
-        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
-            <div>
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Payroll workspace</p>
-                <h2 style="font-size:28px;font-weight:700;color:var(--text);">{% if is_coach_view %}See your sessions, attendance-adjusted pay, bonuses, deductions, and payout history.{% else %}Manage coach pay, sessions delivered, adjustments, deductions, and payout history.{% endif %}</h2>
-            </div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                {% if can_manage %}
-                <a href="{% url 'finance:payroll_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Payroll</a>
-                {% endif %}
-                <a href="{% url 'finance:overview' %}#payroll" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Back to Finance</a>
-            </div>
-        </div>
-    </div>
+<div class="space-y-5">
 
-    <div class="stat-cards">
-        <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Filtered Payroll</p><p class="stat-value">RM {{ total_payroll|floatformat:2 }}</p></div><div class="stat-icon"><i class="fa-solid fa-money-check-dollar"></i></div></div></div>
-        <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Paid Out</p><p class="stat-value">RM {{ paid_total|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-circle-check"></i></div></div></div>
+  <section class="card p-6">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div class="max-w-xl">
+        <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">Payroll</p>
+        <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white leading-tight">{% if is_coach_view %}Your sessions, bonuses, deductions{% else %}Coach pay, sessions, adjustments{% endif %}</h2>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        {% if can_manage %}<a href="{% url 'finance:payroll_create' %}" class="btn btn-primary"><i class="fa-solid fa-plus"></i>Add</a>{% endif %}
+        <a href="{% url 'finance:overview' %}#payroll" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i>Finance</a>
+      </div>
     </div>
+  </section>
 
-    <div class="filter-bar">
-        <form method="get" class="filter-fields">
-            {% if can_manage %}
-            <div class="filter-field">
-                <label>Coach</label>
-                <select name="coach">
-                    <option value="">All coaches</option>
-                    {% for coach_id, coach_name in coaches %}
-                    <option value="{{ coach_id }}" {% if request.GET.coach == coach_id|stringformat:"s" %}selected{% endif %}>{{ coach_name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            {% endif %}
-            <div class="filter-field">
-                <label>Status</label>
-                <select name="status">
-                    <option value="">All statuses</option>
-                    {% for value, label in statuses %}
-                    <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="filter-actions" style="margin-top:auto;">
-                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filter</button>
-                {% if request.GET.coach or request.GET.status %}
-                <a href="{% url 'finance:payroll' %}" class="btn btn-ghost">Clear</a>
-                {% endif %}
-            </div>
-        </form>
+  <section class="grid grid-cols-2 gap-3">
+    <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Filtered</p><p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">RM {{ total_payroll|floatformat:2 }}</p></div>
+    <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Paid</p><p class="mt-1 text-2xl font-bold text-green-600">RM {{ paid_total|floatformat:2 }}</p></div>
+  </section>
+
+  <section class="card p-4">
+    <form method="get" class="grid gap-3 md:grid-cols-4 items-end">
+      {% if can_manage %}
+      <div class="md:col-span-2">
+        <label class="block text-xs font-medium text-gray-500 mb-1">Coach</label>
+        <select name="coach">
+          <option value="">All</option>
+          {% for cid, cname in coaches %}<option value="{{ cid }}" {% if request.GET.coach == cid|stringformat:"s" %}selected{% endif %}>{{ cname }}</option>{% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Status</label>
+        <select name="status">
+          <option value="">All</option>
+          {% for value, label in statuses %}<option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="flex gap-2">
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i>Filter</button>
+        {% if request.GET.coach or request.GET.status %}<a href="{% url 'finance:payroll' %}" class="btn btn-secondary">Clear</a>{% endif %}
+      </div>
+    </form>
+  </section>
+
+  <section class="card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="data-table">
+        <thead><tr><th>Coach</th><th>Period</th><th>Sessions</th><th>Units</th><th>Total</th><th>Status</th><th class="text-right">Action</th></tr></thead>
+        <tbody>
+          {% for p in payroll_records %}
+          <tr>
+            <td>
+              <p class="font-medium text-gray-900 dark:text-white">{{ p.coach.get_full_name|default:p.coach.username }}</p>
+              <p class="text-xs text-gray-500">{{ p.branch_label }}</p>
+            </td>
+            <td class="text-xs text-gray-500">{{ p.period|date:"F Y" }}</td>
+            <td>{{ p.session_count }} / {{ p.sessions_delivered_actual }}</td>
+            <td>{{ p.attendance_units_actual }}</td>
+            <td>
+              <p class="font-semibold">RM {{ p.total_pay|floatformat:2 }}</p>
+              <p class="text-xs text-gray-500">Base RM {{ p.base_pay|floatformat:2 }}{% if p.bonus_amount %} · Bonus RM {{ p.bonus_amount|floatformat:2 }}{% endif %}</p>
+            </td>
+            <td><span class="badge {% if p.status == 'paid' %}badge-success{% elif p.status == 'approved' %}badge-info{% else %}badge-warning{% endif %}">{{ p.get_status_display }}</span></td>
+            <td class="text-right">{% if can_manage %}<a href="{% url 'finance:payroll_edit' p.pk %}" class="btn btn-secondary btn-sm">Edit</a>{% else %}<span class="text-xs text-gray-500">—</span>{% endif %}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-center py-10 text-gray-500">No payroll records.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+  </section>
 
-    <div class="table-wrap">
-        <table class="tbl">
-            <thead>
-                <tr>
-                    <th>Coach</th>
-                    <th>Period</th>
-                    <th>Sessions</th>
-                    <th>Attendance Units</th>
-                    <th>Total Pay</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for payroll in payroll_records %}
-                <tr>
-                    <td data-label="Coach">
-                        <div class="tbl-name">{{ payroll.coach.get_full_name|default:payroll.coach.username }}</div>
-                        <div class="tbl-sub">{{ payroll.branch_label }}</div>
-                    </td>
-                    <td data-label="Period" class="muted">{{ payroll.period|date:"F Y" }}</td>
-                    <td data-label="Sessions">{{ payroll.session_count }} entered / {{ payroll.sessions_delivered_actual }} actual</td>
-                    <td data-label="Attendance Units">{{ payroll.attendance_units_actual }}</td>
-                    <td data-label="Total Pay">
-                        RM {{ payroll.total_pay|floatformat:2 }}
-                        <div class="tbl-sub">Base RM {{ payroll.base_pay|floatformat:2 }}{% if payroll.bonus_amount %} - Bonus RM {{ payroll.bonus_amount|floatformat:2 }}{% endif %}</div>
-                    </td>
-                    <td data-label="Status"><span class="badge {% if payroll.status == 'paid' %}badge-success{% elif payroll.status == 'approved' %}badge-info{% else %}badge-warning{% endif %}">{{ payroll.get_status_display }}</span></td>
-                    <td data-label="Action">
-                        {% if can_manage %}
-                        <a href="{% url 'finance:payroll_edit' payroll.pk %}" class="btn btn-ghost btn-xs">Edit</a>
-                        {% else %}
-                        <span class="text-sm text-muted">Read only</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="7"><div class="empty-state"><i class="fa-regular fa-money-bill-1"></i><p>No payroll records match the current filters.</p></div></td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    {% include "partials/pagination.html" %}
+  {% include "partials/pagination.html" %}
 </div>
 {% endblock %}

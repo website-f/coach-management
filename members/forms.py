@@ -133,7 +133,9 @@ class ParentRegistrationForm(forms.Form):
 
     def clean_username(self):
         username = self.cleaned_data["username"].strip()
-        if User.objects.filter(username=username).exists():
+        if not username:
+            raise forms.ValidationError("Please choose a username.")
+        if User.objects.filter(username__iexact=username).exists():
             raise forms.ValidationError("This username is already in use.")
         return username
 
@@ -143,12 +145,25 @@ class ParentRegistrationForm(forms.Form):
             raise forms.ValidationError("This email address is already linked to an account.")
         return email
 
+    def clean_phone_number(self):
+        phone = (self.cleaned_data.get("phone_number") or "").strip()
+        digits = "".join(ch for ch in phone if ch.isdigit())
+        if len(digits) < 7:
+            raise forms.ValidationError("Enter a valid phone number (at least 7 digits).")
+        return phone
+
     def clean(self):
         cleaned_data = super().clean()
         password1 = cleaned_data.get("password1")
         password2 = cleaned_data.get("password2")
         if password1 and password2 and password1 != password2:
             self.add_error("password2", "Passwords do not match.")
+        if password1:
+            from django.contrib.auth.password_validation import validate_password
+            try:
+                validate_password(password1)
+            except forms.ValidationError as exc:
+                self.add_error("password1", exc)
         return cleaned_data
 
     def save(self):

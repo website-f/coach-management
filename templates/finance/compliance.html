@@ -1,102 +1,105 @@
 {% extends "base.html" %}
 
-{% block title %}Report and Compliance | NYO Admin Dashboard{% endblock %}
-{% block page_heading %}Report and Compliance{% endblock %}
+{% block title %}Report &amp; Compliance | NYO{% endblock %}
+{% block page_heading %}Report &amp; Compliance{% endblock %}
 
 {% block content %}
-<div class="space-y">
-    <div class="card">
-        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
+<div class="space-y-5">
+
+  <section class="card p-6">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div class="max-w-xl">
+        <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">Compliance</p>
+        <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white leading-tight">Monthly reports, tax, audit, locks</h2>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        <a href="{% url 'finance:historical_lock_create' %}" class="btn btn-primary"><i class="fa-solid fa-lock"></i>Add Lock</a>
+        <a href="{% url 'finance:export' %}" class="btn btn-secondary"><i class="fa-solid fa-download"></i>Export</a>
+        <a href="{% url 'finance:overview' %}#compliance" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i>Finance</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid grid-cols-1 md:grid-cols-3 gap-3">
+    <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">YTD Revenue</p><p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">RM {{ tax_summary.year_to_date_revenue|floatformat:2 }}</p></div>
+    <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">YTD Expenses</p><p class="mt-1 text-2xl font-bold text-red-500">RM {{ tax_summary.year_to_date_deductible_expenses|floatformat:2 }}</p></div>
+    <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">YTD Payroll</p><p class="mt-1 text-2xl font-bold text-blue-500">RM {{ tax_summary.year_to_date_payroll|floatformat:2 }}</p></div>
+  </section>
+
+  <div class="grid gap-5 lg:grid-cols-2">
+    <section class="card overflow-hidden">
+      <div class="p-5 pb-3"><h3 class="font-semibold text-gray-900 dark:text-white">Monthly Reports</h3></div>
+      <div class="overflow-x-auto">
+        <table class="data-table">
+          <thead><tr><th>Month</th><th>Revenue</th><th>Expenses</th><th>Net</th><th>Lock</th></tr></thead>
+          <tbody>
+            {% for row in monthly_report_rows %}
+            <tr>
+              <td>{{ row.period|date:"F Y" }}</td>
+              <td>RM {{ row.revenue|floatformat:2 }}</td>
+              <td>RM {{ row.expenses|floatformat:2 }}</td>
+              <td class="font-semibold">RM {{ row.net_profit|floatformat:2 }}</td>
+              <td><span class="badge {% if row.locked %}badge-success{% else %}badge-muted{% endif %}">{% if row.locked %}Locked{% else %}Open{% endif %}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center py-10 text-gray-500">No data.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card p-5">
+      <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Historical Locks</h3>
+      <div class="space-y-3">
+        {% for lock in lock_rows %}
+        <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+          <div class="flex items-start justify-between gap-3 flex-wrap">
             <div>
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Compliance workspace</p>
-                <h2 style="font-size:28px;font-weight:700;color:var(--text);">Monthly reports, tax summary, audit trail, accountant export, and historical month locks.</h2>
+              <p class="font-semibold text-gray-900 dark:text-white">{{ lock.period|date:"F Y" }}</p>
+              <p class="text-sm text-gray-500 mt-1">{{ lock.notes|default:"No note" }}</p>
+              <p class="text-xs text-gray-500 mt-1">Locked by {{ lock.locked_by|default:"System" }}{% if lock.locked_at %} on {{ lock.locked_at|date:"d M Y H:i" }}{% endif %}</p>
             </div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                <a href="{% url 'finance:historical_lock_create' %}" class="btn btn-primary"><i class="fa-solid fa-lock"></i> Add Lock</a>
-                <a href="{% url 'finance:export' %}" class="btn btn-ghost"><i class="fa-solid fa-download"></i> Export CSV</a>
-                <a href="{% url 'finance:overview' %}#compliance" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Back to Finance</a>
-            </div>
+            <a href="{% url 'finance:historical_lock_edit' lock.pk %}" class="btn btn-secondary btn-sm">Edit</a>
+          </div>
         </div>
-    </div>
+        {% empty %}
+        <p class="text-sm text-gray-500 text-center py-6">No locks yet.</p>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
 
-    <div class="stat-cards">
-        <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">YTD Revenue</p><p class="stat-value">RM {{ tax_summary.year_to_date_revenue|floatformat:2 }}</p></div><div class="stat-icon"><i class="fa-solid fa-sack-dollar"></i></div></div></div>
-        <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">YTD Deductible Expenses</p><p class="stat-value">RM {{ tax_summary.year_to_date_deductible_expenses|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(239,68,68,.12);color:#f87171;"><i class="fa-solid fa-receipt"></i></div></div></div>
-        <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">YTD Payroll</p><p class="stat-value">RM {{ tax_summary.year_to_date_payroll|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(79,110,247,.12);color:#93c5fd;"><i class="fa-solid fa-money-check-dollar"></i></div></div></div>
-    </div>
+  <div class="grid gap-5 lg:grid-cols-2">
+    <section class="card p-5">
+      <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Recent Audit Trail</h3>
+      <div class="space-y-3">
+        {% for a in audit_rows %}
+        <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+          <p class="font-semibold text-sm text-gray-900 dark:text-white">{{ a.source_model }} · {{ a.object_repr }}</p>
+          <p class="text-xs text-gray-500 mt-1">{{ a.get_action_display }} by {{ a.actor|default:"System" }}</p>
+          <p class="text-xs text-gray-500">{{ a.happened_at|date:"d M Y H:i" }}</p>
+        </div>
+        {% empty %}
+        <p class="text-sm text-gray-500 text-center py-6">No audit entries.</p>
+        {% endfor %}
+      </div>
+    </section>
 
-    <div class="grid-2">
-        <div class="card">
-            <div class="section-header"><span class="section-title">Monthly Financial Reports</span></div>
-            <div class="table-wrap">
-                <table class="tbl native-stack">
-                    <thead><tr><th>Month</th><th>Revenue</th><th>Expenses</th><th>Net Profit</th><th>Lock</th></tr></thead>
-                    <tbody>
-                        {% for row in monthly_report_rows %}
-                        <tr>
-                            <td data-label="Month">{{ row.period|date:"F Y" }}</td>
-                            <td data-label="Revenue">RM {{ row.revenue|floatformat:2 }}</td>
-                            <td data-label="Expenses">RM {{ row.expenses|floatformat:2 }}</td>
-                            <td data-label="Net Profit">RM {{ row.net_profit|floatformat:2 }}</td>
-                            <td data-label="Lock"><span class="badge {% if row.locked %}badge-success{% else %}badge-neutral{% endif %}">{% if row.locked %}Locked{% else %}Open{% endif %}</span></td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="5"><div class="empty-state"><i class="fa-regular fa-calendar"></i><p>No monthly report data available yet.</p></div></td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+    <section class="card p-5">
+      <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Quick Lock</h3>
+      <form method="post" action="{% url 'finance:historical_lock_create' %}" class="space-y-3">
+        {% csrf_token %}
+        {% for field in historical_lock_form %}
+        <div>
+          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<p class="text-xs text-red-600 mt-1">{{ field.errors|join:", " }}</p>{% endif %}
         </div>
-        <div class="card">
-            <div class="section-header"><span class="section-title">Historical Locks</span></div>
-            <div class="space-y">
-                {% for lock in lock_rows %}
-                <div class="card-inset">
-                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
-                        <div>
-                            <p style="font-weight:700;color:var(--text);">{{ lock.period|date:"F Y" }}</p>
-                            <p class="text-sm text-muted" style="margin-top:6px;">{{ lock.notes|default:"No note" }}</p>
-                            <p class="text-sm text-muted" style="margin-top:6px;">Locked by {{ lock.locked_by|default:"System" }}{% if lock.locked_at %} on {{ lock.locked_at|date:"d M Y H:i" }}{% endif %}</p>
-                        </div>
-                        <a href="{% url 'finance:historical_lock_edit' lock.pk %}" class="btn btn-ghost btn-xs">Edit</a>
-                    </div>
-                </div>
-                {% empty %}
-                <div class="empty-state"><i class="fa-regular fa-lock"></i><p>No historical locks created yet.</p></div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-
-    <div class="grid-2">
-        <div class="card">
-            <div class="section-header"><span class="section-title">Recent Audit Trail</span></div>
-            <div class="space-y">
-                {% for audit in audit_rows %}
-                <div class="card-inset">
-                    <p style="font-weight:700;color:var(--text);">{{ audit.source_model }} - {{ audit.object_repr }}</p>
-                    <p class="text-sm text-muted" style="margin-top:6px;">{{ audit.get_action_display }} by {{ audit.actor|default:"System" }}</p>
-                    <p class="text-sm text-muted" style="margin-top:6px;">{{ audit.happened_at|date:"d M Y H:i" }}</p>
-                </div>
-                {% empty %}
-                <div class="empty-state"><i class="fa-regular fa-clock"></i><p>No audit entries yet.</p></div>
-                {% endfor %}
-            </div>
-        </div>
-        <div class="card">
-            <div class="section-header"><span class="section-title">Quick Lock Form</span></div>
-            <form method="post" action="{% url 'finance:historical_lock_create' %}" class="space-y" style="margin-top:8px;">
-                {% csrf_token %}
-                {% for field in historical_lock_form %}
-                <div class="form-group">
-                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.errors %}<p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ field.errors|join:", " }}</p>{% endif %}
-                </div>
-                {% endfor %}
-                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-lock"></i> Save Lock</button>
-            </form>
-        </div>
-    </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-lock"></i>Save Lock</button>
+      </form>
+    </section>
+  </div>
 </div>
 {% endblock %}

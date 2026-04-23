@@ -65,7 +65,8 @@ class PaymentReviewTests(TestCase):
         self.parent = self.create_user("parent_user", UserProfile.ROLE_PARENT, "parent@example.com")
         self.client.force_login(self.admin)
 
-    def test_approving_registration_payment_keeps_student_in_trial(self):
+    def test_approving_registration_payment_activates_member(self):
+        # Business rule: any approved payment activates the member.
         member = self.create_member(parent_user=self.parent)
         payment, invoice = self.create_payment(member, Invoice.TYPE_REGISTRATION, self.parent)
 
@@ -79,7 +80,7 @@ class PaymentReviewTests(TestCase):
         payment.refresh_from_db()
         invoice.refresh_from_db()
 
-        self.assertEqual(member.status, Member.STATUS_TRIAL)
+        self.assertEqual(member.status, Member.STATUS_ACTIVE)
         self.assertEqual(payment.status, Payment.STATUS_APPROVED)
         self.assertEqual(invoice.status, Invoice.STATUS_PAID)
         self.assertTrue(
@@ -109,7 +110,9 @@ class PaymentReviewTests(TestCase):
         self.assertEqual(payment.status, Payment.STATUS_APPROVED)
         self.assertEqual(invoice.status, Invoice.STATUS_PAID)
 
-    def test_approving_partial_monthly_payment_keeps_student_in_trial(self):
+    def test_approving_partial_monthly_payment_activates_member(self):
+        # Business rule: any approved payment activates the member even if the
+        # invoice remains PARTIAL.
         member = self.create_member(parent_user=self.parent)
         payment, invoice = self.create_payment(member, Invoice.TYPE_MONTHLY, self.parent)
         payment.amount_received = member.payment_plan.monthly_fee / 2
@@ -125,7 +128,7 @@ class PaymentReviewTests(TestCase):
         payment.refresh_from_db()
         invoice.refresh_from_db()
 
-        self.assertEqual(member.status, Member.STATUS_TRIAL)
-        self.assertIsNone(member.subscription_started_at)
+        self.assertEqual(member.status, Member.STATUS_ACTIVE)
+        self.assertEqual(member.subscription_started_at, timezone.localdate())
         self.assertEqual(payment.status, Payment.STATUS_APPROVED)
         self.assertEqual(invoice.status, Invoice.STATUS_PARTIAL)

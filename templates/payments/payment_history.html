@@ -1,111 +1,114 @@
 {% extends "base.html" %}
 {% load ui_tags %}
 
-{% block title %}Payment History | NYO Admin Dashboard{% endblock %}
+{% block title %}Payment History | NYO{% endblock %}
 {% block page_heading %}Payment History{% endblock %}
 
 {% block content %}
-<div class="space-y">
-    <div class="card">
-        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
-            <div>
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Collection history</p>
-                <h2 style="font-size:28px;font-weight:700;color:var(--text);">{% if can_review %}Every submitted receipt, amount, method, and approval decision.{% else %}Payment visibility for your assigned students.{% endif %}</h2>
-            </div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                {% if can_review %}
-                <a href="{% url 'payments:pending_reviews' %}" class="btn btn-primary"><i class="fa-solid fa-receipt"></i> Review Queue</a>
-                {% endif %}
-                <a href="{% url 'finance:overview' %}#collections" class="btn btn-ghost"><i class="fa-solid fa-arrow-left"></i> Back to Finance</a>
-            </div>
+<div class="space-y-5">
+
+  <section class="card p-6">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div class="max-w-xl">
+        <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">Collection history</p>
+        <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white leading-tight">{% if can_review %}All submitted receipts, decisions, and amounts{% else %}Payments for your students{% endif %}</h2>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        {% if can_review %}<a href="{% url 'payments:pending_reviews' %}" class="btn btn-primary"><i class="fa-solid fa-receipt"></i>Queue</a>{% endif %}
+        <a href="{% url 'finance:overview' %}#collections" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i>Finance</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid grid-cols-2 gap-3">
+    <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Pending</p><p class="mt-1 text-2xl font-bold text-amber-500">{{ pending_count }}</p></div>
+    <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Approved total</p><p class="mt-1 text-2xl font-bold text-green-600">RM {{ approved_total|floatformat:2 }}</p></div>
+  </section>
+
+  <section class="card p-4">
+    <form method="get" class="grid gap-3 md:grid-cols-4 items-end">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Status</label>
+        <select name="status">
+          <option value="">All</option>
+          {% for value, label in statuses %}<option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-xs font-medium text-gray-500 mb-1">Member</label>
+        <select name="member">
+          <option value="">All</option>
+          {% for mid, mname in members %}<option value="{{ mid }}" {% if request.GET.member == mid|stringformat:"s" %}selected{% endif %}>{{ mname }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="flex gap-2">
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i>Filter</button>
+        {% if request.GET.status or request.GET.member %}<a href="{% url 'payments:payment_history' %}" class="btn btn-secondary">Clear</a>{% endif %}
+      </div>
+    </form>
+  </section>
+
+  <section class="card overflow-hidden">
+    <div class="hidden md:block overflow-x-auto">
+      <table class="data-table">
+        <thead>
+          <tr><th>Student</th><th>Invoice</th><th>Method</th><th>Amount</th><th>Status</th><th>Submitted</th><th class="text-right">Action</th></tr>
+        </thead>
+        <tbody>
+          {% for p in payments %}
+          <tr>
+            <td>
+              <p class="font-medium text-gray-900 dark:text-white">{{ p.invoice.member.full_name }}</p>
+              <p class="text-xs text-gray-500">{% if p.invoice.member.assigned_coach %}Coach {{ p.invoice.member.assigned_coach }}{% else %}Unassigned{% endif %}</p>
+            </td>
+            <td>
+              <p class="font-medium">{{ p.invoice.get_invoice_type_display }}</p>
+              <p class="text-xs text-gray-500">{{ p.invoice.period|date:"F Y" }} · Due {{ p.invoice.due_date }}</p>
+            </td>
+            <td>
+              <p>{{ p.get_payment_method_display }}</p>
+              <p class="text-xs text-gray-500">{{ p.receipt_reference|default:"—" }}</p>
+            </td>
+            <td class="font-semibold">RM {{ p.amount_received|floatformat:2 }}</td>
+            <td><span class="badge {{ p.status|status_badge }}">{{ p.get_status_display }}</span></td>
+            <td class="text-xs text-gray-500">{{ p.submitted_at|date:"d M Y H:i" }}</td>
+            <td class="text-right whitespace-nowrap">
+              {% if p.proof_image %}<a href="{{ p.proof_image.url }}" target="_blank" class="btn btn-secondary btn-sm">Proof</a>{% endif %}
+              {% if can_review and p.status == 'pending' %}<a href="{% url 'payments:review' p.pk %}" class="btn btn-primary btn-sm">Review</a>{% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-center py-10 text-gray-500">No payments match.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="md:hidden divide-y divide-gray-100 dark:divide-gray-800">
+      {% for p in payments %}
+      <div class="p-4">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="font-medium text-gray-900 dark:text-white truncate">{{ p.invoice.member.full_name }}</p>
+            <p class="text-xs text-gray-500">{{ p.invoice.get_invoice_type_display }} · {{ p.invoice.period|date:"F Y" }}</p>
+            <p class="text-xs text-gray-500 mt-1">{{ p.get_payment_method_display }} · {{ p.submitted_at|date:"d M Y H:i" }}</p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-semibold">RM {{ p.amount_received|floatformat:2 }}</p>
+            <span class="badge {{ p.status|status_badge }} mt-1">{{ p.get_status_display }}</span>
+          </div>
         </div>
+        <div class="flex gap-2 mt-3">
+          {% if p.proof_image %}<a href="{{ p.proof_image.url }}" target="_blank" class="btn btn-secondary btn-sm">Proof</a>{% endif %}
+          {% if can_review and p.status == 'pending' %}<a href="{% url 'payments:review' p.pk %}" class="btn btn-primary btn-sm">Review</a>{% endif %}
+        </div>
+      </div>
+      {% empty %}
+      <p class="text-center py-10 text-gray-500">No payments match.</p>
+      {% endfor %}
     </div>
+  </section>
 
-    <div class="stat-cards">
-        <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Pending Proofs</p><p class="stat-value">{{ pending_count }}</p></div><div class="stat-icon" style="background:rgba(245,158,11,.12);color:#fbbf24;"><i class="fa-solid fa-hourglass-half"></i></div></div></div>
-        <div class="stat-card"><div class="stat-card-top"><div><p class="stat-label">Approved Total</p><p class="stat-value">RM {{ approved_total|floatformat:2 }}</p></div><div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-wallet"></i></div></div></div>
-    </div>
-
-    <div class="filter-bar">
-        <form method="get" class="filter-fields">
-            <div class="filter-field">
-                <label>Status</label>
-                <select name="status">
-                    <option value="">All statuses</option>
-                    {% for value, label in statuses %}
-                    <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="filter-field">
-                <label>Member</label>
-                <select name="member">
-                    <option value="">All members</option>
-                    {% for member_id, member_name in members %}
-                    <option value="{{ member_id }}" {% if request.GET.member == member_id|stringformat:"s" %}selected{% endif %}>{{ member_name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="filter-actions" style="margin-top:auto;">
-                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filter</button>
-                {% if request.GET.status or request.GET.member %}
-                <a href="{% url 'payments:payment_history' %}" class="btn btn-ghost">Clear</a>
-                {% endif %}
-            </div>
-        </form>
-    </div>
-
-    <div class="table-wrap">
-        <table class="tbl">
-            <thead>
-                <tr>
-                    <th>Student</th>
-                    <th>Invoice</th>
-                    <th>Method</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                    <th>Submitted</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for payment in payments %}
-                <tr>
-                    <td data-label="Student">
-                        <div class="tbl-name">{{ payment.invoice.member.full_name }}</div>
-                        <div class="tbl-sub">{% if payment.invoice.member.assigned_coach %}Coach {{ payment.invoice.member.assigned_coach }}{% else %}No coach assigned{% endif %}</div>
-                    </td>
-                    <td data-label="Invoice">
-                        <div class="tbl-name">{{ payment.invoice.get_invoice_type_display }}</div>
-                        <div class="tbl-sub">{{ payment.invoice.period|date:"F Y" }} - Due {{ payment.invoice.due_date }}</div>
-                    </td>
-                    <td data-label="Method">
-                        <div class="tbl-name">{{ payment.get_payment_method_display }}</div>
-                        <div class="tbl-sub">{{ payment.receipt_reference|default:"No reference" }}</div>
-                    </td>
-                    <td data-label="Amount">RM {{ payment.amount_received|floatformat:2 }}</td>
-                    <td data-label="Status"><span class="badge {{ payment.status|status_badge }}">{{ payment.get_status_display }}</span></td>
-                    <td data-label="Submitted" class="muted">{{ payment.submitted_at|date:"d M Y H:i" }}</td>
-                    <td data-label="Action">
-                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                            {% if payment.proof_image %}
-                            <a href="{{ payment.proof_image.url }}" target="_blank" class="btn btn-ghost btn-xs">Proof</a>
-                            {% endif %}
-                            {% if can_review and payment.status == 'pending' %}
-                            <a href="{% url 'payments:review' payment.pk %}" class="btn btn-primary btn-xs">Review</a>
-                            {% else %}
-                            <span class="text-sm text-muted">Read only</span>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="7"><div class="empty-state"><i class="fa-regular fa-credit-card"></i><p>No payment records match the current filters.</p></div></td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    {% include "partials/pagination.html" %}
+  {% include "partials/pagination.html" %}
 </div>
 {% endblock %}

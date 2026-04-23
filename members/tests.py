@@ -194,9 +194,14 @@ class ParentPortalTests(TestCase):
             },
         )
 
-        self.assertRedirects(response, reverse("members:list") + "?application_submitted=1")
+        # Parent self-submissions auto-provision a trial member + onboarding
+        # invoice and redirect to the payment hub.
+        self.assertRedirects(response, reverse("payments:my_payments") + "?onboarding=1")
         application = AdmissionApplication.objects.get(student_name="New Child Request")
         self.assertEqual(application.linked_parent_user, self.parent)
+        self.assertEqual(application.status, AdmissionApplication.STATUS_APPROVED)
+        self.assertIsNotNone(application.linked_member)
+        self.assertEqual(application.linked_member.status, Member.STATUS_TRIAL)
 
 
 class ParentRegistrationTests(TestCase):

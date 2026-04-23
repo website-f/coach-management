@@ -1,17 +1,29 @@
 from django.urls import reverse
 from django.utils import timezone
 
-from accounts.utils import ROLE_ADMIN, ROLE_COACH, ROLE_HEADCOUNT, get_role_label, get_user_role, has_role
+from accounts.utils import ROLE_ADMIN, ROLE_COACH, ROLE_PARENT, ROLE_SUPERADMIN, get_role_label, get_user_role, has_role
 
 
 def global_dashboard_context(request):
     role = get_user_role(request.user)
+    # Templates compare against 'admin' — superadmin collapses into the admin
+    # bucket for display purposes; use `is_superadmin` for super-only UI.
+    template_role = ROLE_ADMIN if role == ROLE_SUPERADMIN else role
+    parent_is_inactive = False
+    if request.user.is_authenticated and role == ROLE_PARENT:
+        from members.models import Member
+        has_live_child = Member.objects.filter(
+            parent_user=request.user,
+            status__in=[Member.STATUS_ACTIVE, Member.STATUS_TRIAL],
+        ).exists()
+        has_any_child = Member.objects.filter(parent_user=request.user).exists()
+        parent_is_inactive = has_any_child and not has_live_child
     pending_payment_reviews = 0
     pending_applications = 0
     unread_notifications = 0
     sidebar_planner_url = ""
     sidebar_planner_session = None
-    if request.user.is_authenticated and has_role(request.user, ROLE_ADMIN, ROLE_COACH, ROLE_HEADCOUNT):
+    if request.user.is_authenticated and has_role(request.user, ROLE_ADMIN, ROLE_COACH):
         from members.models import AdmissionApplication
         from payments.models import Payment
         from sessions.models import TrainingSession
@@ -30,9 +42,6 @@ def global_dashboard_context(request):
         ).order_by("session_date", "start_time")
         if has_role(request.user, ROLE_COACH) and not has_role(request.user, ROLE_ADMIN):
             session_queryset = session_queryset.filter(coach=request.user)
-        if has_role(request.user, ROLE_HEADCOUNT) and not has_role(request.user, ROLE_ADMIN):
-            sidebar_planner_url = reverse("members:crm")
-            session_queryset = session_queryset.none()
 
         today = timezone.localdate()
         sidebar_planner_session = session_queryset.filter(session_date__gte=today).first() or session_queryset.order_by(
@@ -50,7 +59,10 @@ def global_dashboard_context(request):
         unread_notifications = Notification.objects.filter(user=request.user, is_read=False).count()
 
     return {
-        "current_role": role,
+        "current_role": template_role,
+        "current_role_raw": role,
+        "is_superadmin": role == ROLE_SUPERADMIN,
+        "parent_is_inactive": parent_is_inactive,
         "current_role_label": get_role_label(role),
         "pending_payment_reviews": pending_payment_reviews,
         "pending_applications": pending_applications,

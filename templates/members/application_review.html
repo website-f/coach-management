@@ -1,161 +1,112 @@
 {% extends "base.html" %}
 {% load ui_tags %}
 
-{% block title %}Lead Review | NYO Admin Dashboard{% endblock %}
+{% block title %}Lead Review | NYO{% endblock %}
 {% block page_heading %}Lead Review{% endblock %}
 
 {% block content %}
-<div class="space-y">
-    <div class="card">
-        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
-            <div>
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;">Lead Review</p>
-                <h2 style="font-size:28px;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1.1;">{{ object.student_name }}</h2>
-                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">
-                    Parent {{ object.guardian_name }} requested {{ object.preferred_program }} at {{ object.preferred_location }}.
-                    Approving this lead creates a trial student profile, not an active subscriber.
-                </p>
-            </div>
-            <span class="badge {{ object.status|status_badge }}">{{ object.get_status_display }}</span>
-        </div>
+<div class="space-y-5">
+
+  <section class="card p-6">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div class="max-w-2xl">
+        <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">Lead Review</p>
+        <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ object.student_name }}</h2>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Parent {{ object.guardian_name }} requested {{ object.preferred_program }} at {{ object.preferred_location }}. Approving this creates a trial student profile.</p>
+      </div>
+      <span class="badge {{ object.status|status_badge }}">{{ object.get_status_display }}</span>
     </div>
+  </section>
 
-    <div class="grid-2">
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Lead Snapshot</span>
-                <a href="{% url 'members:application_list' %}" class="section-link">Back to leads</a>
-            </div>
-            <div class="grid-2 mt-3">
-                <div class="card-inset">
-                    <p class="text-xs text-muted" style="margin-bottom:4px;">Student</p>
-                    <p style="font-weight:600;color:var(--text);">{{ object.student_name }}</p>
-                </div>
-                <div class="card-inset">
-                    <p class="text-xs text-muted" style="margin-bottom:4px;">Date of birth</p>
-                    <p style="font-weight:600;color:var(--text);">{{ object.date_of_birth|default:"Not provided" }}</p>
-                </div>
-                <div class="card-inset">
-                    <p class="text-xs text-muted" style="margin-bottom:4px;">Parent</p>
-                    <p style="font-weight:600;color:var(--text);">{{ object.guardian_name }}</p>
-                    <p class="text-sm text-muted">{{ object.guardian_email|default:"No email" }}</p>
-                </div>
-                <div class="card-inset">
-                    <p class="text-xs text-muted" style="margin-bottom:4px;">Contact</p>
-                    <p style="font-weight:600;color:var(--text);">{{ object.contact_number }}</p>
-                </div>
-                <div class="card-inset">
-                    <p class="text-xs text-muted" style="margin-bottom:4px;">Source</p>
-                    <p style="font-weight:600;color:var(--text);">{{ object.get_source_display }}</p>
-                </div>
-                <div class="card-inset">
-                    <p class="text-xs text-muted" style="margin-bottom:4px;">Interest level</p>
-                    <p style="font-weight:600;color:var(--text);">{{ object.get_interest_level_display }}</p>
-                </div>
-                <div class="card-inset">
-                    <p class="text-xs text-muted" style="margin-bottom:4px;">Program</p>
-                    <p style="font-weight:600;color:var(--text);">{{ object.preferred_program }}</p>
-                </div>
-                <div class="card-inset">
-                    <p class="text-xs text-muted" style="margin-bottom:4px;">Location</p>
-                    <p style="font-weight:600;color:var(--text);">{{ object.preferred_location }}</p>
-                </div>
-                <div class="card-inset">
-                    <p class="text-xs text-muted" style="margin-bottom:4px;">Playing experience</p>
-                    <p style="font-weight:600;color:var(--text);">{{ object.get_playing_experience_display }}</p>
-                </div>
-                <div class="card-inset">
-                    <p class="text-xs text-muted" style="margin-bottom:4px;">Recommended level</p>
-                    <p style="font-weight:600;color:var(--text);">{{ object.get_recommended_level_display }}</p>
-                </div>
-            </div>
+  <div class="grid gap-5 lg:grid-cols-2">
+    <section class="card p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-gray-900 dark:text-white">Lead Snapshot</h3>
+        <a href="{% url 'members:application_list' %}" class="text-xs text-brand-500 hover:underline">Back to leads</a>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-2">
+        {% spaceless %}
+        {% for label, value in snapshot_rows %}{% endfor %}
+        {% endspaceless %}
+        <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="text-[11px] uppercase tracking-wider text-gray-500">Student</p><p class="font-medium mt-0.5">{{ object.student_name }}</p></div>
+        <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="text-[11px] uppercase tracking-wider text-gray-500">DOB</p><p class="font-medium mt-0.5">{{ object.date_of_birth|default:"—" }}</p></div>
+        <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="text-[11px] uppercase tracking-wider text-gray-500">Parent</p><p class="font-medium mt-0.5">{{ object.guardian_name }}</p><p class="text-xs text-gray-500">{{ object.guardian_email|default:"No email" }}</p></div>
+        <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="text-[11px] uppercase tracking-wider text-gray-500">Contact</p><p class="font-medium mt-0.5">{{ object.contact_number }}</p></div>
+        <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="text-[11px] uppercase tracking-wider text-gray-500">Source</p><p class="font-medium mt-0.5">{{ object.get_source_display }}</p></div>
+        <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="text-[11px] uppercase tracking-wider text-gray-500">Interest</p><p class="font-medium mt-0.5">{{ object.get_interest_level_display }}</p></div>
+        <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="text-[11px] uppercase tracking-wider text-gray-500">Program</p><p class="font-medium mt-0.5">{{ object.preferred_program }}</p></div>
+        <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="text-[11px] uppercase tracking-wider text-gray-500">Location</p><p class="font-medium mt-0.5">{{ object.preferred_location }}</p></div>
+        <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="text-[11px] uppercase tracking-wider text-gray-500">Experience</p><p class="font-medium mt-0.5">{{ object.get_playing_experience_display }}</p></div>
+        <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3"><p class="text-[11px] uppercase tracking-wider text-gray-500">Level</p><p class="font-medium mt-0.5">{{ object.get_recommended_level_display }}</p></div>
+      </div>
 
-            {% if object.notes %}
-            <div class="card-inset mt-3">
-                <p class="text-xs text-muted" style="margin-bottom:6px;">Lead notes</p>
-                <p style="font-size:13.5px;color:var(--text);line-height:1.8;">{{ object.notes }}</p>
-            </div>
-            {% endif %}
+      {% if object.notes %}
+      <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+        <p class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Notes</p>
+        <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{{ object.notes }}</p>
+      </div>
+      {% endif %}
 
-            {% if object.linked_member %}
-            <div class="card-inset mt-3" style="border-color:rgba(34,197,94,.26);">
-                <p class="text-xs text-muted" style="margin-bottom:6px;">Linked trial profile</p>
-                <p style="font-weight:600;color:var(--text);">{{ object.linked_member.full_name }}</p>
-                <p class="text-sm text-muted" style="margin-top:4px;">This lead already links into the trial/student table.</p>
-            </div>
-            {% endif %}
+      {% if object.linked_member %}
+      <div class="mt-4 rounded-lg border border-green-200 dark:border-green-500/30 bg-green-50 dark:bg-green-500/10 p-3">
+        <p class="text-[11px] uppercase tracking-wider text-green-700 dark:text-green-300 mb-1">Linked trial profile</p>
+        <p class="font-semibold text-green-900 dark:text-green-200">{{ object.linked_member.full_name }}</p>
+      </div>
+      {% endif %}
+    </section>
+
+    <section class="card p-5">
+      <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Decision</h3>
+      <form method="post" class="space-y-4">
+        {% csrf_token %}
+        {% for field in form %}
+        <div>
+          <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>{% endif %}
+          {% if field.errors %}<p class="text-xs text-red-600 mt-1">{{ field.errors|join:", " }}</p>{% endif %}
         </div>
-
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Decision</span>
-            </div>
-            <form method="post" class="space-y mt-3">
-                {% csrf_token %}
-                {% for field in form %}
-                <div class="form-group">
-                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.help_text %}<p class="text-sm text-muted">{{ field.help_text }}</p>{% endif %}
-                    {% if field.errors %}<p class="text-sm" style="color:var(--danger);">{{ field.errors|join:", " }}</p>{% endif %}
-                </div>
-                {% endfor %}
-                {% if form.non_field_errors %}
-                <div class="card-inset" style="border-color:rgba(239,68,68,.3);">
-                    <p class="text-sm" style="color:var(--danger);">{{ form.non_field_errors|join:", " }}</p>
-                </div>
-                {% endif %}
-                <div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;">
-                    <a href="{% url 'members:application_list' %}" class="btn btn-ghost">Cancel</a>
-                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Save Lead Review</button>
-                </div>
-            </form>
+        {% endfor %}
+        {% if form.non_field_errors %}
+        <div class="rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-300 text-sm p-3">{{ form.non_field_errors|join:", " }}</div>
+        {% endif %}
+        <div class="flex justify-end gap-2 flex-wrap pt-2">
+          <a href="{% url 'members:application_list' %}" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i>Save Review</button>
         </div>
+      </form>
+    </section>
+  </div>
+
+  <section class="card p-5">
+    <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Communication Log</h3>
+    <div class="grid gap-4 md:grid-cols-2 items-start">
+      <form method="post" action="{% url 'members:application_communication_create' object.pk %}" class="space-y-3 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+        {% csrf_token %}
+        {% for field in communication_form %}
+        <div>
+          <label class="block text-[11px] uppercase tracking-wider text-gray-500 mb-1">{{ field.label }}</label>
+          {{ field }}
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i>Add Touch</button>
+      </form>
+      <div class="space-y-3">
+        {% for log in communication_logs %}
+        <div class="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+          <div class="flex items-start justify-between gap-2 flex-wrap">
+            <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ log.get_channel_display }} · {{ log.get_message_type_display }}</p>
+            <span class="badge badge-info">{{ log.get_channel_display }}</span>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">{{ log.happened_at|date:"d M Y H:i" }} · {{ log.staff|default:"System" }}</p>
+          <p class="text-sm text-gray-700 dark:text-gray-300 mt-2 leading-relaxed">{{ log.outcome }}</p>
+          {% if log.next_step %}<p class="text-xs text-gray-500 mt-2"><strong>Next:</strong> {{ log.next_step }}</p>{% endif %}
+        </div>
+        {% empty %}
+        <p class="text-sm text-gray-500 text-center py-6">No communication touches yet.</p>
+        {% endfor %}
+      </div>
     </div>
-
-    <div class="card">
-        <div class="section-header">
-            <span class="section-title">Communication Log</span>
-        </div>
-        <div class="grid-2" style="align-items:start;">
-            <div class="card-inset">
-                <form method="post" action="{% url 'members:application_communication_create' object.pk %}" class="space-y">
-                    {% csrf_token %}
-                    {% for field in communication_form %}
-                    <div class="form-group">
-                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                        {{ field }}
-                    </div>
-                    {% endfor %}
-                    <button type="submit" class="btn btn-primary btn-xs"><i class="fa-solid fa-plus"></i> Add Communication Touch</button>
-                </form>
-            </div>
-            <div class="space-y">
-                {% for log in communication_logs %}
-                <div class="card-inset">
-                    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
-                        <div>
-                            <p style="font-weight:700;font-size:14px;color:var(--text);">{{ log.get_channel_display }} · {{ log.get_message_type_display }}</p>
-                            <p class="text-sm text-muted" style="margin-top:6px;">{{ log.happened_at|date:"d M Y H:i" }} · {{ log.staff|default:"System" }}</p>
-                        </div>
-                        <span class="badge badge-info">{{ log.get_channel_display }}</span>
-                    </div>
-                    <p style="font-size:13.5px;color:var(--text);line-height:1.8;margin-top:10px;">{{ log.outcome }}</p>
-                    {% if log.notes %}
-                    <p class="text-sm text-muted" style="margin-top:8px;">{{ log.notes }}</p>
-                    {% endif %}
-                    {% if log.next_step %}
-                    <p class="text-sm text-muted" style="margin-top:8px;"><strong>Next step:</strong> {{ log.next_step }}</p>
-                    {% endif %}
-                </div>
-                {% empty %}
-                <div class="empty-state">
-                    <i class="fa-regular fa-message"></i>
-                    <p>No communication touches logged for this lead yet.</p>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
+  </section>
 </div>
 {% endblock %}

@@ -1,29 +1,29 @@
 {% extends "base.html" %}
 
-{% block title %}{% if form.instance.pk %}Edit Historical Lock{% else %}Add Historical Lock{% endif %} | NYO Admin Dashboard{% endblock %}
-{% block page_heading %}{% if form.instance.pk %}Edit Historical Lock{% else %}Add Historical Lock{% endif %}{% endblock %}
+{% block title %}{% if form.instance.pk %}Edit Lock{% else %}Add Lock{% endif %} | NYO{% endblock %}
+{% block page_heading %}{% if form.instance.pk %}Edit Lock{% else %}Add Lock{% endif %}{% endblock %}
 
 {% block content %}
-<div class="form-centered" style="max-width:760px;">
-    <div class="card">
-        <div class="section-header">
-            <span class="section-title">{% if form.instance.pk %}Historical Lock Update{% else %}New Historical Lock{% endif %}</span>
-            <a href="{% url 'finance:compliance' %}" class="section-link">Back to compliance</a>
-        </div>
-        <form method="post" class="space-y" style="margin-top:18px;">
-            {% csrf_token %}
-            {% for field in form %}
-            <div class="form-group">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.errors %}<p style="font-size:12px;color:var(--danger);margin-top:4px;">{{ field.errors|join:", " }}</p>{% endif %}
-            </div>
-            {% endfor %}
-            <div style="display:flex;justify-content:flex-end;gap:10px;">
-                <a href="{% url 'finance:compliance' %}" class="btn btn-ghost">Cancel</a>
-                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Lock</button>
-            </div>
-        </form>
+<div class="max-w-2xl mx-auto">
+  <section class="card p-6 sm:p-8">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="font-semibold text-gray-900 dark:text-white">{% if form.instance.pk %}Update Lock{% else %}New Historical Lock{% endif %}</h3>
+      <a href="{% url 'finance:compliance' %}" class="text-xs text-brand-500 hover:underline">Back</a>
     </div>
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      {% for field in form %}
+      <div>
+        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}<p class="text-xs text-red-600 mt-1">{{ field.errors|join:", " }}</p>{% endif %}
+      </div>
+      {% endfor %}
+      <div class="flex flex-col sm:flex-row gap-3 pt-2">
+        <a href="{% url 'finance:compliance' %}" class="btn btn-secondary flex-1 justify-center">Cancel</a>
+        <button type="submit" class="btn btn-primary flex-1 justify-center"><i class="fa-solid fa-floppy-disk"></i>Save</button>
+      </div>
+    </form>
+  </section>
 </div>
 {% endblock %}

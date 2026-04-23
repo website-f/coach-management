@@ -1,586 +1,290 @@
 {% extends "base.html" %}
 {% load ui_tags %}
 
-{% block title %}Dashboard | NYO Admin Dashboard{% endblock %}
+{% block title %}Dashboard | NYO{% endblock %}
 {% block page_heading %}Dashboard{% endblock %}
 
-{% block content %}
-{% if current_role == 'parent' %}
-{% include "accounts/partials/student_portal.html" %}
-{% elif current_role == 'coach' %}
-{% include "accounts/partials/coach_dashboard.html" %}
-{% else %}
-<div class="space-y">
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
 
-    <div class="card">
-        <div style="display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;">
-            <div style="max-width:760px;">
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.14em;margin-bottom:10px;">{{ dashboard_intro.eyebrow }}</p>
-                <h2 style="font-size:30px;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1.1;">{{ dashboard_intro.title }}</h2>
-                <p class="text-sm text-muted" style="margin-top:12px;line-height:1.8;max-width:680px;">{{ dashboard_intro.body }}</p>
-            </div>
-            <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;">
-                <span class="badge badge-info">{{ current_role_label }}</span>
-                {% if dashboard_intro.meta %}
-                <span class="badge badge-neutral">{{ dashboard_intro.meta }}</span>
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Hero / role intro -->
+    <section class="card p-6 sm:p-8">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="max-w-2xl">
+                {% if dashboard_intro.eyebrow %}
+                <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-2">{{ dashboard_intro.eyebrow }}</p>
                 {% endif %}
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white leading-tight">{{ dashboard_intro.title|default:"Welcome" }}</h2>
+                {% if dashboard_intro.body %}
+                <p class="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{{ dashboard_intro.body }}</p>
+                {% endif %}
+            </div>
+            <div class="flex gap-2 flex-wrap">
+                <span class="badge badge-info">{{ current_role_label }}</span>
+                {% if dashboard_intro.meta %}<span class="badge badge-muted">{{ dashboard_intro.meta }}</span>{% endif %}
+                {% if is_superadmin %}<span class="badge badge-warning">Super</span>{% endif %}
             </div>
         </div>
 
         {% if dashboard_actions %}
-        <div class="action-rail" data-scroll-track style="margin-top:18px;position:relative;z-index:1;">
-            <div class="action-rail-track">
-            {% for action in dashboard_actions %}
-            <a href="{{ action.url }}" class="btn {% if forloop.first %}btn-primary{% else %}btn-ghost{% endif %}">
-                <i class="fa-solid {{ action.icon }}"></i> {{ action.label }}
-                {% if action.badge %}
-                <span style="display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 7px;border-radius:999px;background:rgba(255,255,255,.14);font-size:11px;font-weight:700;">{{ action.badge }}</span>
-                {% endif %}
-            </a>
-            {% endfor %}
-            </div>
-            <span class="scroll-indicator">Scroll for more</span>
+        <div class="mt-5 flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x">
+          {% for action in dashboard_actions %}
+          <a href="{{ action.url }}" class="shrink-0 snap-start inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap
+             {% if forloop.first %}bg-brand-400 hover:bg-brand-500 text-white{% else %}bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-100{% endif %}">
+            <i class="fa-solid {{ action.icon }}"></i>{{ action.label }}
+            {% if action.badge %}<span class="ml-1 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-white/25 text-[11px] font-semibold">{{ action.badge }}</span>{% endif %}
+          </a>
+          {% endfor %}
         </div>
         {% endif %}
-    </div>
+    </section>
 
-    <div class="stat-cards">
-        {% for card in dashboard_cards %}
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div>
-                    <p class="stat-label">{{ card.label }}</p>
-                    <p class="stat-value">{{ card.value }}</p>
-                </div>
-                <div class="stat-icon"><i class="fa-solid {{ card.icon }}"></i></div>
-            </div>
+    <!-- Stat cards -->
+    {% if dashboard_cards %}
+    <section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      {% for card in dashboard_cards %}
+      <div class="card p-4">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400">{{ card.label }}</p>
+            <p class="mt-1 text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate">{{ card.value }}</p>
+          </div>
+          <div class="w-9 h-9 rounded-lg bg-brand-50 dark:bg-brand-400/10 text-brand-500 dark:text-brand-300 grid place-items-center shrink-0">
+            <i class="fa-solid {{ card.icon }}"></i>
+          </div>
         </div>
-        {% endfor %}
-    </div>
-
-    {% if current_role == 'admin' or current_role == 'coach' or current_role == 'headcount' %}
-    <div class="grid-2">
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">
-                    {% if current_role == 'admin' %}Operations Pulse{% elif current_role == 'coach' %}Coach Focus{% else %}Pipeline Pulse{% endif %}
-                </span>
-            </div>
-            <div class="grid-2 mt-3">
-                {% for highlight in workspace_highlights %}
-                <div class="card-inset">
-                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;">{{ highlight.label }}</p>
-                    <p style="font-size:24px;font-weight:700;color:var(--text);line-height:1.1;">{{ highlight.value }}</p>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">
-                    {% if current_role == 'headcount' %}Lead Queue{% else %}Action Queue{% endif %}
-                </span>
-                {% if current_role == 'admin' %}
-                <a href="{% url 'payments:pending_reviews' %}" class="section-link">Open review queue</a>
-                {% elif current_role == 'coach' %}
-                <a href="{% url 'members:report_list' %}" class="section-link">Open reports</a>
-                {% else %}
-                <a href="{% url 'members:application_list' %}" class="section-link">Open leads</a>
-                {% endif %}
-            </div>
-            <div class="space-y">
-                {% if current_role == 'admin' %}
-                    {% for payment in workspace_lists.queue %}
-                    <a href="{% url 'payments:review' payment.pk %}" class="list-item">
-                        <div>
-                            <p class="list-item-title">{{ payment.invoice.member.full_name }}</p>
-                            <p class="list-item-sub">{{ payment.invoice.period|date:"F Y" }} · RM {{ payment.invoice.amount }} · {{ payment.submitted_at|date:"d M Y H:i" }}</p>
-                        </div>
-                        <span class="badge badge-warning">Pending</span>
-                    </a>
-                    {% empty %}
-                    <div class="empty-state">
-                        <i class="fa-regular fa-circle-check"></i>
-                        <p>No payment proofs waiting right now.</p>
-                    </div>
-                    {% endfor %}
-                {% elif current_role == 'coach' %}
-                    {% for report in workspace_lists.queue %}
-                    <a href="{% url 'members:report_detail' report.pk %}" class="list-item">
-                        <div>
-                            <p class="list-item-title">{{ report.member.full_name }}</p>
-                            <p class="list-item-sub">{{ report.period_label }} · {{ report.attendance_rate }}% attendance</p>
-                        </div>
-                        <span class="badge badge-neutral">Draft</span>
-                    </a>
-                    {% empty %}
-                    <div class="empty-state">
-                        <i class="fa-regular fa-circle-check"></i>
-                        <p>No draft reports waiting right now.</p>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    {% for lead in workspace_lists.queue %}
-                    <a href="{% url 'members:application_review' lead.pk %}" class="list-item">
-                        <div>
-                            <p class="list-item-title">{{ lead.student_name }}</p>
-                            <p class="list-item-sub">{{ lead.get_source_display }} &middot; {{ lead.preferred_program }} &middot; {{ lead.submitted_at|date:"d M Y" }}</p>
-                        </div>
-                        <span class="badge badge-info">{{ lead.get_status_display }}</span>
-                    </a>
-                    {% empty %}
-                    <div class="empty-state">
-                        <i class="fa-regular fa-circle-check"></i>
-                        <p>No open leads are waiting right now.</p>
-                    </div>
-                    {% endfor %}
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <div class="grid-2">
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">
-                    {% if current_role == 'headcount' %}Upcoming Trial Sessions{% else %}Upcoming Sessions{% endif %}
-                </span>
-                <a href="{% url 'sessions:list' %}" class="section-link">Open schedule</a>
-            </div>
-            <div class="space-y">
-                {% for session in workspace_lists.upcoming_sessions %}
-                <a href="{% url 'sessions:detail' session.pk %}" class="list-item">
-                    <div>
-                        <p class="list-item-title">{{ session.title }}</p>
-                    </div>
-                    <i class="fa-solid fa-chevron-right text-muted" style="font-size:11px;flex-shrink:0;"></i>
-                </a>
-                {% empty %}
-                <div class="empty-state">
-                    <i class="fa-regular fa-calendar-xmark"></i>
-                    <p>{% if current_role == 'headcount' %}No trial sessions lined up yet.{% else %}No sessions lined up yet.{% endif %}</p>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        {% if current_role == 'admin' or current_role == 'coach' %}
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">
-                    {% if current_role == 'admin' %}Recent Member Activity{% else %}Player Focus{% endif %}
-                </span>
-                <a href="{% url 'members:list' %}" class="section-link">Open members</a>
-            </div>
-            <div class="space-y">
-                {% for member in workspace_lists.member_focus %}
-                <a href="{% url 'members:detail' member.pk %}" class="list-item">
-                    <div>
-                        <p class="list-item-title">{{ member.full_name }}</p>
-                        <p class="list-item-sub">
-                            Coach: {{ member.assigned_coach|default:"Unassigned" }} · {{ member.joined_at }}
-                        </p>
-                    </div>
-                    <span class="badge {{ member.status|status_badge }}">{{ member.get_status_display }}</span>
-                </a>
-                {% empty %}
-                <div class="empty-state">
-                    <i class="fa-regular fa-users"></i>
-                    <p>No members to show here yet.</p>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-    </div>
-    
-    {% if current_role == 'coach' and workspace_lists.plan_session %}
-    <div class="card">
-        <div class="section-header">
-            <span class="section-title">Coach Strategy Assistant</span>
-            <a href="{% url 'sessions:plan' workspace_lists.plan_session.pk %}?autostart=1" class="section-link">Open planner</a>
-        </div>
-        <div class="card-inset">
-            <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;">
-                <div style="max-width:760px;">
-                    <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Next plan target</p>
-                    <h3 style="font-size:24px;font-weight:700;color:var(--text);margin-top:6px;">{{ workspace_lists.plan_session.title }}</h3>
-                    <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;">
-                        Generate a smart plan from the admin syllabus, roster level mix, attendance rhythm, and fee status visibility.
-                    </p>
-                </div>
-                <a href="{% url 'sessions:plan' workspace_lists.plan_session.pk %}?autostart=1" class="btn btn-primary">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> Plan For Today
-                </a>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    {% if current_role == 'admin' or current_role == 'coach' %}
-    <div class="card">
-        <div class="section-header">
-            <span class="section-title">This Month Fee Status</span>
-            <a href="{% url 'payments:payment_history' %}" class="section-link">Open payment status</a>
-        </div>
-        <div class="space-y">
-            {% for invoice in workspace_lists.payment_watchlist %}
-            <div class="list-item" style="text-decoration:none;">
-                <div>
-                    <p class="list-item-title">{{ invoice.member.full_name }}</p>
-                    <p class="list-item-sub">{{ invoice.period|date:"F Y" }} &middot; {{ invoice.get_invoice_type_display }} &middot; Due {{ invoice.due_date }}{% if current_role == 'admin' %} &middot; Coach {{ invoice.member.assigned_coach|default:"Unassigned" }}{% endif %}</p>
-                </div>
-                <span class="badge {{ invoice.status|status_badge }}">{{ invoice.get_status_display }}</span>
-            </div>
-            {% empty %}
-            <div class="empty-state">
-                <i class="fa-regular fa-circle-check"></i>
-                <p>All tracked students are clear for this month.</p>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
+      </div>
+      {% endfor %}
+    </section>
     {% endif %}
 
     {% if current_role == 'parent' %}
-    <div class="card">
-        <div class="section-header">
-            <span class="section-title">Children Snapshot</span>
-            <a href="{% url 'members:list' %}" class="section-link">Open profiles</a>
+      <!-- PARENT VIEW -->
+      {% if children %}
+      <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {% for child in children %}
+        <div class="card p-5">
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-full bg-brand-50 dark:bg-brand-400/10 text-brand-500 grid place-items-center text-lg font-bold shrink-0">{{ child.full_name|first|upper }}</div>
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-gray-900 dark:text-white truncate">{{ child.full_name }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ child.get_skill_level_display|default:"—" }} · {{ child.get_status_display }}</p>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <a href="{% url 'members:detail' child.pk %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-user"></i>Profile</a>
+                {% if child.assigned_coach %}<span class="badge badge-muted"><i class="fa-solid fa-user-tie mr-1"></i>{{ child.assigned_coach.get_full_name|default:child.assigned_coach.username }}</span>{% endif %}
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="grid-2 mt-3">
-            {% for child in child_summaries %}
-            <a href="{% url 'members:detail' child.member.pk %}" class="card-inset" style="display:block;">
-                <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
-                    <div>
-                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Child</p>
-                        <p style="font-size:18px;font-weight:700;color:var(--text);margin-top:4px;">{{ child.member.full_name }}</p>
-                        <p class="text-sm text-muted" style="margin-top:6px;">
-                            Coach: {{ child.member.assigned_coach|default:"Unassigned" }}
-                            {% if child.next_session %}<br>Next session: {{ child.next_session.session_date }} · {{ child.next_session.start_time|time:"H:i" }}{% endif %}
-                        </p>
-                    </div>
-                    <span class="badge {{ child.member.status|status_badge }}">{{ child.member.get_status_display }}</span>
+        {% endfor %}
+      </section>
+      {% else %}
+      <section class="card p-10 text-center">
+        <i class="fa-solid fa-child-reaching text-4xl text-gray-300 dark:text-gray-600"></i>
+        <p class="mt-3 font-semibold text-gray-900 dark:text-white">No children linked yet</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Add your first child to get started.</p>
+        <a href="{% url 'members:apply' %}" class="btn btn-primary mt-4 inline-flex"><i class="fa-solid fa-plus"></i>Add Child</a>
+      </section>
+      {% endif %}
+
+      <section class="grid gap-4 lg:grid-cols-2">
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-gray-900 dark:text-white">Upcoming Sessions</h3>
+            <a href="{% url 'sessions:list' %}" class="text-xs text-brand-500 hover:underline">View calendar</a>
+          </div>
+          <div class="space-y-2">
+            {% for s in workspace_lists.upcoming_sessions %}
+            <div class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+              <div class="w-10 h-10 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 grid place-items-center text-center text-xs leading-tight">
+                <div>
+                  <div class="font-semibold text-gray-900 dark:text-white">{{ s.session_date|date:"d" }}</div>
+                  <div class="text-[10px] text-gray-500">{{ s.session_date|date:"M" }}</div>
                 </div>
-                <div class="grid-2 mt-3">
-                    <div>
-                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Attendance</p>
-                        <p style="font-size:22px;font-weight:700;color:var(--text);">{{ child.attendance_rate }}%</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Outstanding</p>
-                        <p style="font-size:22px;font-weight:700;color:var(--text);">RM {{ child.outstanding_total }}</p>
-                    </div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ s.title }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ s.start_time|time:"H:i" }} · {{ s.court|default:"Court 1" }}</p>
+              </div>
+            </div>
+            {% empty %}
+            <p class="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">No sessions scheduled.</p>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-gray-900 dark:text-white">Payments</h3>
+            <a href="{% url 'payments:my_payments' %}" class="text-xs text-brand-500 hover:underline">Manage</a>
+          </div>
+          <div class="space-y-2">
+            {% for p in recent_payments|slice:":5" %}
+            <div class="flex items-center justify-between gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+              <div class="min-w-0">
+                <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ p.invoice.period|date:"F Y" }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ p.invoice.get_invoice_type_display }} · RM {{ p.amount_received }}</p>
+              </div>
+              <span class="badge {% if p.status == 'approved' %}badge-success{% elif p.status == 'pending' %}badge-warning{% else %}badge-danger{% endif %}">{{ p.get_status_display }}</span>
+            </div>
+            {% empty %}
+            <p class="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">No payment activity yet.</p>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+
+    {% else %}
+      <!-- ADMIN / COACH VIEW -->
+      {% if workspace_highlights %}
+      <section class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {% for h in workspace_highlights %}
+        <div class="card p-4">
+          <p class="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400">{{ h.label }}</p>
+          <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{{ h.value }}</p>
+        </div>
+        {% endfor %}
+      </section>
+      {% endif %}
+
+      <section class="grid gap-4 lg:grid-cols-3">
+        <!-- Action queue -->
+        <div class="card p-5 lg:col-span-2">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-gray-900 dark:text-white">
+              {% if current_role == 'admin' %}Action Queue{% else %}Coach Focus{% endif %}
+            </h3>
+            {% if current_role == 'admin' %}<a href="{% url 'payments:pending_reviews' %}" class="text-xs text-brand-500 hover:underline">Review queue</a>
+            {% else %}<a href="{% url 'members:report_list' %}" class="text-xs text-brand-500 hover:underline">All reports</a>{% endif %}
+          </div>
+          <div class="divide-y divide-gray-100 dark:divide-gray-800">
+            {% if current_role == 'admin' %}
+              {% for payment in workspace_lists.queue %}
+              <a href="{% url 'payments:review' payment.pk %}" class="flex items-center justify-between gap-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 -mx-2 px-2 rounded-lg transition">
+                <div class="min-w-0">
+                  <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ payment.invoice.member.full_name }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ payment.invoice.period|date:"F Y" }} · RM {{ payment.amount_received }} · {{ payment.submitted_at|date:"d M" }}</p>
                 </div>
-                {% if child.latest_invoice %}
-                <div style="margin-top:14px;">
-                    <span class="badge {{ child.latest_invoice.status|status_badge }}">{{ child.latest_invoice.get_status_display }}</span>
+                <span class="badge badge-warning">Pending</span>
+              </a>
+              {% empty %}
+              <p class="text-sm text-gray-500 dark:text-gray-400 py-6 text-center">No payment reviews pending. </p>
+              {% endfor %}
+            {% else %}
+              {% for item in workspace_lists.pending_items %}
+              <a href="{{ item.url }}" class="flex items-center justify-between gap-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 -mx-2 px-2 rounded-lg transition">
+                <div class="min-w-0">
+                  <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ item.title }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ item.meta }}</p>
                 </div>
-                {% endif %}
+                <span class="badge badge-{{ item.tone|default:'muted' }}">{{ item.label }}</span>
+              </a>
+              {% empty %}
+              <p class="text-sm text-gray-500 dark:text-gray-400 py-6 text-center">All caught up.</p>
+              {% endfor %}
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Upcoming sessions -->
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="font-semibold text-gray-900 dark:text-white">Upcoming Sessions</h3>
+            <a href="{% url 'sessions:list' %}" class="text-xs text-brand-500 hover:underline">View all</a>
+          </div>
+          <div class="space-y-2">
+            {% for s in workspace_lists.upcoming_sessions %}
+            <a href="{% url 'sessions:detail' s.pk %}" class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
+              <div class="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 grid place-items-center text-center text-xs leading-tight shrink-0">
+                <div>
+                  <div class="font-semibold text-gray-900 dark:text-white">{{ s.session_date|date:"d" }}</div>
+                  <div class="text-[10px] text-gray-500">{{ s.session_date|date:"M" }}</div>
+                </div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ s.title }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ s.start_time|time:"H:i" }}{% if s.coach %} · {{ s.coach.get_full_name|default:s.coach.username }}{% endif %}</p>
+              </div>
             </a>
             {% empty %}
-            <div class="empty-state" style="grid-column:1 / -1;">
-                <i class="fa-regular fa-user"></i>
-                <p>No linked child profiles found yet.</p>
-            </div>
+            <p class="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">No upcoming sessions.</p>
             {% endfor %}
+          </div>
         </div>
-    </div>
+      </section>
 
-    <div class="grid-2">
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Payment Spotlight</span>
-                <a href="{% url 'payments:my_payments' %}" class="section-link">Open payments</a>
-            </div>
-            {% if workspace_lists.featured_invoice %}
-            <div class="card-inset">
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.08em;">Next invoice to action</p>
-                <h3 style="font-size:24px;font-weight:700;color:var(--text);margin-top:8px;">{{ workspace_lists.featured_invoice.member.full_name }}</h3>
-                <p class="text-sm text-muted" style="margin-top:8px;line-height:1.8;">
-                    {{ workspace_lists.featured_invoice.period|date:"F Y" }} · Due {{ workspace_lists.featured_invoice.due_date }}<br>
-                    Amount: RM {{ workspace_lists.featured_invoice.amount }}
-                </p>
-                <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
-                    <span class="badge {{ workspace_lists.featured_invoice.status|status_badge }}">{{ workspace_lists.featured_invoice.get_status_display }}</span>
-                    <a href="{% url 'payments:my_payments' %}" class="btn btn-primary"><i class="fa-solid fa-credit-card"></i> Go To Payments</a>
-                </div>
-            </div>
-            {% else %}
-            <div class="empty-state">
-                <i class="fa-regular fa-circle-check"></i>
-                <p>No outstanding invoices right now.</p>
-            </div>
-            {% endif %}
-        </div>
-
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Upcoming Sessions</span>
-                <a href="{% url 'sessions:list' %}" class="section-link">Open schedule</a>
-            </div>
-            <div class="space-y">
-                {% for session in workspace_lists.upcoming_sessions %}
-                <a href="{% url 'sessions:detail' session.pk %}" class="list-item">
-                    <div>
-                        <p class="list-item-title">{{ session.title }}</p>
-                    </div>
-                    <i class="fa-solid fa-chevron-right text-muted" style="font-size:11px;flex-shrink:0;"></i>
-                </a>
-                {% empty %}
-                <div class="empty-state">
-                    <i class="fa-regular fa-calendar-xmark"></i>
-                    <p>No upcoming sessions linked yet.</p>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    {% if workspace_lists.reports %}
-    <div class="grid-2">
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Latest Progress Reports</span>
-                <a href="{% url 'members:report_list' %}" class="section-link">Open reports</a>
-            </div>
-            <div class="space-y">
-                {% for report in workspace_lists.reports %}
-                <a href="{% url 'members:report_detail' report.pk %}" class="list-item">
-                    <div>
-                        <p class="list-item-title">{{ report.member.full_name }}</p>
-                        <p class="list-item-sub">{{ report.period_label }} · {{ report.get_overall_status_display }} · {{ report.attendance_rate }}% attendance</p>
-                    </div>
-                    <span class="badge {% if report.is_published %}badge-success{% else %}badge-neutral{% endif %}">{% if report.is_published %}Published{% else %}Draft{% endif %}</span>
-                </a>
-                {% empty %}
-                <div class="empty-state">
-                    <i class="fa-regular fa-file-lines"></i>
-                    <p>No reports to show yet.</p>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        {% if current_role == 'admin' %}
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Pending Leads</span>
-                <a href="{% url 'members:application_list' %}" class="section-link">Open queue</a>
-            </div>
-            <div class="space-y">
-                {% for application in workspace_lists.applications %}
-                <a href="{% url 'members:application_review' application.pk %}" class="list-item">
-                    <div>
-                        <p class="list-item-title">{{ application.student_name }}</p>
-                        <p class="list-item-sub">{{ application.preferred_program }} · {{ application.preferred_location }} · {{ application.submitted_at|date:"d M Y" }}</p>
-                    </div>
-                    <span class="badge badge-warning">Pending</span>
-                </a>
-                {% empty %}
-                <div class="empty-state">
-                    <i class="fa-regular fa-circle-check"></i>
-                    <p>No pending leads are waiting right now.</p>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-    </div>
-    {% endif %}
-
-    {% if show_revenue_chart or show_attendance_chart or show_growth_chart %}
-    <div class="{% if show_revenue_chart and show_attendance_chart and show_growth_chart %}grid-3{% elif show_revenue_chart and show_attendance_chart or show_revenue_chart and show_growth_chart or show_attendance_chart and show_growth_chart %}grid-2{% endif %}" style="margin-top:16px;">
+      <!-- Charts -->
+      {% if show_revenue_chart or show_attendance_chart or show_growth_chart %}
+      <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {% if show_revenue_chart %}
-        <div class="card">
-            <div class="section-header mb-3">
-                <span class="section-title">Monthly Revenue</span>
-            </div>
-            <div class="chart-wrap">
-                <canvas id="revenueChart"></canvas>
-            </div>
+        <div class="card p-5">
+          <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Monthly Revenue</h3>
+          <canvas id="revenueChart" height="200" data-chart='{{ revenue_chart_data|safe }}'></canvas>
         </div>
         {% endif %}
         {% if show_attendance_chart %}
-        <div class="card">
-            <div class="section-header mb-3">
-                <span class="section-title">Attendance Trend</span>
-            </div>
-            <div class="chart-wrap">
-                <canvas id="attendanceChart"></canvas>
-            </div>
+        <div class="card p-5">
+          <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Attendance Rate</h3>
+          <canvas id="attendanceChart" height="200" data-chart='{{ attendance_chart_data|safe }}'></canvas>
         </div>
         {% endif %}
         {% if show_growth_chart %}
-        <div class="card">
-            <div class="section-header mb-3">
-                <span class="section-title">Member Growth</span>
-            </div>
-            <div class="chart-wrap">
-                <canvas id="growthChart"></canvas>
-            </div>
+        <div class="card p-5">
+          <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Member Growth</h3>
+          <canvas id="growthChart" height="200" data-chart='{{ growth_chart_data|safe }}'></canvas>
         </div>
         {% endif %}
-    </div>
+      </section>
+      {% endif %}
+
+      <!-- Recent payments (admin/coach) -->
+      {% if recent_payments %}
+      <section class="card p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-gray-900 dark:text-white">Recent Payments</h3>
+          <a href="{% url 'payments:payment_history' %}" class="text-xs text-brand-500 hover:underline">All payments</a>
+        </div>
+        <div class="overflow-x-auto -mx-5">
+          <table class="data-table">
+            <thead>
+              <tr><th>Member</th><th>Period</th><th>Amount</th><th>Method</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              {% for p in recent_payments|slice:":8" %}
+              <tr>
+                <td class="font-medium text-gray-900 dark:text-white">{{ p.invoice.member.full_name }}</td>
+                <td>{{ p.invoice.period|date:"F Y" }}</td>
+                <td>RM {{ p.amount_received }}</td>
+                <td>{{ p.get_payment_method_display }}</td>
+                <td><span class="badge {% if p.status == 'approved' %}badge-success{% elif p.status == 'pending' %}badge-warning{% else %}badge-danger{% endif %}">{{ p.get_status_display }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      {% endif %}
     {% endif %}
-
-    <div class="grid-2" style="margin-top:16px;">
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">Recent Sessions</span>
-                <a href="{% url 'sessions:list' %}" class="section-link">View all <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i></a>
-            </div>
-            <div class="space-y">
-                {% for session in recent_sessions %}
-                <a href="{% url 'sessions:detail' session.pk %}" class="list-item">
-                    <div>
-                        <p class="list-item-title">{{ session.title }}</p>
-                    </div>
-                    <i class="fa-solid fa-chevron-right text-muted" style="font-size:11px;flex-shrink:0;"></i>
-                </a>
-                {% empty %}
-                <div class="empty-state">
-                    <i class="fa-regular fa-calendar-xmark"></i>
-                    <p>No sessions created yet.</p>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="section-header">
-                <span class="section-title">
-                    {% if current_role == 'parent' %}My Payment Activity{% else %}Recent Payments{% endif %}
-                </span>
-                {% if current_role == 'parent' %}
-                <a href="{% url 'payments:my_payments' %}" class="section-link">Open payments</a>
-                {% elif current_role == 'admin' %}
-                <a href="{% url 'payments:pending_reviews' %}" class="section-link">Open queue</a>
-                {% elif current_role == 'coach' %}
-                <a href="{% url 'payments:payment_history' %}" class="section-link">Open payment view</a>
-                {% endif %}
-            </div>
-            <div class="overflow-x">
-                <table class="tbl native-stack">
-                    <thead>
-                        <tr>
-                            <th>Member</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for payment in recent_payments %}
-                        <tr>
-                            <td class="tbl-name" data-label="Member">{{ payment.invoice.member.full_name }}</td>
-                            <td class="muted" data-label="Amount">RM {{ payment.invoice.amount }}</td>
-                            <td data-label="Status"><span class="badge {{ payment.status|status_badge }}">{{ payment.get_status_display }}</span></td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="3" style="text-align:center;padding:28px;color:var(--muted);">No payment activity yet.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
 </div>
-{% endif %}
-{% endblock %}
 
-{% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const chartArea = document.querySelector('.chart-wrap');
-        if (!chartArea) return;
-
-        let chartBooted = false;
-
-        function chartDefaults() {
-            return {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { labels: { color: '#8a8a9a', font: { family: 'Inter', size: 12 }, boxWidth: 12 } }
-                },
-                scales: {
-                    x: {
-                        ticks: { color: '#8a8a9a', font: { family: 'Inter', size: 11 } },
-                        grid: { color: 'rgba(255,255,255,0.05)' },
-                        border: { color: '#2a2a35' }
-                    },
-                    y: {
-                        ticks: { color: '#8a8a9a', font: { family: 'Inter', size: 11 } },
-                        grid: { color: 'rgba(255,255,255,0.05)' },
-                        border: { color: '#2a2a35' }
-                    }
-                }
-            };
-        }
-
-        function applyAccentDataset(data) {
-            if (data.datasets) {
-                data.datasets = data.datasets.map((ds, i) => ({
-                    ...ds,
-                    backgroundColor: i === 0 ? 'rgba(79,110,247,0.18)' : 'rgba(99,210,130,0.18)',
-                    borderColor: i === 0 ? '#4f6ef7' : '#22c55e',
-                    borderWidth: 2,
-                    borderRadius: 6,
-                    pointBackgroundColor: i === 0 ? '#4f6ef7' : '#22c55e',
-                    pointRadius: 4,
-                    tension: 0.4,
-                    fill: true
-                }));
-            }
-            return data;
-        }
-
-        async function bootCharts() {
-            if (chartBooted) return;
-            chartBooted = true;
-            await window.ensureChartJs();
-
-            {% if show_revenue_chart %}
-            new Chart(document.getElementById('revenueChart'), {
-                type: 'bar',
-                data: applyAccentDataset(JSON.parse('{{ revenue_chart_data|escapejs }}')),
-                options: chartDefaults()
-            });
-            {% endif %}
-            {% if show_attendance_chart %}
-            new Chart(document.getElementById('attendanceChart'), {
-                type: 'line',
-                data: applyAccentDataset(JSON.parse('{{ attendance_chart_data|escapejs }}')),
-                options: chartDefaults()
-            });
-            {% endif %}
-            {% if show_growth_chart %}
-            new Chart(document.getElementById('growthChart'), {
-                type: 'line',
-                data: applyAccentDataset(JSON.parse('{{ growth_chart_data|escapejs }}')),
-                options: chartDefaults()
-            });
-            {% endif %}
-        }
-
-        if (window.nyoIsMobileViewport && 'IntersectionObserver' in window) {
-            const observer = new IntersectionObserver(function(entries) {
-                if (entries.some(function(entry) { return entry.isIntersecting; })) {
-                    bootCharts();
-                    observer.disconnect();
-                }
-            }, { rootMargin: '120px 0px' });
-            observer.observe(chartArea);
-        } else if ('requestIdleCallback' in window) {
-            requestIdleCallback(bootCharts, { timeout: 1500 });
-        } else {
-            setTimeout(bootCharts, 0);
-        }
-    });
+  (function () {
+    function mkChart(id, color) {
+      var el = document.getElementById(id);
+      if (!el || !window.Chart) return;
+      try {
+        var data = JSON.parse(el.dataset.chart);
+        data.datasets.forEach(function (d) { d.borderColor = color; d.backgroundColor = color + '33'; d.tension = 0.35; d.fill = true; });
+        new Chart(el, { type: 'line', data: data, options: { plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true } } } });
+      } catch (e) { /* ignore */ }
+    }
+    mkChart('revenueChart', '#f59e0b');
+    mkChart('attendanceChart', '#3b82f6');
+    mkChart('growthChart', '#22c55e');
+  })();
 </script>
 {% endblock %}

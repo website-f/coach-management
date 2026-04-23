@@ -1,351 +1,203 @@
 {% extends "base.html" %}
 {% load ui_tags %}
 
-{% block title %}CRM | NYO Admin Dashboard{% endblock %}
+{% block title %}CRM | NYO{% endblock %}
 {% block page_heading %}CRM{% endblock %}
 
 {% block content %}
-<div class="space-y">
-    <div class="card">
-        <div style="display:flex;justify-content:space-between;gap:20px;align-items:flex-start;flex-wrap:wrap;">
-            <div style="max-width:860px;">
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;">CRM Control Center</p>
-                <h2 style="font-size:30px;font-weight:700;color:var(--text);letter-spacing:-.03em;">Leads, trials, active students, churn, and every touchpoint in one place.</h2>
-                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">
-                    This workspace is structured to answer the commercial questions fast: where a student came from, what happened during trial, who touched the account, why they stayed or left, and what needs to happen next.
-                </p>
-            </div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                <a href="{% url 'members:application_list' %}" class="btn btn-primary"><i class="fa-solid fa-filter-circle-dollar"></i> Open Leads</a>
-                <a href="{% url 'members:list' %}" class="btn btn-ghost"><i class="fa-solid fa-users"></i> Student Profiles</a>
-            </div>
-        </div>
-    </div>
+<div class="space-y-5">
 
-    <div class="stat-cards">
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div>
-                    <p class="stat-label">Leads</p>
-                    <p class="stat-value">{{ crm_kpis.lead_count }}</p>
-                </div>
-                <div class="stat-icon"><i class="fa-solid fa-filter-circle-dollar"></i></div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div>
-                    <p class="stat-label">Trials</p>
-                    <p class="stat-value">{{ crm_kpis.trial_count }}</p>
-                </div>
-                <div class="stat-icon" style="background:rgba(245,158,11,.12);color:#fbbf24;"><i class="fa-solid fa-hourglass-half"></i></div>
-            </div>
-        </div>
-        {% if show_active_sections %}
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div>
-                    <p class="stat-label">Active Students</p>
-                    <p class="stat-value">{{ crm_kpis.active_count }}</p>
-                </div>
-                <div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;"><i class="fa-solid fa-user-check"></i></div>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-card-top">
-                <div>
-                    <p class="stat-label">Inactive / Churned</p>
-                    <p class="stat-value">{{ crm_kpis.inactive_count }}</p>
-                </div>
-                <div class="stat-icon" style="background:rgba(239,68,68,.12);color:#f87171;"><i class="fa-solid fa-user-slash"></i></div>
-            </div>
-        </div>
-        {% endif %}
+  <section class="card p-6">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div class="max-w-2xl">
+        <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">CRM Control Center</p>
+        <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white leading-tight">Leads, trials, active, churn — one view</h2>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Where the student came from, what happened during trial, why they stayed or left, and what needs to happen next.</p>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        <a href="{% url 'members:application_list' %}" class="btn btn-primary"><i class="fa-solid fa-filter-circle-dollar"></i>Leads</a>
+        <a href="{% url 'members:list' %}" class="btn btn-secondary"><i class="fa-solid fa-users"></i>Students</a>
+      </div>
     </div>
+  </section>
 
-    <div class="filter-bar">
-        <form method="get" class="filter-fields">
-            <div class="filter-field" style="min-width:280px;">
-                <label>Search CRM</label>
-                <input type="text" name="q" value="{{ search_query }}" placeholder="Student, parent, contact, outcome...">
-            </div>
-            <div class="filter-actions" style="margin-top:auto;">
-                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
-                {% if search_query %}
-                <a href="{% url 'members:crm' %}" class="btn btn-ghost">Reset</a>
-                {% endif %}
-            </div>
-        </form>
-    </div>
-
-    <div class="card">
-        <div class="section-header">
-            <span class="section-title">Leads</span>
-            <a href="{% url 'members:application_list' %}" class="section-link">Open lead queue</a>
-        </div>
-        <div class="table-wrap" style="margin-top:14px;">
-            <table class="tbl">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Parent Name</th>
-                        <th>Contact</th>
-                        <th>Source</th>
-                        <th>Interest Level</th>
-                        <th>Assigned Staff</th>
-                        <th>Status</th>
-                        <th>Last Followed-Up</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in lead_rows %}
-                    <tr>
-                        <td data-label="Name">
-                            <div class="tbl-name">{{ row.lead.student_name }}</div>
-                            <div class="tbl-sub">{{ row.lead.preferred_program }}</div>
-                        </td>
-                        <td data-label="Parent Name">{{ row.lead.guardian_name }}</td>
-                        <td data-label="Contact">
-                            <div class="tbl-name">{{ row.lead.contact_number }}</div>
-                            <div class="tbl-sub">{{ row.lead.guardian_email|default:"No email" }}</div>
-                        </td>
-                        <td data-label="Source">{{ row.lead.get_source_display }}</td>
-                        <td data-label="Interest Level"><span class="badge badge-info">{{ row.lead.get_interest_level_display }}</span></td>
-                        <td data-label="Assigned Staff">{{ row.lead.assigned_staff|default:"Unassigned" }}</td>
-                        <td data-label="Status"><span class="badge {{ row.lead.status|status_badge }}">{{ row.lead.get_status_display }}</span></td>
-                        <td data-label="Last Followed-Up">
-                            {% if row.lead.last_followed_up_at %}
-                            {{ row.lead.last_followed_up_at|date:"d M Y" }}
-                            {% elif row.latest_touch %}
-                            {{ row.latest_touch.happened_at|date:"d M Y" }}
-                            {% else %}
-                            Not yet
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                                <a href="{% url 'members:application_review' row.lead.pk %}" class="btn btn-ghost btn-xs">Review</a>
-                                {% if row.lead.contact_number|whatsapp_url %}<a href="{{ row.lead.contact_number|whatsapp_url }}" target="_blank" rel="noopener" class="btn btn-success btn-xs" title="WhatsApp {{ row.lead.contact_number }}"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>{% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="9">
-                            <div class="empty-state">
-                                <i class="fa-regular fa-address-card"></i>
-                                <p>No leads match the current CRM search.</p>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="section-header">
-            <span class="section-title">Trials</span>
-            <span class="section-link">Trial limit: {{ trial_session_limit }} class{{ trial_session_limit|pluralize }}</span>
-        </div>
-        <div class="table-wrap" style="margin-top:14px;">
-            <table class="tbl">
-                <thead>
-                    <tr>
-                        <th>Student</th>
-                        <th>Linked Date</th>
-                        <th>Trial Date</th>
-                        <th>Coach Assigned</th>
-                        <th>Class Type</th>
-                        <th>Attendance</th>
-                        <th>Coach Feedback</th>
-                        <th>Parent Feedback</th>
-                        <th>Outcome</th>
-                        <th>Conversion Reason</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in trial_rows %}
-                    <tr>
-                        <td data-label="Student">
-                            <div class="tbl-name"><a href="{% url 'members:detail' row.member.pk %}">{{ row.member.full_name }}</a></div>
-                            <div class="tbl-sub">{{ row.member.program_enrolled|default:"Program not set" }}</div>
-                        </td>
-                        <td data-label="Linked Date">{{ row.linked_date|date:"d M Y" }}</td>
-                        <td data-label="Trial Date">{{ row.trial_date|default:"Not set" }}</td>
-                        <td data-label="Coach Assigned">{{ row.member.assigned_coach|default:"Unassigned" }}</td>
-                        <td data-label="Class Type">{{ row.class_type|default:"Default syllabus" }}</td>
-                        <td data-label="Attendance">{{ row.attendance_summary }}</td>
-                        <td data-label="Coach Feedback">
-                            {% if row.latest_feedback %}
-                            {{ row.latest_feedback.feedback_text|truncatechars:90 }}
-                            {% else %}
-                            No feedback yet
-                            {% endif %}
-                        </td>
-                        <td data-label="Parent Feedback">{{ row.member.parent_feedback|default:"No parent feedback yet"|truncatechars:90 }}</td>
-                        <td data-label="Outcome"><span class="badge {{ row.member.trial_outcome|status_badge }}">{{ row.member.get_trial_outcome_display }}</span></td>
-                        <td data-label="Conversion Reason">{{ row.member.conversion_reason|default:row.member.next_action|default:"Pending close plan"|truncatechars:90 }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="10">
-                            <div class="empty-state">
-                                <i class="fa-regular fa-hourglass"></i>
-                                <p>No trial students match the current CRM search.</p>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
+  <section class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Leads</p><p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{{ crm_kpis.lead_count }}</p></div>
+    <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Trials</p><p class="mt-1 text-2xl font-bold text-amber-500">{{ crm_kpis.trial_count }}</p></div>
     {% if show_active_sections %}
-    <div class="card">
-        <div class="section-header">
-            <span class="section-title">Active Students</span>
-            <a href="{% url 'members:list' %}" class="section-link">Open all student profiles</a>
-        </div>
-        <div class="table-wrap" style="margin-top:14px;">
-            <table class="tbl">
-                <thead>
-                    <tr>
-                        <th>Student Profile</th>
-                        <th>Parent Account</th>
-                        <th>Program Enrolled</th>
-                        <th>Start Date</th>
-                        <th>Coach Assigned</th>
-                        <th>Attendance %</th>
-                        <th>Payment Status</th>
-                        <th>Skill Level</th>
-                        <th>Retention Risk Score</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in active_rows %}
-                    <tr>
-                        <td data-label="Student Profile"><a href="{% url 'members:detail' row.member.pk %}" class="tbl-name">{{ row.member.full_name }}</a></td>
-                        <td data-label="Parent Account">{{ row.member.parent_user|default:"Not linked" }}</td>
-                        <td data-label="Program Enrolled">{{ row.member.program_enrolled|default:"Not set" }}</td>
-                        <td data-label="Start Date">{{ row.member.start_date|date:"d M Y" }}</td>
-                        <td data-label="Coach Assigned">{{ row.member.assigned_coach|default:"Unassigned" }}</td>
-                        <td data-label="Attendance %">{{ row.attendance_rate }}%</td>
-                        <td data-label="Payment Status"><span class="badge {{ row.payment_status|status_badge }}">{{ row.payment_status }}</span></td>
-                        <td data-label="Skill Level">{{ row.member.get_skill_level_display }}</td>
-                        <td>{{ row.retention_risk }}/100</td>
-                        <td>
-                            {% if row.member.contact_number|whatsapp_url %}<a href="{{ row.member.contact_number|whatsapp_url }}" target="_blank" rel="noopener" class="btn btn-success btn-xs" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>{% else %}<span class="text-muted text-xs">No number</span>{% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="10">
-                            <div class="empty-state">
-                                <i class="fa-regular fa-user-check"></i>
-                                <p>No active students match the current CRM search.</p>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="section-header">
-            <span class="section-title">Inactive / Churned</span>
-        </div>
-        <div class="table-wrap" style="margin-top:14px;">
-            <table class="tbl">
-                <thead>
-                    <tr>
-                        <th>Student</th>
-                        <th>Program</th>
-                        <th>Coach</th>
-                        <th>Status</th>
-                        <th>Why Did They Leave?</th>
-                        <th>What Should We Do Next?</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in inactive_rows %}
-                    <tr>
-                        <td data-label="Student"><a href="{% url 'members:detail' row.member.pk %}" class="tbl-name">{{ row.member.full_name }}</a></td>
-                        <td data-label="Program">{{ row.member.program_enrolled|default:"Not set" }}</td>
-                        <td data-label="Coach">{{ row.member.assigned_coach|default:"Unassigned" }}</td>
-                        <td data-label="Status"><span class="badge {{ row.member.status|status_badge }}">{{ row.member.get_status_display }}</span></td>
-                        <td data-label="Why Did They Leave?">{{ row.why_left|default:"Reason not captured"|truncatechars:100 }}</td>
-                        <td data-label="What Should We Do Next?">{{ row.member.next_action|default:"No next step recorded"|truncatechars:100 }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6">
-                            <div class="empty-state">
-                                <i class="fa-regular fa-user-slash"></i>
-                                <p>No inactive or churned students match the current CRM search.</p>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Active</p><p class="mt-1 text-2xl font-bold text-green-600">{{ crm_kpis.active_count }}</p></div>
+    <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Inactive</p><p class="mt-1 text-2xl font-bold text-red-500">{{ crm_kpis.inactive_count }}</p></div>
     {% endif %}
+  </section>
 
-    <div class="card">
-        <div class="section-header">
-            <span class="section-title">Communication Log</span>
-        </div>
-        <div class="table-wrap" style="margin-top:14px;">
-            <table class="tbl">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Account</th>
-                        <th>Channel</th>
-                        <th>Message Type</th>
-                        <th>Staff</th>
-                        <th>Outcome</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for log in communication_logs %}
-                    <tr>
-                        <td data-label="Date">{{ log.happened_at|date:"d M Y H:i" }}</td>
-                        <td data-label="Account">
-                            {% if log.member %}
-                            <a href="{% url 'members:detail' log.member.pk %}" class="tbl-name">{{ log.member.full_name }}</a>
-                            {% elif log.lead %}
-                            <a href="{% url 'members:application_review' log.lead.pk %}" class="tbl-name">{{ log.lead.student_name }}</a>
-                            {% else %}
-                            Unknown
-                            {% endif %}
-                        </td>
-                        <td data-label="Channel">{{ log.get_channel_display }}</td>
-                        <td data-label="Message Type">{{ log.get_message_type_display }}</td>
-                        <td data-label="Staff">{{ log.staff|default:"System" }}</td>
-                        <td data-label="Outcome">{{ log.outcome|truncatechars:120 }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6">
-                            <div class="empty-state">
-                                <i class="fa-regular fa-message"></i>
-                                <p>No communication touches recorded yet.</p>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+  <section class="card p-4">
+    <form method="get" class="grid gap-3 md:grid-cols-4 items-end">
+      <div class="md:col-span-3">
+        <label class="block text-xs font-medium text-gray-500 mb-1">Search CRM</label>
+        <input type="text" name="q" value="{{ search_query }}" placeholder="Student, parent, contact, outcome…">
+      </div>
+      <div class="flex gap-2">
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i>Search</button>
+        {% if search_query %}<a href="{% url 'members:crm' %}" class="btn btn-secondary">Reset</a>{% endif %}
+      </div>
+    </form>
+  </section>
+
+  <!-- Leads -->
+  <section class="card overflow-hidden">
+    <div class="flex items-center justify-between p-5 pb-3">
+      <h3 class="font-semibold text-gray-900 dark:text-white">Leads</h3>
+      <a href="{% url 'members:application_list' %}" class="text-xs text-brand-500 hover:underline">Queue</a>
     </div>
+    <div class="overflow-x-auto">
+      <table class="data-table">
+        <thead>
+          <tr><th>Student</th><th>Parent</th><th>Contact</th><th>Source</th><th>Staff</th><th>Status</th><th class="text-right">Action</th></tr>
+        </thead>
+        <tbody>
+          {% for row in lead_rows %}
+          <tr>
+            <td>
+              <p class="font-medium text-gray-900 dark:text-white">{{ row.lead.student_name }}</p>
+              <p class="text-xs text-gray-500">{{ row.lead.preferred_program }}</p>
+            </td>
+            <td>{{ row.lead.guardian_name }}</td>
+            <td>
+              <p>{{ row.lead.contact_number }}</p>
+              <p class="text-xs text-gray-500">{{ row.lead.guardian_email|default:"—" }}</p>
+            </td>
+            <td>{{ row.lead.get_source_display }}</td>
+            <td>{{ row.lead.assigned_staff|default:"Unassigned" }}</td>
+            <td><span class="badge {{ row.lead.status|status_badge }}">{{ row.lead.get_status_display }}</span></td>
+            <td class="text-right whitespace-nowrap">
+              <a href="{% url 'members:application_review' row.lead.pk %}" class="btn btn-secondary btn-sm">Review</a>
+              {% if row.lead.contact_number|whatsapp_url %}<a href="{{ row.lead.contact_number|whatsapp_url }}" target="_blank" class="btn btn-secondary btn-sm bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400"><i class="fa-brands fa-whatsapp"></i></a>{% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-center py-10 text-gray-500">No leads match.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Trials -->
+  <section class="card overflow-hidden">
+    <div class="flex items-center justify-between p-5 pb-3">
+      <h3 class="font-semibold text-gray-900 dark:text-white">Trials</h3>
+      <span class="text-xs text-gray-500">Trial limit: {{ trial_session_limit }} class{{ trial_session_limit|pluralize }}</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="data-table">
+        <thead>
+          <tr><th>Student</th><th>Linked</th><th>Trial Date</th><th>Coach</th><th>Attendance</th><th>Outcome</th><th>Feedback</th></tr>
+        </thead>
+        <tbody>
+          {% for row in trial_rows %}
+          <tr>
+            <td>
+              <a href="{% url 'members:detail' row.member.pk %}" class="font-medium text-gray-900 dark:text-white hover:text-brand-500">{{ row.member.full_name }}</a>
+              <p class="text-xs text-gray-500">{{ row.member.program_enrolled|default:"—" }}</p>
+            </td>
+            <td class="text-xs">{{ row.linked_date|date:"d M Y" }}</td>
+            <td class="text-xs">{{ row.trial_date|default:"—" }}</td>
+            <td>{{ row.member.assigned_coach|default:"Unassigned" }}</td>
+            <td>{{ row.attendance_summary }}</td>
+            <td><span class="badge {{ row.member.trial_outcome|status_badge }}">{{ row.member.get_trial_outcome_display }}</span></td>
+            <td class="max-w-xs text-xs text-gray-600 dark:text-gray-400">{{ row.latest_feedback.feedback_text|default:"—"|truncatechars:80 }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-center py-10 text-gray-500">No trials match.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  {% if show_active_sections %}
+  <section class="card overflow-hidden">
+    <div class="flex items-center justify-between p-5 pb-3">
+      <h3 class="font-semibold text-gray-900 dark:text-white">Active Students</h3>
+      <a href="{% url 'members:list' %}" class="text-xs text-brand-500 hover:underline">All</a>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="data-table">
+        <thead>
+          <tr><th>Student</th><th>Parent</th><th>Program</th><th>Start</th><th>Coach</th><th>Attend%</th><th>Payment</th><th>Risk</th><th class="text-right">WA</th></tr>
+        </thead>
+        <tbody>
+          {% for row in active_rows %}
+          <tr>
+            <td><a href="{% url 'members:detail' row.member.pk %}" class="font-medium text-gray-900 dark:text-white hover:text-brand-500">{{ row.member.full_name }}</a></td>
+            <td>{{ row.member.parent_user|default:"—" }}</td>
+            <td>{{ row.member.program_enrolled|default:"—" }}</td>
+            <td class="text-xs">{{ row.member.start_date|date:"d M Y" }}</td>
+            <td>{{ row.member.assigned_coach|default:"—" }}</td>
+            <td>{{ row.attendance_rate }}%</td>
+            <td><span class="badge {{ row.payment_status|status_badge }}">{{ row.payment_status }}</span></td>
+            <td>{{ row.retention_risk }}/100</td>
+            <td class="text-right">
+              {% if row.member.contact_number|whatsapp_url %}<a href="{{ row.member.contact_number|whatsapp_url }}" target="_blank" class="btn btn-secondary btn-sm bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-400"><i class="fa-brands fa-whatsapp"></i></a>{% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="9" class="text-center py-10 text-gray-500">No active students match.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card overflow-hidden">
+    <div class="p-5 pb-3"><h3 class="font-semibold text-gray-900 dark:text-white">Inactive / Churned</h3></div>
+    <div class="overflow-x-auto">
+      <table class="data-table">
+        <thead><tr><th>Student</th><th>Program</th><th>Coach</th><th>Status</th><th>Why left?</th><th>Next step</th></tr></thead>
+        <tbody>
+          {% for row in inactive_rows %}
+          <tr>
+            <td><a href="{% url 'members:detail' row.member.pk %}" class="font-medium text-gray-900 dark:text-white hover:text-brand-500">{{ row.member.full_name }}</a></td>
+            <td>{{ row.member.program_enrolled|default:"—" }}</td>
+            <td>{{ row.member.assigned_coach|default:"—" }}</td>
+            <td><span class="badge {{ row.member.status|status_badge }}">{{ row.member.get_status_display }}</span></td>
+            <td class="text-xs max-w-xs">{{ row.why_left|default:"—"|truncatechars:100 }}</td>
+            <td class="text-xs max-w-xs">{{ row.member.next_action|default:"—"|truncatechars:100 }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="text-center py-10 text-gray-500">No inactive/churned students match.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="card overflow-hidden">
+    <div class="p-5 pb-3"><h3 class="font-semibold text-gray-900 dark:text-white">Communication Log</h3></div>
+    <div class="overflow-x-auto">
+      <table class="data-table">
+        <thead><tr><th>Date</th><th>Account</th><th>Channel</th><th>Type</th><th>Staff</th><th>Outcome</th></tr></thead>
+        <tbody>
+          {% for log in communication_logs %}
+          <tr>
+            <td class="text-xs">{{ log.happened_at|date:"d M Y H:i" }}</td>
+            <td>
+              {% if log.member %}<a href="{% url 'members:detail' log.member.pk %}" class="hover:text-brand-500">{{ log.member.full_name }}</a>
+              {% elif log.lead %}<a href="{% url 'members:application_review' log.lead.pk %}" class="hover:text-brand-500">{{ log.lead.student_name }}</a>
+              {% else %}Unknown{% endif %}
+            </td>
+            <td>{{ log.get_channel_display }}</td>
+            <td>{{ log.get_message_type_display }}</td>
+            <td>{{ log.staff|default:"System" }}</td>
+            <td class="text-xs max-w-xs">{{ log.outcome|truncatechars:120 }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="text-center py-10 text-gray-500">No touches yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
 </div>
 {% endblock %}

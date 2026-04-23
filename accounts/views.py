@@ -23,6 +23,7 @@ from accounts.utils import (
     ROLE_COACH,
     ROLE_HEADCOUNT,
     ROLE_PARENT,
+    ROLE_SUPERADMIN,
     get_role_label,
     get_user_role,
     has_role,
@@ -295,7 +296,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         upcoming_sessions = sessions.filter(session_date__gte=today).order_by("session_date", "start_time")[:5]
         week_window_end = today + timedelta(days=6)
 
-        if role == ROLE_ADMIN:
+        if role in (ROLE_SUPERADMIN, ROLE_ADMIN):
             coach_count = User.objects.filter(profile__role=UserProfile.ROLE_COACH).count()
             dashboard_intro = {
                 "eyebrow": "Admin Workspace",
@@ -640,7 +641,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             }
 
         cards = []
-        if role == ROLE_ADMIN:
+        if role in (ROLE_SUPERADMIN, ROLE_ADMIN):
             cards = [
                 {"label": "Total Active Members", "value": total_active_members, "icon": "fa-users"},
                 {"label": "Monthly Revenue", "value": f"RM {monthly_revenue:,.2f}", "icon": "fa-wallet"},
@@ -673,9 +674,9 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             {
                 "dashboard_cards": cards,
                 "current_role_label": get_role_label(role),
-                "show_revenue_chart": role in {ROLE_ADMIN, ROLE_COACH},
-                "show_growth_chart": role in {ROLE_ADMIN, ROLE_COACH},
-                "show_attendance_chart": role in {ROLE_ADMIN, ROLE_COACH, ROLE_HEADCOUNT},
+                "show_revenue_chart": role in {ROLE_SUPERADMIN, ROLE_ADMIN, ROLE_COACH},
+                "show_growth_chart": role in {ROLE_SUPERADMIN, ROLE_ADMIN, ROLE_COACH},
+                "show_attendance_chart": role in {ROLE_SUPERADMIN, ROLE_ADMIN, ROLE_COACH},
                 "revenue_chart_data": build_chart_payload(month_labels, revenue_values, "Monthly Revenue"),
                 "attendance_chart_data": build_chart_payload(month_labels, attendance_values, "Attendance Rate"),
                 "growth_chart_data": build_chart_payload(month_labels, growth_values, "Member Growth"),

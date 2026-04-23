@@ -1,103 +1,97 @@
 {% extends "base.html" %}
 {% load ui_tags %}
 
-{% block title %}Leads | NYO Admin Dashboard{% endblock %}
+{% block title %}Leads | NYO{% endblock %}
 {% block page_heading %}Leads{% endblock %}
 
 {% block content %}
-<div class="space-y">
-    <div class="card">
-        <div style="display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap;">
-            <div style="max-width:760px;">
-                <p class="text-xs text-muted" style="text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;">Lead Queue</p>
-                <h2 style="font-size:28px;font-weight:700;letter-spacing:-.03em;color:var(--text);line-height:1.1;">Capture origin, interest, and next step before the lead turns cold.</h2>
-                <p class="text-sm text-muted" style="margin-top:10px;line-height:1.8;">
-                    Pending leads stay here until they are moved into trial or closed out. Sales/Admin can log follow-ups, assign ownership, and keep the next action visible.
-                </p>
-            </div>
-            <a href="{% url 'members:apply' %}" class="btn btn-ghost"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open public form</a>
+<div class="space-y-5">
+
+  <section class="card p-6">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div class="max-w-xl">
+        <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">Lead Queue</p>
+        <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white leading-tight">Capture origin, interest, and next step</h2>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Pending leads stay here until they move into trial or close out.</p>
+      </div>
+      <a href="{% url 'members:apply' %}" class="btn btn-secondary"><i class="fa-solid fa-arrow-up-right-from-square"></i>Public form</a>
+    </div>
+  </section>
+
+  <section class="card p-4">
+    <form method="get" class="grid gap-3 md:grid-cols-4 items-end">
+      <div class="md:col-span-2">
+        <label class="block text-xs font-medium text-gray-500 mb-1">Search</label>
+        <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Student, parent, or program">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Status</label>
+        <select name="status">
+          <option value="">All</option>
+          {% for value, label in statuses %}<option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Location</label>
+        <select name="location">
+          <option value="">All</option>
+          {% for loc in locations %}<option value="{{ loc }}" {% if request.GET.location == loc %}selected{% endif %}>{{ loc }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="flex gap-2 md:col-span-4">
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i>Filter</button>
+        {% if request.GET.q or request.GET.status or request.GET.location %}<a href="{% url 'members:application_list' %}" class="btn btn-secondary">Clear</a>{% endif %}
+      </div>
+    </form>
+  </section>
+
+  <section class="card overflow-hidden">
+    <div class="hidden lg:block overflow-x-auto">
+      <table class="data-table">
+        <thead>
+          <tr><th>Lead</th><th>Parent</th><th>Source</th><th>Interest</th><th>Staff</th><th>Status</th><th>Follow-up</th><th class="text-right">Action</th></tr>
+        </thead>
+        <tbody>
+          {% for app in applications %}
+          <tr>
+            <td>
+              <p class="font-medium text-gray-900 dark:text-white">{{ app.student_name }}</p>
+              <p class="text-xs text-gray-500">{{ app.preferred_program }} · {{ app.preferred_location }}</p>
+            </td>
+            <td>
+              <p>{{ app.guardian_name }}</p>
+              <p class="text-xs text-gray-500">{{ app.contact_number }}</p>
+            </td>
+            <td>{{ app.get_source_display }}</td>
+            <td><span class="badge badge-info">{{ app.get_interest_level_display }}</span></td>
+            <td>{{ app.assigned_staff|default:"Unassigned" }}</td>
+            <td><span class="badge {{ app.status|status_badge }}">{{ app.get_status_display }}</span></td>
+            <td class="text-xs text-gray-500">{{ app.last_followed_up_at|default:"—" }}</td>
+            <td class="text-right"><a href="{% url 'members:application_review' app.pk %}" class="btn btn-secondary btn-sm">Open</a></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="8" class="text-center py-10 text-gray-500">No leads match.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="lg:hidden divide-y divide-gray-100 dark:divide-gray-800">
+      {% for app in applications %}
+      <a href="{% url 'members:application_review' app.pk %}" class="block p-4 active:bg-gray-50 dark:active:bg-gray-800/50">
+        <div class="flex items-start justify-between gap-2 mb-2">
+          <div>
+            <p class="font-medium text-gray-900 dark:text-white">{{ app.student_name }}</p>
+            <p class="text-xs text-gray-500">{{ app.guardian_name }} · {{ app.contact_number }}</p>
+          </div>
+          <span class="badge {{ app.status|status_badge }}">{{ app.get_status_display }}</span>
         </div>
+        <p class="text-xs text-gray-500">{{ app.preferred_program }} · {{ app.get_source_display }} · {{ app.assigned_staff|default:"Unassigned" }}</p>
+      </a>
+      {% empty %}
+      <p class="text-center py-10 text-gray-500">No leads match.</p>
+      {% endfor %}
     </div>
-
-    <div class="filter-bar">
-        <form method="get" class="filter-fields">
-            <div class="filter-field">
-                <label>Search</label>
-                <input type="text" name="q" value="{{ request.GET.q }}" placeholder="Student, parent, or program">
-            </div>
-            <div class="filter-field">
-                <label>Status</label>
-                <select name="status">
-                    <option value="">All statuses</option>
-                    {% for value, label in statuses %}
-                    <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="filter-field">
-                <label>Location</label>
-                <select name="location">
-                    <option value="">All locations</option>
-                    {% for location in locations %}
-                    <option value="{{ location }}" {% if request.GET.location == location %}selected{% endif %}>{{ location }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="filter-actions" style="margin-top:auto;">
-                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filter</button>
-                {% if request.GET.q or request.GET.status or request.GET.location %}
-                <a href="{% url 'members:application_list' %}" class="btn btn-ghost">Clear</a>
-                {% endif %}
-            </div>
-        </form>
-    </div>
-
-    <div class="table-wrap">
-        <table class="tbl">
-            <thead>
-                <tr>
-                    <th>Lead</th>
-                    <th>Parent</th>
-                    <th>Source</th>
-                    <th>Interest Level</th>
-                    <th>Assigned Staff</th>
-                    <th>Status</th>
-                    <th>Last Follow-Up</th>
-                    <th>Next Action</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for application in applications %}
-                <tr>
-                    <td data-label="Lead">
-                        <div class="tbl-name">{{ application.student_name }}</div>
-                        <div class="tbl-sub">{{ application.preferred_program }} · {{ application.preferred_location }}</div>
-                    </td>
-                    <td data-label="Parent">
-                        <div class="tbl-name">{{ application.guardian_name }}</div>
-                        <div class="tbl-sub">{{ application.contact_number }}</div>
-                    </td>
-                    <td data-label="Source">{{ application.get_source_display }}</td>
-                    <td data-label="Interest Level"><span class="badge badge-info">{{ application.get_interest_level_display }}</span></td>
-                    <td data-label="Assigned Staff">{{ application.assigned_staff|default:"Unassigned" }}</td>
-                    <td data-label="Status"><span class="badge {{ application.status|status_badge }}">{{ application.get_status_display }}</span></td>
-                    <td data-label="Last Follow-Up">{{ application.last_followed_up_at|default:"Not yet" }}</td>
-                    <td data-label="Next Action">{{ application.next_action|default:"Review and decide the trial plan"|truncatechars:90 }}</td>
-                    <td data-label="Action"><a href="{% url 'members:application_review' application.pk %}" class="btn btn-ghost btn-xs">Open</a></td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="9">
-                        <div class="empty-state">
-                            <i class="fa-regular fa-folder-open"></i>
-                            <p>No leads match the current filters.</p>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+  </section>
 </div>
 {% endblock %}
