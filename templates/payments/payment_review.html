@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load ui_tags %}
+{% load ui_tags static %}
 
 {% block title %}Review Payment | NYO{% endblock %}
 {% block page_heading %}Review Payment{% endblock %}
@@ -8,7 +8,13 @@
 <div class="grid gap-5 lg:grid-cols-2">
 
   <section class="card p-5">
-    <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Submitted Proof</h3>
+    <div class="flex items-center gap-3 pb-4 mb-4 border-b border-gray-100 dark:border-gray-800">
+      <img src="{% static 'img/rsbe-logo.png' %}" alt="RSBE" class="w-12 h-12 rounded-lg object-contain bg-white p-1 border border-gray-200">
+      <div>
+        <p class="text-[11px] uppercase tracking-wider text-brand-500 font-semibold">RSBE Payment Receipt</p>
+        <h3 class="font-semibold text-gray-900 dark:text-white">Submitted Proof</h3>
+      </div>
+    </div>
     <div class="mb-4">
       <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ payment.invoice.member.full_name }}</p>
       <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ payment.invoice.period|date:"F Y" }} · {{ payment.invoice.get_invoice_type_display }}</p>

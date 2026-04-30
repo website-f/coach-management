@@ -1,4 +1,4 @@
-{% load ui_tags %}
+{% load ui_tags static %}
 <!DOCTYPE html>
 <html lang="en" class="h-full">
 <head>
@@ -33,7 +33,7 @@
     <!-- Header -->
     <header class="flex items-center justify-between mb-8">
       <a href="/" class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-lg bg-brand-400 text-white grid place-items-center"><i class="fa-solid fa-shuttlecock"></i></div>
+        <img src="{% static 'img/rsbe-logo.png' %}" alt="RSBE" class="w-11 h-11 rounded-lg object-contain bg-white p-0.5 border border-gray-200 dark:border-gray-700">
         <div>
           <p class="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400">Badminton Club</p>
           <p class="font-semibold">NYO Dashboard</p>

@@ -32,7 +32,7 @@
 <nav class="sticky top-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur border-b border-gray-200 dark:border-gray-800">
   <div class="max-w-6xl mx-auto flex items-center justify-between gap-3 h-14 px-4 sm:px-6">
     <a href="#" class="flex items-center gap-2">
-      <div class="w-9 h-9 rounded-lg bg-brand-400 text-white grid place-items-center"><i class="fa-solid fa-bolt"></i></div>
+      <img src="/static/img/rsbe-logo.png" alt="RSBE" class="w-9 h-9 rounded-lg object-contain bg-white p-0.5">
       <span class="font-display text-base font-bold">{{ landing_content.hero_title }}</span>
     </a>
     <div class="hidden lg:flex items-center gap-1">
@@ -403,9 +403,12 @@
 <!-- FOOTER -->
 <footer class="border-t border-gray-200 dark:border-gray-800">
   <div class="max-w-6xl mx-auto flex items-center justify-between gap-4 px-4 sm:px-6 py-8 text-sm flex-wrap">
-    <div>
-      <strong class="block text-gray-900 dark:text-white font-semibold">{{ landing_content.hero_title }}</strong>
-      <span class="text-gray-500">Sports club management — sessions, reports, payments.</span>
+    <div class="flex items-center gap-3">
+      <img src="/static/img/rsbe-logo.png" alt="RSBE" class="w-10 h-10 rounded-lg object-contain bg-white p-0.5 border border-gray-200 dark:border-gray-700">
+      <div>
+        <strong class="block text-gray-900 dark:text-white font-semibold">{{ landing_content.hero_title }}</strong>
+        <span class="text-gray-500">Sports club management — sessions, reports, payments.</span>
+      </div>
     </div>
     <div class="flex gap-4 flex-wrap text-gray-500">
       {% if landing_content.instagram_link %}<a href="{{ landing_content.instagram_link }}" target="_blank" class="hover:text-brand-500"><i class="fa-brands fa-instagram mr-1"></i>Instagram</a>{% endif %}

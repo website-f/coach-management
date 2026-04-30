@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load ui_tags %}
+{% load ui_tags static %}
 
 {% block title %}My Payments | NYO{% endblock %}
 {% block page_heading %}My Payments{% endblock %}
@@ -9,10 +9,13 @@
 
   <section class="card p-6">
     <div class="flex flex-wrap items-start justify-between gap-4">
-      <div class="max-w-xl">
-        <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">Parent payment hub</p>
-        <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white leading-tight">Invoices, receipts, and outstanding balance</h2>
-        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">{{ billing_overview_text }}</p>
+      <div class="max-w-xl flex items-start gap-4">
+        <img src="{% static 'img/rsbe-logo.png' %}" alt="RSBE" class="w-14 h-14 rounded-lg object-contain bg-white p-1 border border-gray-200 dark:border-gray-700 shrink-0 hidden sm:block">
+        <div>
+          <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">Parent payment hub</p>
+          <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white leading-tight">Invoices, receipts, and outstanding balance</h2>
+          <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">{{ billing_overview_text }}</p>
+        </div>
       </div>
       <div class="flex gap-2 flex-wrap">
         <span class="badge badge-info">{{ children|length }} child{{ children|length|pluralize:"ren" }}</span>
@@ -102,9 +105,12 @@
 
   <dialog id="pay-{{ invoice.pk }}" class="rounded-2xl backdrop:bg-black/50 p-0 w-full max-w-2xl bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
     <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
-      <div>
-        <p class="text-xs uppercase tracking-wider text-gray-500">{{ invoice.member.full_name }}</p>
-        <h3 class="font-semibold">{{ invoice.get_invoice_type_display }} Payment</h3>
+      <div class="flex items-center gap-3">
+        <img src="{% static 'img/rsbe-logo.png' %}" alt="RSBE" class="w-10 h-10 rounded-lg object-contain bg-white p-0.5 border border-gray-200">
+        <div>
+          <p class="text-xs uppercase tracking-wider text-gray-500">{{ invoice.member.full_name }}</p>
+          <h3 class="font-semibold">{{ invoice.get_invoice_type_display }} Payment</h3>
+        </div>
       </div>
       <button type="button" onclick="this.closest('dialog').close()" class="w-9 h-9 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"><i class="fa-solid fa-xmark"></i></button>
     </div>

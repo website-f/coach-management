@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load ui_tags %}
+{% load ui_tags static %}
 
 {% block title %}Payment History | NYO{% endblock %}
 {% block page_heading %}Payment History{% endblock %}
@@ -9,9 +9,12 @@
 
   <section class="card p-6">
     <div class="flex flex-wrap items-start justify-between gap-4">
-      <div class="max-w-xl">
-        <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">Collection history</p>
-        <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white leading-tight">{% if can_review %}All submitted receipts, decisions, and amounts{% else %}Payments for your students{% endif %}</h2>
+      <div class="max-w-xl flex items-start gap-4">
+        <img src="{% static 'img/rsbe-logo.png' %}" alt="RSBE" class="w-14 h-14 rounded-lg object-contain bg-white p-1 border border-gray-200 dark:border-gray-700 shrink-0 hidden sm:block">
+        <div>
+          <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">Collection history</p>
+          <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white leading-tight">{% if can_review %}All submitted receipts, decisions, and amounts{% else %}Payments for your students{% endif %}</h2>
+        </div>
       </div>
       <div class="flex gap-2 flex-wrap">
         {% if can_review %}<a href="{% url 'payments:pending_reviews' %}" class="btn btn-primary"><i class="fa-solid fa-receipt"></i>Queue</a>{% endif %}
