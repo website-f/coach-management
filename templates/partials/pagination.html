@@ -1,6 +1,7 @@
 {% load ui_tags %}
 {% if is_paginated %}
-<div class="flex items-center justify-between gap-3 pt-2 flex-wrap">
+{# pr-* keeps the Next button clear of the floating AI Planner FAB on admin/coach views #}
+<div class="flex items-center justify-between gap-3 pt-2 flex-wrap pb-2 sm:pb-0 pr-0 sm:pr-28 lg:pr-32">
     <span class="text-xs text-gray-500 dark:text-gray-400">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
     <div class="flex gap-2">
       {% if page_obj.has_previous %}

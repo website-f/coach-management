@@ -62,7 +62,7 @@ AttendanceFormSet = modelformset_factory(
 def visible_sessions_for_user(user):
     queryset = TrainingSession.objects.select_related("coach", "created_by", "syllabus_root")
     if has_role(user, ROLE_COACH) and not has_role(user, ROLE_ADMIN):
-        return queryset.filter(coach=user)
+        return queryset.filter(Q(coach=user) | Q(coaches=user)).distinct()
     if has_role(user, ROLE_HEADCOUNT) and not has_role(user, ROLE_ADMIN):
         return queryset.filter(
             attendance_records__member__status=Member.STATUS_TRIAL,
@@ -284,9 +284,13 @@ def notify_feedback_ready(feedback_entry):
 
 
 def can_manage_session_plan(user, training_session):
-    return has_role(user, ROLE_ADMIN) or (
-        has_role(user, ROLE_COACH) and training_session.coach_id == user.id
-    )
+    if has_role(user, ROLE_ADMIN):
+        return True
+    if not has_role(user, ROLE_COACH):
+        return False
+    if training_session.coach_id == user.id:
+        return True
+    return training_session.coaches.filter(pk=user.id).exists()
 
 
 def clone_default_syllabus_root_structure(target_root):
@@ -818,7 +822,10 @@ class SessionDetailView(LoginRequiredMixin, DetailView):
         absent_count = sum(1 for record in records if record.status == AttendanceRecord.STATUS_ABSENT)
         scheduled_count = sum(1 for record in records if record.status == AttendanceRecord.STATUS_SCHEDULED)
         can_feedback = has_role(self.request.user, ROLE_ADMIN) or (
-            has_role(self.request.user, ROLE_COACH) and self.object.coach_id == self.request.user.id
+            has_role(self.request.user, ROLE_COACH) and (
+                self.object.coach_id == self.request.user.id
+                or self.object.coaches.filter(pk=self.request.user.id).exists()
+            )
         )
         feedback_is_open = session_feedback_is_open(self.object)
         feedback_total_count = len(feedback_rows)
@@ -1193,6 +1200,17 @@ class SessionUpdateView(AdminRequiredMixin, UpdateView):
         return response
 
 
+class SessionDeleteView(AdminRequiredMixin, View):
+    """Admin removes a wrongly-created training session."""
+
+    def post(self, request, *args, **kwargs):
+        training_session = get_object_or_404(TrainingSession, pk=kwargs["pk"])
+        title = training_session.title
+        training_session.delete()
+        messages.success(request, f"Session '{title}' deleted.")
+        return redirect("sessions:list")
+
+
 class AttendanceUpdateView(HeadcountOrAboveRequiredMixin, View):
     template_name = "sessions/attendance_form.html"
 
@@ -1266,7 +1284,10 @@ class SessionFeedbackUpsertView(AdminOrCoachRequiredMixin, View):
 
     def can_manage_feedback(self, training_session):
         return has_role(self.request.user, ROLE_ADMIN) or (
-            has_role(self.request.user, ROLE_COACH) and training_session.coach_id == self.request.user.id
+            has_role(self.request.user, ROLE_COACH) and (
+                training_session.coach_id == self.request.user.id
+                or training_session.coaches.filter(pk=self.request.user.id).exists()
+            )
         )
 
     def render_page(self, request, training_session, member, form, feedback):
@@ -1327,3 +1348,176 @@ class SessionFeedbackUpsertView(AdminOrCoachRequiredMixin, View):
             messages.success(request, f"Session report saved for {member.full_name}.")
             return redirect("sessions:detail", pk=training_session.pk)
         return self.render_page(request, training_session, member, form, feedback)
+
+
+class AttendanceOverviewView(AdminOrCoachRequiredMixin, ListView):
+    """Cross-session attendance summary — one row per student.
+
+    Admin / coach see every student they're allowed to see, with totals for
+    present / absent / late / scheduled and an attendance rate.
+    """
+
+    template_name = "sessions/attendance_overview.html"
+    context_object_name = "members"
+    paginate_by = 20
+
+    def get_queryset(self):
+        from members.views import visible_members_for_user
+        queryset = visible_members_for_user(self.request.user).order_by("full_name", "id").distinct()
+
+        search = self.request.GET.get("q", "").strip()
+        status_filter = self.request.GET.get("status", "").strip()
+        coach_filter = self.request.GET.get("coach", "").strip()
+        if search:
+            queryset = queryset.filter(full_name__icontains=search)
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        if coach_filter:
+            queryset = queryset.filter(assigned_coach_id=coach_filter)
+
+        # Aggregate attendance counts per member.
+        queryset = queryset.annotate(
+            total_records=Count("attendance_records"),
+            present_count=Count(
+                "attendance_records",
+                filter=Q(attendance_records__status=AttendanceRecord.STATUS_PRESENT),
+            ),
+            absent_count=Count(
+                "attendance_records",
+                filter=Q(attendance_records__status=AttendanceRecord.STATUS_ABSENT),
+            ),
+            late_count=Count(
+                "attendance_records",
+                filter=Q(attendance_records__status=AttendanceRecord.STATUS_LATE),
+            ),
+            scheduled_count=Count(
+                "attendance_records",
+                filter=Q(attendance_records__status=AttendanceRecord.STATUS_SCHEDULED),
+            ),
+        )
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Compute attendance_rate in Python so we can divide safely.
+        rows = []
+        for member in context["members"]:
+            attended = (member.present_count or 0) + (member.late_count or 0)
+            counted = attended + (member.absent_count or 0)
+            rate = round((attended / counted) * 100) if counted else None
+            rows.append({"member": member, "attendance_rate": rate})
+        context["rows"] = rows
+
+        all_members = self.get_queryset()
+        agg = all_members.aggregate(
+            total=Count("attendance_records"),
+            present=Count(
+                "attendance_records",
+                filter=Q(attendance_records__status=AttendanceRecord.STATUS_PRESENT),
+            ),
+            absent=Count(
+                "attendance_records",
+                filter=Q(attendance_records__status=AttendanceRecord.STATUS_ABSENT),
+            ),
+            late=Count(
+                "attendance_records",
+                filter=Q(attendance_records__status=AttendanceRecord.STATUS_LATE),
+            ),
+        )
+        attended_total = (agg["present"] or 0) + (agg["late"] or 0)
+        counted_total = attended_total + (agg["absent"] or 0)
+        context["summary"] = {
+            "students": all_members.count(),
+            "total_records": agg["total"] or 0,
+            "present": agg["present"] or 0,
+            "absent": agg["absent"] or 0,
+            "late": agg["late"] or 0,
+            "rate": round((attended_total / counted_total) * 100) if counted_total else None,
+        }
+
+        context["statuses"] = Member.STATUS_CHOICES
+        context["is_admin"] = has_role(self.request.user, ROLE_ADMIN)
+        context["coaches"] = (
+            User.objects.filter(profile__role=ROLE_COACH).order_by("first_name", "username")
+            if has_role(self.request.user, ROLE_ADMIN)
+            else []
+        )
+        return context
+
+
+class MemberAttendanceDetailView(AdminOrCoachRequiredMixin, DetailView):
+    """Drill-down: every AttendanceRecord for one student, admin can edit inline."""
+
+    template_name = "sessions/attendance_member_detail.html"
+    context_object_name = "member"
+
+    def get_queryset(self):
+        from members.views import visible_members_for_user
+        return visible_members_for_user(self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        records = (
+            self.object.attendance_records
+            .select_related("training_session", "training_session__coach", "marked_by")
+            .order_by("-training_session__session_date", "-training_session__start_time")
+        )
+        context["records"] = records
+        present = records.filter(status=AttendanceRecord.STATUS_PRESENT).count()
+        late = records.filter(status=AttendanceRecord.STATUS_LATE).count()
+        absent = records.filter(status=AttendanceRecord.STATUS_ABSENT).count()
+        scheduled = records.filter(status=AttendanceRecord.STATUS_SCHEDULED).count()
+        attended = present + late
+        counted = attended + absent
+        context["stats"] = {
+            "present": present,
+            "absent": absent,
+            "late": late,
+            "scheduled": scheduled,
+            "total": records.count(),
+            "attended": attended,
+            "rate": round((attended / counted) * 100) if counted else None,
+        }
+        context["status_choices"] = AttendanceRecord.STATUS_CHOICES
+        context["is_admin"] = has_role(self.request.user, ROLE_ADMIN)
+        return context
+
+
+class AttendanceRecordEditView(AdminOrCoachRequiredMixin, View):
+    """Inline edit a single AttendanceRecord status from the overview drill-down."""
+
+    def post(self, request, *args, **kwargs):
+        record = get_object_or_404(
+            AttendanceRecord.objects.select_related("training_session", "member"),
+            pk=kwargs["pk"],
+        )
+        # Coaches can only edit their own sessions; admins can edit any.
+        if not has_role(request.user, ROLE_ADMIN):
+            ts = record.training_session
+            is_session_coach = ts.coach_id == request.user.id or ts.coaches.filter(pk=request.user.id).exists()
+            if not is_session_coach:
+                messages.error(request, "You can only edit attendance for your own sessions.")
+                return redirect("sessions:attendance_overview")
+
+        new_status = (request.POST.get("status") or "").strip()
+        valid = {choice[0] for choice in AttendanceRecord.STATUS_CHOICES}
+        if new_status not in valid:
+            messages.error(request, "Invalid attendance status.")
+            return redirect("sessions:member_attendance", pk=record.member_id)
+
+        record.status = new_status
+        record.marked_by = request.user
+        record.marked_at = timezone.now()
+        record.save(update_fields=["status", "marked_by", "marked_at"])
+        # Trial-quota check, mirrors AttendanceUpdateView behaviour.
+        record.member.refresh_from_db(fields=["status"])
+        if expire_trial_if_needed(record.member):
+            messages.info(
+                request,
+                f"Trial complete for {record.member.full_name}. Account marked inactive until a plan is paid.",
+            )
+        messages.success(
+            request,
+            f"Marked {record.member.full_name} as {record.get_status_display()} for {record.training_session.title}.",
+        )
+        return redirect("sessions:member_attendance", pk=record.member_id)

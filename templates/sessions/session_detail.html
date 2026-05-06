@@ -42,7 +42,7 @@
           <span class="inline-flex items-center gap-1.5 text-xs rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1"><i class="fa-regular fa-calendar"></i>{{ training_session.session_date|date:"d M Y" }}</span>
           <span class="inline-flex items-center gap-1.5 text-xs rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1"><i class="fa-regular fa-clock"></i>{{ training_session.start_time|time:"H:i" }}–{{ training_session.end_time|time:"H:i" }}</span>
           <span class="inline-flex items-center gap-1.5 text-xs rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1"><i class="fa-solid fa-location-dot"></i>Court {{ training_session.court }}</span>
-          <span class="inline-flex items-center gap-1.5 text-xs rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1"><i class="fa-solid fa-user-tie"></i>{{ training_session.coach|default:"Unassigned" }}</span>
+          <span class="inline-flex items-center gap-1.5 text-xs rounded-full bg-gray-100 dark:bg-gray-800 px-3 py-1"><i class="fa-solid fa-user-tie"></i>{{ training_session.coach_label|default:"Unassigned" }}</span>
         </div>
 
         <div class="mt-5">

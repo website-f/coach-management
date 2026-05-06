@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+
+{% block title %}{{ member.full_name }} Attendance | NYO{% endblock %}
+{% block page_heading %}{{ member.full_name }} - Attendance{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+
+  <!-- Header card -->
+  <section class="card p-6">
+    <div class="flex flex-wrap items-start justify-between gap-4">
+      <div class="flex items-start gap-4 min-w-0 flex-1">
+        <div class="w-14 h-14 rounded-xl bg-brand-50 dark:bg-brand-400/10 text-brand-500 grid place-items-center font-semibold text-2xl shrink-0">{{ member.full_name|first|upper }}</div>
+        <div class="min-w-0">
+          <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold">Attendance ledger</p>
+          <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white truncate">{{ member.full_name }}</h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            {{ member.package_label }} · Coach: {{ member.assigned_coach|default:"Unassigned" }}
+          </p>
+        </div>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        <a href="{% url 'sessions:attendance_overview' %}" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i>Back</a>
+        <a href="{% url 'members:detail' member.pk %}" class="btn btn-secondary"><i class="fa-solid fa-id-badge"></i>Profile</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="grid grid-cols-2 md:grid-cols-5 gap-3">
+    <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Total</p><p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{{ stats.total }}</p></div>
+    <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Present</p><p class="mt-1 text-2xl font-bold text-green-600">{{ stats.present }}</p></div>
+    <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Late</p><p class="mt-1 text-2xl font-bold text-amber-500">{{ stats.late }}</p></div>
+    <div class="card p-4"><p class="text-[11px] uppercase tracking-wider text-gray-500">Absent</p><p class="mt-1 text-2xl font-bold text-red-500">{{ stats.absent }}</p></div>
+    <div class="card p-4 col-span-2 md:col-span-1">
+      <p class="text-[11px] uppercase tracking-wider text-gray-500">Rate</p>
+      <p class="mt-1 text-2xl font-bold text-brand-500">{% if stats.rate is not None %}{{ stats.rate }}%{% else %}—{% endif %}</p>
+    </div>
+  </section>
+
+  <!-- Records -->
+  <section class="card">
+    <div class="px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between gap-3 flex-wrap">
+      <h3 class="font-semibold text-gray-900 dark:text-white">Session log</h3>
+      <p class="text-xs text-gray-500">{{ records.count }} record{{ records.count|pluralize }}</p>
+    </div>
+
+    <!-- Desktop table -->
+    <div class="hidden md:block overflow-x-auto">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Session</th>
+            <th>Coach</th>
+            <th>Status</th>
+            <th>Marked</th>
+            <th class="text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in records %}
+          <tr>
+            <td data-label="Date">
+              <p class="font-medium text-gray-900 dark:text-white">{{ record.training_session.session_date|date:"d M Y" }}</p>
+              <p class="text-xs text-gray-500">{{ record.training_session.start_time|time:"H:i" }}–{{ record.training_session.end_time|time:"H:i" }}</p>
+            </td>
+            <td data-label="Session">
+              <a href="{% url 'sessions:detail' record.training_session.pk %}" class="font-medium text-gray-900 dark:text-white hover:text-brand-500">{{ record.training_session.title }}</a>
+              {% if record.training_session.court %}<p class="text-xs text-gray-500">{{ record.training_session.court }}</p>{% endif %}
+            </td>
+            <td data-label="Coach" class="text-sm">{{ record.training_session.coach|default:"—" }}</td>
+            <td data-label="Status">
+              <span class="badge {% if record.status == 'present' %}badge-success{% elif record.status == 'late' %}badge-warning{% elif record.status == 'absent' %}badge-danger{% else %}badge-muted{% endif %}">{{ record.get_status_display }}</span>
+            </td>
+            <td data-label="Marked" class="text-xs text-gray-500">
+              {% if record.marked_at %}{{ record.marked_at|date:"d M H:i" }}{% if record.marked_by %}<br>by {{ record.marked_by }}{% endif %}{% else %}—{% endif %}
+            </td>
+            <td data-label="Action" class="text-right whitespace-nowrap">
+              <form method="post" action="{% url 'sessions:attendance_record_edit' record.pk %}" class="inline-flex items-center gap-1.5 justify-end flex-wrap">
+                {% csrf_token %}
+                <select name="status" class="!w-auto !py-1 !pl-2 !pr-7 !text-xs">
+                  {% for value, label in status_choices %}
+                  <option value="{{ value }}" {% if record.status == value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary btn-sm" title="Save"><i class="fa-solid fa-floppy-disk"></i>Save</button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="text-center py-10 text-gray-500 dark:text-gray-400">No attendance records yet for this student.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile cards -->
+    <div class="md:hidden divide-y divide-gray-100 dark:divide-gray-800">
+      {% for record in records %}
+      <div class="p-4 space-y-3">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="font-medium text-gray-900 dark:text-white truncate">{{ record.training_session.title }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ record.training_session.session_date|date:"d M Y" }} · {{ record.training_session.start_time|time:"H:i" }}–{{ record.training_session.end_time|time:"H:i" }}</p>
+            <p class="text-xs text-gray-500">Coach: {{ record.training_session.coach|default:"—" }}</p>
+          </div>
+          <span class="badge {% if record.status == 'present' %}badge-success{% elif record.status == 'late' %}badge-warning{% elif record.status == 'absent' %}badge-danger{% else %}badge-muted{% endif %} shrink-0">{{ record.get_status_display }}</span>
+        </div>
+        <form method="post" action="{% url 'sessions:attendance_record_edit' record.pk %}" class="flex gap-2">
+          {% csrf_token %}
+          <select name="status" class="flex-1">
+            {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if record.status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="btn btn-primary btn-sm shrink-0"><i class="fa-solid fa-floppy-disk"></i>Save</button>
+        </form>
+        {% if record.marked_at %}<p class="text-[11px] text-gray-400">Last marked {{ record.marked_at|date:"d M Y H:i" }}{% if record.marked_by %} by {{ record.marked_by }}{% endif %}</p>{% endif %}
+      </div>
+      {% empty %}
+      <div class="p-10 text-center text-gray-500 dark:text-gray-400">No attendance records yet.</div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

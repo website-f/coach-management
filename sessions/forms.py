@@ -40,7 +40,13 @@ class TrainingSessionForm(forms.ModelForm):
     members = forms.ModelMultipleChoiceField(
         queryset=Member.objects.filter(status__in=[Member.STATUS_ACTIVE, Member.STATUS_TRIAL]).order_by("full_name"),
         required=False,
-        widget=forms.SelectMultiple(attrs={"size": 8}),
+        widget=forms.SelectMultiple(attrs={"data-select2": "members", "data-placeholder": "Pick students..."}),
+    )
+    coaches = forms.ModelMultipleChoiceField(
+        queryset=User.objects.none(),
+        required=False,
+        widget=forms.SelectMultiple(attrs={"data-select2": "coaches", "data-placeholder": "Pick coach(es)..."}),
+        help_text="The first coach selected becomes the lead. Add co-coaches if more than one runs the session.",
     )
     schedule_mode = forms.ChoiceField(
         choices=(
@@ -65,7 +71,6 @@ class TrainingSessionForm(forms.ModelForm):
             "end_time",
             "court",
             "syllabus_root",
-            "coach",
             "notes",
         ]
         widgets = {
@@ -81,15 +86,20 @@ class TrainingSessionForm(forms.ModelForm):
         self.created_sessions = []
         self.generated_schedule_dates = []
         self.fields["syllabus_root"].queryset = SyllabusRoot.objects.filter(is_active=True).order_by("name")
-        self.fields["coach"].queryset = User.objects.filter(profile__role=UserProfile.ROLE_COACH).order_by(
+        coach_queryset = User.objects.filter(profile__role=UserProfile.ROLE_COACH).order_by(
             "first_name", "username"
         )
+        self.fields["coaches"].queryset = coach_queryset
         if self.instance.pk:
             self.fields["members"].initial = self.instance.attendance_records.values_list("member_id", flat=True)
+            existing_coaches = list(self.instance.coaches.values_list("id", flat=True))
+            if not existing_coaches and self.instance.coach_id:
+                existing_coaches = [self.instance.coach_id]
+            self.fields["coaches"].initial = existing_coaches
             self.fields["schedule_mode"].initial = self.SCHEDULE_MODE_ONE_TIME
         if current_user and has_role(current_user, ROLE_COACH) and not has_role(current_user, ROLE_ADMIN):
-            self.fields["coach"].queryset = User.objects.filter(pk=current_user.pk)
-            self.fields["coach"].initial = current_user
+            self.fields["coaches"].queryset = User.objects.filter(pk=current_user.pk)
+            self.fields["coaches"].initial = [current_user.pk]
         if self.instance.pk:
             self.fields["schedule_mode"].help_text = "Recurring generation is only used while creating a new schedule."
 
@@ -130,15 +140,23 @@ class TrainingSessionForm(forms.ModelForm):
                 )
         return cleaned_data
 
+    def _selected_coach_list(self):
+        coaches = list(self.cleaned_data.get("coaches") or [])
+        if not coaches and self.current_user and has_role(self.current_user, ROLE_COACH) and not has_role(self.current_user, ROLE_ADMIN):
+            coaches = [self.current_user]
+        return coaches
+
     def save(self, commit=True):
         training_session = super().save(commit=False)
-        if self.current_user and has_role(self.current_user, ROLE_COACH) and not has_role(self.current_user, ROLE_ADMIN):
-            training_session.coach = self.current_user
+        coach_list = self._selected_coach_list()
+        # Set the FK (lead coach) — first selected coach, or fall back to current coach user.
+        training_session.coach = coach_list[0] if coach_list else None
         if not commit:
             return training_session
 
         if self.instance.pk or self.cleaned_data.get("schedule_mode") == self.SCHEDULE_MODE_ONE_TIME:
             training_session.save()
+            training_session.coaches.set(coach_list)
             self.save_members(training_session)
             self.created_sessions = [training_session]
             self.generated_schedule_dates = [training_session.session_date]
@@ -149,6 +167,7 @@ class TrainingSessionForm(forms.ModelForm):
             self.cleaned_data.get("recurring_weekdays", []),
         )
         self.generated_schedule_dates = recurring_dates
+        lead_coach = training_session.coach
         for occurrence_date in recurring_dates:
             session = TrainingSession.objects.filter(
                 title=training_session.title,
@@ -156,7 +175,7 @@ class TrainingSessionForm(forms.ModelForm):
                 start_time=training_session.start_time,
                 end_time=training_session.end_time,
                 court=training_session.court,
-                coach=training_session.coach,
+                coach=lead_coach,
             ).first()
             if not session:
                 session = TrainingSession(
@@ -166,14 +185,16 @@ class TrainingSessionForm(forms.ModelForm):
                     end_time=training_session.end_time,
                     court=training_session.court,
                     syllabus_root=training_session.syllabus_root,
-                    coach=training_session.coach,
+                    coach=lead_coach,
                     notes=training_session.notes,
                     created_by=training_session.created_by,
                 )
             else:
                 session.syllabus_root = training_session.syllabus_root
                 session.notes = training_session.notes
+                session.coach = lead_coach
             session.save()
+            session.coaches.set(coach_list)
             self.save_members(session)
             self.created_sessions.append(session)
         return self.created_sessions[0]

@@ -3,6 +3,101 @@
 {% block title %}{% if form.instance.pk %}Edit Session{% else %}Create Session{% endif %} | NYO{% endblock %}
 {% block page_heading %}{% if form.instance.pk %}Edit Session{% else %}Create Session{% endif %}{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+<style>
+  /* ── Brand-aligned Select2 skin ─────────────────────────────────────────── */
+  .select2-container { width: 100% !important; }
+  .select2-container--default .select2-selection--multiple {
+    min-height: 44px;
+    border: 1px solid rgb(209 213 219);
+    border-radius: 0.5rem;
+    background: #fff;
+    padding: 0.25rem 0.4rem;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  html.dark .select2-container--default .select2-selection--multiple {
+    background: rgb(17 24 39);
+    border-color: rgb(55 65 81);
+  }
+  .select2-container--default.select2-container--focus .select2-selection--multiple,
+  .select2-container--default.select2-container--open .select2-selection--multiple {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245,158,11,.2);
+    outline: none;
+  }
+  .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background: #fff8ec;
+    color: #92400e;
+    border: 1px solid #ffd98a;
+    border-radius: 999px;
+    padding: 2px 10px 2px 6px;
+    font-size: 12px;
+    font-weight: 500;
+    margin: 3px 4px 3px 0;
+    line-height: 1.4;
+  }
+  html.dark .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background: rgba(245,158,11,.15);
+    color: #fcd34d;
+    border-color: rgba(245,158,11,.3);
+  }
+  .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: #b45309;
+    margin-right: 4px;
+    border: none;
+    background: transparent;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  html.dark .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: #fcd34d;
+  }
+  .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+    color: #92400e;
+  }
+  .select2-search--inline .select2-search__field {
+    margin-top: 6px !important;
+    padding-left: 4px !important;
+    color: rgb(17 24 39);
+  }
+  html.dark .select2-search--inline .select2-search__field { color: rgb(243 244 246); }
+  .select2-dropdown {
+    border-color: rgb(229 231 235);
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,.08);
+    overflow: hidden;
+  }
+  html.dark .select2-dropdown {
+    background: rgb(17 24 39);
+    border-color: rgb(55 65 81);
+    color: rgb(243 244 246);
+  }
+  .select2-results__option {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.875rem;
+  }
+  .select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background: #f59e0b;
+    color: #fff;
+  }
+  html.dark .select2-container--default .select2-results__option[aria-selected=true] {
+    background: rgba(245,158,11,.15);
+    color: #fcd34d;
+  }
+  .select2-container--default .select2-search--dropdown .select2-search__field {
+    border: 1px solid rgb(209 213 219);
+    border-radius: 0.375rem;
+    padding: 0.45rem 0.6rem;
+  }
+  html.dark .select2-container--default .select2-search--dropdown .select2-search__field {
+    background: rgb(17 24 39);
+    border-color: rgb(55 65 81);
+    color: rgb(243 244 246);
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="max-w-4xl mx-auto">
   <section class="card p-6 sm:p-8">
@@ -10,7 +105,7 @@
       <div class="max-w-xl">
         <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">Schedule Planner</p>
         <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">{% if form.instance.pk %}Update session{% else %}Build a session{% endif %}</h2>
-        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Set coach, roster, court, timing. For recurring schedules choose weekdays and the system generates each session.</p>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Set coach(es), roster, court, timing. For recurring schedules choose weekdays and the system generates each session.</p>
       </div>
       <a href="{% url 'sessions:list' %}" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i>Calendar</a>
     </div>
@@ -23,13 +118,20 @@
       {% endif %}
 
       <div class="grid gap-4 sm:grid-cols-2">
-        {% for field in form %}{% if field.name not in 'notes,members,schedule_mode,recurring_weekdays' %}
+        {% for field in form %}{% if field.name not in 'notes,members,coaches,schedule_mode,recurring_weekdays' %}
         <div class="{% if field.name == 'title' %}sm:col-span-2{% endif %}">
           <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{{ field.label }}</label>
           {{ field }}
           {% if field.errors %}<p class="text-xs text-red-600 mt-1">{{ field.errors|join:", " }}</p>{% endif %}
         </div>
         {% endif %}{% endfor %}
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Coach(es) <span class="text-red-500">*</span></label>
+        {{ form.coaches }}
+        <p class="text-xs text-gray-500 mt-1">{{ form.coaches.help_text }}</p>
+        {% if form.coaches.errors %}<p class="text-xs text-red-600 mt-1">{{ form.coaches.errors|join:", " }}</p>{% endif %}
       </div>
 
       <div class="rounded-xl border border-gray-200 dark:border-gray-800 p-4 bg-gray-50/50 dark:bg-gray-800/20">
@@ -57,7 +159,7 @@
       <div>
         <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Assigned Members</label>
         {{ form.members }}
-        <p class="text-xs text-gray-500 mt-1">Trial members get blocked automatically once they hit the trial limit.</p>
+        <p class="text-xs text-gray-500 mt-1">Pick one or many. Trial members get blocked automatically once they hit the trial limit.</p>
         {% if form.members.errors %}<p class="text-xs text-red-600 mt-1">{{ form.members.errors|join:", " }}</p>{% endif %}
       </div>
 
@@ -75,4 +177,31 @@
     </form>
   </section>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+  (function () {
+    function init() {
+      if (typeof window.jQuery === 'undefined' || typeof window.jQuery.fn.select2 === 'undefined') return;
+      var $ = window.jQuery;
+      $('select[data-select2]').each(function () {
+        var $sel = $(this);
+        $sel.select2({
+          placeholder: $sel.data('placeholder') || 'Select...',
+          width: '100%',
+          allowClear: true,
+          closeOnSelect: false,
+        });
+      });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+</script>
 {% endblock %}

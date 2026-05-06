@@ -326,7 +326,7 @@ class MemberListView(LoginRequiredMixin, ListView):
             queryset = queryset.filter(status=status)
         if coach:
             queryset = queryset.filter(assigned_coach_id=coach)
-        return queryset
+        return queryset.order_by("full_name", "id").distinct()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

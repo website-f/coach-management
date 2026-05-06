@@ -1,12 +1,16 @@
 from django.urls import path
 
 from sessions.views import (
+    AttendanceOverviewView,
+    AttendanceRecordEditView,
     AttendanceUpdateView,
     AutoAssignSessionsView,
+    MemberAttendanceDetailView,
     ParentRescheduleView,
     SessionChecklistAuditView,
     SessionChecklistSaveView,
     SessionCreateView,
+    SessionDeleteView,
     SessionPlanAssistantView,
     SessionDetailView,
     SessionFeedbackUpsertView,
@@ -29,6 +33,9 @@ app_name = "sessions"
 
 urlpatterns = [
     path("", SessionListView.as_view(), name="list"),
+    path("attendance/", AttendanceOverviewView.as_view(), name="attendance_overview"),
+    path("attendance/member/<int:pk>/", MemberAttendanceDetailView.as_view(), name="member_attendance"),
+    path("attendance/record/<int:pk>/edit/", AttendanceRecordEditView.as_view(), name="attendance_record_edit"),
     path("checklist-audit/", SessionChecklistAuditView.as_view(), name="checklist_audit"),
     path("parent/attendance/<int:pk>/reschedule/", ParentRescheduleView.as_view(), name="parent_reschedule"),
     path("auto-assign/", AutoAssignSessionsView.as_view(), name="auto_assign"),
@@ -48,6 +55,7 @@ urlpatterns = [
     path("<int:pk>/plan-assistant/", SessionPlanAssistantView.as_view(), name="plan_assistant"),
     path("<int:pk>/plan-save/", SessionPlanSaveView.as_view(), name="plan_save"),
     path("<int:pk>/edit/", SessionUpdateView.as_view(), name="edit"),
+    path("<int:pk>/delete/", SessionDeleteView.as_view(), name="delete"),
     path("<int:pk>/attendance/", AttendanceUpdateView.as_view(), name="attendance"),
     path("<int:session_pk>/feedback/<int:member_pk>/", SessionFeedbackUpsertView.as_view(), name="feedback"),
 ]

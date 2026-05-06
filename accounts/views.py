@@ -718,9 +718,12 @@ class CoachPasswordChangeView(PasswordChangeView):
     def form_valid(self, form):
         response = super().form_valid(form)
         profile = self.request.user.profile
+        update_fields = ["temporary_password", "updated_at"]
+        profile.temporary_password = ""
         if profile.must_change_password:
             profile.must_change_password = False
-            profile.save(update_fields=["must_change_password", "updated_at"])
+            update_fields.insert(0, "must_change_password")
+        profile.save(update_fields=update_fields)
         messages.success(self.request, "Password updated successfully. Your coach account is now fully active.")
         return response
 
@@ -761,6 +764,42 @@ class CoachManagementView(AdminRequiredMixin, FormView):
             f"Coach account {user.username} created successfully.",
         )
         return super().form_valid(form)
+
+
+class CoachPasswordResetView(AdminRequiredMixin, View):
+    """Admin generates a fresh temporary password for a coach who forgot theirs."""
+
+    def post(self, request, *args, **kwargs):
+        coach = get_object_or_404(coach_accounts_queryset(), pk=kwargs["pk"])
+        from accounts.forms import CoachAccountForm  # avoid circular at module load
+        temporary_password = CoachAccountForm().generate_temporary_password()
+        coach.set_password(temporary_password)
+        coach.save(update_fields=["password"])
+        profile = coach.profile
+        profile.must_change_password = True
+        profile.temporary_password = temporary_password
+        profile.save(update_fields=["must_change_password", "temporary_password", "updated_at"])
+        request.session["created_coach_credentials"] = {
+            "name": coach.get_full_name() or coach.username,
+            "username": coach.username,
+            "temporary_password": temporary_password,
+        }
+        messages.success(request, f"New temporary password issued for {coach.username}.")
+        return redirect("accounts:coaches")
+
+
+class CoachDeleteView(AdminRequiredMixin, View):
+    """Admin removes a coach account that was created by mistake."""
+
+    def post(self, request, *args, **kwargs):
+        coach = get_object_or_404(coach_accounts_queryset(), pk=kwargs["pk"])
+        if coach == request.user:
+            messages.error(request, "You cannot delete your own account.")
+            return redirect("accounts:coaches")
+        username = coach.username
+        coach.delete()
+        messages.success(request, f"Coach account {username} deleted.")
+        return redirect("accounts:coaches")
 
 
 class CoachDetailView(AdminRequiredMixin, DetailView):

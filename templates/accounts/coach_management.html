@@ -76,11 +76,47 @@
               <p class="text-xs text-gray-500">{{ coach.upcoming_session_count }} upcoming</p>
             </td>
             <td data-label="Reports">{{ coach.report_count }}</td>
-            <td data-label="Password">{% if coach.profile.must_change_password %}<span class="badge badge-warning">Temp</span>{% else %}<span class="badge badge-success">Ready</span>{% endif %}</td>
+            <td data-label="Password">
+              {% if coach.profile.temporary_password %}
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="badge badge-warning">Temp</span>
+                  <code data-coach-pw="{{ coach.profile.temporary_password }}"
+                        class="font-mono text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 select-all"
+                        data-revealed="0">••••••••</code>
+                  <button type="button" data-coach-pw-toggle title="Show / hide password"
+                          class="w-7 h-7 grid place-items-center rounded-md border border-gray-200 dark:border-gray-700 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <i class="fa-regular fa-eye text-xs"></i>
+                  </button>
+                  <button type="button" data-coach-pw-copy title="Copy password"
+                          class="w-7 h-7 grid place-items-center rounded-md border border-gray-200 dark:border-gray-700 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <i class="fa-regular fa-copy text-xs"></i>
+                  </button>
+                </div>
+              {% elif coach.profile.must_change_password %}
+                <span class="badge badge-warning">Temp (unknown)</span>
+              {% else %}
+                <span class="badge badge-success">Ready</span>
+                <p class="text-[11px] text-gray-500 mt-1">Coach set their own — admin cannot view.</p>
+              {% endif %}
+            </td>
             <td data-label="Last Login" class="text-xs text-gray-500">{{ coach.last_login|date:"d M Y H:i"|default:"Never" }}</td>
             <td data-label="Action" class="text-right whitespace-nowrap">
-              <a href="{% url 'accounts:coach_detail' coach.pk %}" class="btn btn-secondary btn-sm">Profile</a>
-              <a href="{% url 'sessions:list' %}?coach={{ coach.pk }}" class="btn btn-secondary btn-sm">Sessions</a>
+              <div class="inline-flex flex-wrap gap-1 justify-end">
+                <a href="{% url 'accounts:coach_detail' coach.pk %}" class="btn btn-secondary btn-sm">Profile</a>
+                <a href="{% url 'sessions:list' %}?coach={{ coach.pk }}" class="btn btn-secondary btn-sm">Sessions</a>
+                <form method="post" action="{% url 'accounts:coach_reset_password' coach.pk %}" class="inline"
+                      onsubmit="return confirm('Issue a new temporary password for {{ coach.username|escapejs }}? The old password will stop working.');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-secondary btn-sm" title="Issue new temporary password"><i class="fa-solid fa-key"></i>Reset</button>
+                </form>
+                {% if coach != request.user %}
+                <form method="post" action="{% url 'accounts:coach_delete' coach.pk %}" class="inline"
+                      onsubmit="return confirm('Delete coach account {{ coach.username|escapejs }}? This cannot be undone.');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-danger btn-sm" title="Delete coach account"><i class="fa-solid fa-trash"></i>Delete</button>
+                </form>
+                {% endif %}
+              </div>
             </td>
           </tr>
           {% empty %}
@@ -134,6 +170,37 @@
         } catch (e) { btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>Failed'; }
       });
     }
+
+    // Per-row password reveal + copy
+    document.querySelectorAll('[data-coach-pw-toggle]').forEach(function (toggle) {
+      toggle.addEventListener('click', function () {
+        var code = toggle.parentElement.querySelector('[data-coach-pw]');
+        if (!code) return;
+        var revealed = code.getAttribute('data-revealed') === '1';
+        if (revealed) {
+          code.textContent = '••••••••';
+          code.setAttribute('data-revealed', '0');
+          toggle.innerHTML = '<i class="fa-regular fa-eye text-xs"></i>';
+        } else {
+          code.textContent = code.getAttribute('data-coach-pw');
+          code.setAttribute('data-revealed', '1');
+          toggle.innerHTML = '<i class="fa-regular fa-eye-slash text-xs"></i>';
+        }
+      });
+    });
+    document.querySelectorAll('[data-coach-pw-copy]').forEach(function (copyBtn) {
+      copyBtn.addEventListener('click', async function () {
+        var code = copyBtn.parentElement.querySelector('[data-coach-pw]');
+        if (!code) return;
+        var pw = code.getAttribute('data-coach-pw');
+        try {
+          await navigator.clipboard.writeText(pw);
+          var prev = copyBtn.innerHTML;
+          copyBtn.innerHTML = '<i class="fa-solid fa-check text-xs"></i>';
+          setTimeout(function () { copyBtn.innerHTML = prev; }, 1500);
+        } catch (e) { /* ignore */ }
+      });
+    });
   })();
 </script>
 {% endblock %}

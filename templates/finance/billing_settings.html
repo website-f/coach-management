@@ -90,7 +90,16 @@
             <td data-label="Sessions">{{ plan.sessions_per_month }} / month</td>
             <td data-label="Status"><span class="badge {% if plan.is_active %}badge-success{% else %}badge-muted{% endif %}">{% if plan.is_active %}Active{% else %}Inactive{% endif %}</span></td>
             <td data-label="Default"><span class="badge {% if plan.is_default %}badge-info{% else %}badge-muted{% endif %}">{% if plan.is_default %}Default{% else %}Optional{% endif %}</span></td>
-            <td data-label="Action" class="text-right"><a href="{% url 'finance:payment_plan_edit' plan.pk %}" class="btn btn-secondary btn-sm">Edit</a></td>
+            <td data-label="Action" class="text-right">
+              <div class="inline-flex flex-wrap gap-1 justify-end">
+                <a href="{% url 'finance:payment_plan_edit' plan.pk %}" class="btn btn-secondary btn-sm">Edit</a>
+                <form method="post" action="{% url 'finance:payment_plan_delete' plan.pk %}" class="inline"
+                      onsubmit="return confirm('Delete package \'{{ plan.name|escapejs }}\'? Existing invoices and members on this plan will be unlinked but kept.');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-danger btn-sm" title="Delete package"><i class="fa-solid fa-trash"></i>Remove</button>
+                </form>
+              </div>
+            </td>
           </tr>
           {% empty %}
           <tr><td data-label="Package" colspan="6" class="text-center py-10 text-gray-500">No packages yet.</td></tr>

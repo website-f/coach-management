@@ -32,12 +32,26 @@
   </section>
 
   <section class="card p-4">
-    <form method="get" class="grid gap-3 md:grid-cols-4 items-end">
+    <form method="get" class="grid gap-3 md:grid-cols-3 lg:grid-cols-5 items-end">
       <div>
         <label class="block text-xs font-medium text-gray-500 mb-1">Status</label>
         <select name="status">
           <option value="">All</option>
           {% for value, label in statuses %}<option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Type</label>
+        <select name="invoice_type">
+          <option value="">All types</option>
+          {% for value, label in invoice_types %}<option value="{{ value }}" {% if request.GET.invoice_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Month</label>
+        <select name="month">
+          <option value="">All months</option>
+          {% for value, label in month_options %}<option value="{{ value }}" {% if request.GET.month == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
         </select>
       </div>
       <div>
@@ -54,9 +68,9 @@
           {% for branch in branches %}<option value="{{ branch }}" {% if request.GET.branch == branch %}selected{% endif %}>{{ branch }}</option>{% endfor %}
         </select>
       </div>
-      <div class="flex gap-2">
+      <div class="flex gap-2 lg:col-span-5">
         <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i>Filter</button>
-        {% if request.GET.status or request.GET.member or request.GET.branch %}<a href="{% url 'finance:invoice_list' %}" class="btn btn-secondary">Clear</a>{% endif %}
+        {% if request.GET.status or request.GET.invoice_type or request.GET.month or request.GET.member or request.GET.branch %}<a href="{% url 'finance:invoice_list' %}" class="btn btn-secondary">Clear</a>{% endif %}
       </div>
     </form>
   </section>

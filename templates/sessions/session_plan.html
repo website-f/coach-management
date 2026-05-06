@@ -15,7 +15,7 @@
         <div class="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400 mt-2">
           <span>{{ training_session.session_date }} · {{ training_session.start_time|time:"H:i" }}–{{ training_session.end_time|time:"H:i" }}</span>
           <span>Court {{ training_session.court }}</span>
-          <span>Coach {{ training_session.coach|default:"Unassigned" }}</span>
+          <span>Coach {{ training_session.coach_label|default:"Unassigned" }}</span>
         </div>
         <p class="text-sm text-gray-600 dark:text-gray-400 mt-3 leading-relaxed">Use the structured blueprint, then open the floating AI planner for drills, flow variants, or match-focus ideas.</p>
       </div>

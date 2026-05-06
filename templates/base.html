@@ -265,6 +265,7 @@
 
             <div class="nav-section-label">Club</div>
             <a href="{% url 'members:list' %}" class="nav-link {% nav_active_section '/members/' '/members/reports/' '/members/applications/' '/members/apply/' '/members/crm/' %}"><i class="fa-solid fa-users w-4"></i>Students</a>
+            <a href="{% url 'sessions:attendance_overview' %}" class="nav-link {% nav_active_contains '/sessions/attendance/' %}"><i class="fa-solid fa-clipboard-user w-4"></i>Attendance</a>
             <a href="{% url 'members:crm' %}" class="nav-link {% nav_active '/members/crm/' %}"><i class="fa-solid fa-address-book w-4"></i>CRM</a>
             <a href="{% url 'members:application_list' %}" class="nav-link {% nav_active '/members/applications/' %}"><i class="fa-solid fa-user-plus w-4"></i>Leads{% if pending_applications %}<span class="nav-badge">{{ pending_applications }}</span>{% endif %}</a>
             <a href="{% url 'members:report_list' %}" class="nav-link {% nav_active '/members/reports/' %}"><i class="fa-solid fa-file-lines w-4"></i>Progress Reports</a>
@@ -293,6 +294,7 @@
             <a href="{% url 'accounts:dashboard' %}" class="nav-link {% nav_active '/accounts/dashboard/' %}"><i class="fa-solid fa-chart-pie w-4"></i>Dashboard</a>
             <div class="nav-section-label">My Squad</div>
             <a href="{% url 'members:list' %}" class="nav-link {% nav_active_section '/members/' '/members/reports/' %}"><i class="fa-solid fa-users-viewfinder w-4"></i>My Players</a>
+            <a href="{% url 'sessions:attendance_overview' %}" class="nav-link {% nav_active_contains '/sessions/attendance/' %}"><i class="fa-solid fa-clipboard-user w-4"></i>Attendance</a>
             <a href="{% url 'members:report_list' %}" class="nav-link {% nav_active '/members/reports/' %}"><i class="fa-solid fa-file-lines w-4"></i>Progress Reports</a>
             <div class="nav-section-label">Training</div>
             <a href="{% url 'sessions:list' %}" class="nav-link {% nav_active_path '/sessions/' '/plan/' %}"><i class="fa-solid fa-calendar-days w-4"></i>Sessions</a>
@@ -374,7 +376,7 @@
         </header>
 
         <!-- Content -->
-        <main class="flex-1 px-4 sm:px-6 py-5 pb-24 lg:pb-6 max-w-7xl w-full mx-auto">
+        <main class="flex-1 px-4 sm:px-6 py-5 pb-24 {% if current_role == 'admin' or current_role == 'coach' %}lg:pb-24{% else %}lg:pb-6{% endif %} max-w-7xl w-full mx-auto">
             {% if parent_is_inactive %}
             <div class="mb-5 rounded-xl border border-amber-200 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 p-4 flex flex-wrap gap-3 items-center">
                 <div class="w-10 h-10 rounded-lg bg-amber-400 text-white grid place-items-center shrink-0"><i class="fa-solid fa-lock"></i></div>

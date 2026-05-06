@@ -343,7 +343,7 @@
                 <p class="font-semibold text-sm text-gray-900 dark:text-white">{{ session.title }}</p>
                 <p class="text-xs text-gray-500 mt-1 leading-relaxed">
                   {{ session.session_date|date:"d M Y" }} · {{ session.start_time|time:"H:i" }}–{{ session.end_time|time:"H:i" }}<br>
-                  Coach {{ session.coach|default:"Unassigned" }} · Court {{ session.court }} · {{ session.attendee_count }} player(s)
+                  Coach {{ session.coach_label|default:"Unassigned" }} · Court {{ session.court }} · {{ session.attendee_count }} player(s)
                 </p>
               </div>
               <div class="flex gap-1.5 flex-wrap">
@@ -353,6 +353,13 @@
                 {% endif %}
                 {% if can_plan %}<a href="{% url 'sessions:edit' session.pk %}" class="btn btn-secondary btn-sm">Edit</a>{% endif %}
                 {% if can_mark_attendance %}<a href="{% url 'sessions:attendance' session.pk %}" class="btn btn-sm bg-green-500 hover:bg-green-600 text-white">Attendance</a>{% endif %}
+                {% if current_role == 'admin' %}
+                <form method="post" action="{% url 'sessions:delete' session.pk %}" class="inline"
+                      onsubmit="return confirm('Delete session \'{{ session.title|escapejs }}\' on {{ session.session_date|date:'d M Y' }}? This cannot be undone.');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-danger btn-sm" title="Delete session"><i class="fa-solid fa-trash"></i>Delete</button>
+                </form>
+                {% endif %}
               </div>
             </div>
             {% if is_parent_user %}

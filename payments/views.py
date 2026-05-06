@@ -207,16 +207,53 @@ class PaymentHistoryView(AdminOrCoachRequiredMixin, ListView):
         queryset = visible_payments_for_user(self.request.user)
         status = self.request.GET.get("status", "").strip()
         member = self.request.GET.get("member", "").strip()
+        invoice_type = self.request.GET.get("invoice_type", "").strip()
+        method = self.request.GET.get("method", "").strip()
+        month = self.request.GET.get("month", "").strip()  # YYYY-MM, applied to invoice.period
         if status:
             queryset = queryset.filter(status=status)
         if member:
             queryset = queryset.filter(invoice__member_id=member)
+        if invoice_type:
+            queryset = queryset.filter(invoice__invoice_type=invoice_type)
+        if method:
+            queryset = queryset.filter(payment_method=method)
+        if month:
+            try:
+                year, month_num = month.split("-")
+                queryset = queryset.filter(
+                    invoice__period__year=int(year),
+                    invoice__period__month=int(month_num),
+                )
+            except (ValueError, TypeError):
+                pass
         return queryset
 
     def get_context_data(self, **kwargs):
+        from finance.models import Invoice, PAYMENT_METHOD_CHOICES
         context = super().get_context_data(**kwargs)
         queryset = self.get_queryset()
         context["statuses"] = Payment.STATUS_CHOICES
+        context["invoice_types"] = Invoice.TYPE_CHOICES
+        context["methods"] = PAYMENT_METHOD_CHOICES
+        # Build month dropdown from periods that exist in the user's visible payments.
+        month_periods = (
+            visible_payments_for_user(self.request.user)
+            .order_by("-invoice__period")
+            .values_list("invoice__period", flat=True)
+            .distinct()
+        )
+        seen = set()
+        month_options = []
+        for period in month_periods:
+            if not period:
+                continue
+            key = period.strftime("%Y-%m")
+            if key in seen:
+                continue
+            seen.add(key)
+            month_options.append((key, period.strftime("%B %Y")))
+        context["month_options"] = month_options
         context["members"] = visible_payments_for_user(self.request.user).values_list(
             "invoice__member_id", "invoice__member__full_name"
         ).distinct()

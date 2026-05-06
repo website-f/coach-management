@@ -108,7 +108,7 @@
   </section>
 
   <!-- List: cards on mobile, table on desktop -->
-  <section class="card overflow-hidden">
+  <section class="card">
     <div class="hidden md:block overflow-x-auto">
       <table class="data-table">
         <thead>
@@ -124,17 +124,22 @@
         <tbody>
           {% for member in members %}
           <tr>
-            <td>
+            <td data-label="{% if is_parent_view %}Child{% else %}Student{% endif %}">
               <p class="font-medium text-gray-900 dark:text-white">{{ member.full_name }}</p>
               <p class="text-xs text-gray-500">{{ member.contact_number }}</p>
             </td>
-            <td>{{ member.program_enrolled|default:member.syllabus_root|default:"—" }}</td>
-            <td>{{ member.package_label }}</td>
-            <td>{{ member.assigned_coach|default:"Unassigned" }}</td>
-            <td><span class="badge {{ member.status|status_badge }}">{{ member.get_status_display }}</span></td>
-            <td class="text-right whitespace-nowrap">
-              <a href="{% url 'members:detail' member.pk %}" class="btn btn-secondary btn-sm">View</a>
-              {% if can_manage %}<a href="{% url 'members:edit' member.pk %}" class="btn btn-secondary btn-sm">Edit</a>{% endif %}
+            <td data-label="Program">{{ member.program_enrolled|default:member.syllabus_root|default:"—" }}</td>
+            <td data-label="Package">{{ member.package_label }}</td>
+            <td data-label="Coach">{{ member.assigned_coach|default:"Unassigned" }}</td>
+            <td data-label="Status"><span class="badge {{ member.status|status_badge }}">{{ member.get_status_display }}</span></td>
+            <td data-label="Action" class="text-right whitespace-nowrap">
+              <div class="inline-flex flex-wrap gap-1 justify-end">
+                <a href="{% url 'members:detail' member.pk %}" class="btn btn-secondary btn-sm">View</a>
+                {% if can_manage %}<a href="{% url 'members:edit' member.pk %}" class="btn btn-secondary btn-sm">Edit</a>{% endif %}
+                {% if is_admin %}
+                <a href="{% url 'members:delete' member.pk %}" class="btn btn-danger btn-sm" title="Delete student"><i class="fa-solid fa-trash"></i>Delete</a>
+                {% endif %}
+              </div>
             </td>
           </tr>
           {% empty %}
@@ -147,18 +152,31 @@
     <!-- Mobile cards -->
     <div class="md:hidden divide-y divide-gray-100 dark:divide-gray-800">
       {% for member in members %}
-      <a href="{% url 'members:detail' member.pk %}" class="flex items-center gap-3 p-4 active:bg-gray-50 dark:active:bg-gray-800/50">
-        <div class="w-11 h-11 rounded-full bg-brand-50 dark:bg-brand-400/10 text-brand-500 grid place-items-center font-semibold shrink-0">{{ member.full_name|first|upper }}</div>
-        <div class="flex-1 min-w-0">
-          <p class="font-medium text-gray-900 dark:text-white truncate">{{ member.full_name }}</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ member.package_label }} · {{ member.assigned_coach|default:"Unassigned" }}</p>
-        </div>
-        <span class="badge {{ member.status|status_badge }}">{{ member.get_status_display }}</span>
-      </a>
+      <div class="flex items-center gap-3 p-4">
+        <a href="{% url 'members:detail' member.pk %}" class="flex items-center gap-3 flex-1 min-w-0 active:opacity-70">
+          <div class="w-11 h-11 rounded-full bg-brand-50 dark:bg-brand-400/10 text-brand-500 grid place-items-center font-semibold shrink-0">{{ member.full_name|first|upper }}</div>
+          <div class="flex-1 min-w-0">
+            <p class="font-medium text-gray-900 dark:text-white truncate">{{ member.full_name }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ member.package_label }} · {{ member.assigned_coach|default:"Unassigned" }}</p>
+          </div>
+          <span class="badge {{ member.status|status_badge }} shrink-0">{{ member.get_status_display }}</span>
+        </a>
+        {% if is_admin %}
+        <a href="{% url 'members:delete' member.pk %}" class="w-9 h-9 grid place-items-center rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 shrink-0" title="Delete student" aria-label="Delete student">
+          <i class="fa-solid fa-trash text-sm"></i>
+        </a>
+        {% endif %}
+      </div>
       {% empty %}
       <div class="p-10 text-center text-gray-500 dark:text-gray-400">No records match.</div>
       {% endfor %}
     </div>
+
+    {% if is_paginated %}
+    <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-800">
+      {% include "partials/pagination.html" %}
+    </div>
+    {% endif %}
   </section>
 </div>
 {% endblock %}

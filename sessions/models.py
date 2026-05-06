@@ -276,6 +276,12 @@ class TrainingSession(models.Model):
         blank=True,
         related_name="training_sessions",
     )
+    coaches = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name="coached_sessions",
+        blank=True,
+        help_text="All coaches running this session (lead coach + co-coaches).",
+    )
     members = models.ManyToManyField("members.Member", through="AttendanceRecord", related_name="training_sessions")
     notes = models.TextField(blank=True)
     created_by = models.ForeignKey(
@@ -293,6 +299,16 @@ class TrainingSession(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.session_date})"
+
+    @property
+    def coach_label(self):
+        """Comma-separated display of every coach on this session."""
+        names = []
+        for c in self.coaches.all():
+            names.append(c.get_full_name() or c.username)
+        if not names and self.coach_id:
+            names.append(self.coach.get_full_name() or self.coach.username)
+        return ", ".join(names) if names else ""
 
 
 class AttendanceRecord(models.Model):

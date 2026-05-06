@@ -116,6 +116,7 @@ class CoachAccountForm(forms.Form):
         profile.role = ROLE_COACH
         profile.phone_number = self.cleaned_data.get("phone_number", "")
         profile.must_change_password = True
+        profile.temporary_password = temporary_password
         profile.save()
         return user, temporary_password
 

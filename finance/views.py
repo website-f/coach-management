@@ -6,8 +6,10 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Sum
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
+from django.views import View
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
 
 from accounts.decorators import role_required
@@ -193,6 +195,28 @@ class PaymentPlanUpdateView(AdminRequiredMixin, UpdateView):
         return response
 
 
+class PaymentPlanDeleteView(AdminRequiredMixin, View):
+    """Admin removes a wrongly-created or retired monthly package.
+    Member.payment_plan and Invoice.payment_plan are SET_NULL, so existing
+    rows aren't lost — just unlinked from the deleted plan.
+    """
+
+    def post(self, request, *args, **kwargs):
+        plan = get_object_or_404(PaymentPlan, pk=kwargs["pk"])
+        in_use_members = plan.member_set.count() if hasattr(plan, "member_set") else 0
+        in_use_invoices = plan.invoice_set.count() if hasattr(plan, "invoice_set") else 0
+        name = plan.name
+        plan.delete()
+        if in_use_members or in_use_invoices:
+            messages.success(
+                request,
+                f"Package '{name}' deleted. {in_use_members} member(s) and {in_use_invoices} invoice(s) had this plan and are now unlinked.",
+            )
+        else:
+            messages.success(request, f"Package '{name}' deleted.")
+        return redirect("finance:billing_settings")
+
+
 class InvoiceListView(AdminOrCoachRequiredMixin, ListView):
     model = Invoice
     template_name = "finance/invoice_list.html"
@@ -204,10 +228,20 @@ class InvoiceListView(AdminOrCoachRequiredMixin, ListView):
         status = self.request.GET.get("status", "").strip()
         member = self.request.GET.get("member", "").strip()
         branch = self.request.GET.get("branch", "").strip()
+        invoice_type = self.request.GET.get("invoice_type", "").strip()
+        month = self.request.GET.get("month", "").strip()  # format: YYYY-MM
         if status:
             queryset = queryset.filter(status=status)
         if member:
             queryset = queryset.filter(member_id=member)
+        if invoice_type:
+            queryset = queryset.filter(invoice_type=invoice_type)
+        if month:
+            try:
+                year, month_num = month.split("-")
+                queryset = queryset.filter(period__year=int(year), period__month=int(month_num))
+            except (ValueError, TypeError):
+                pass
         if branch:
             queryset = [invoice for invoice in queryset if invoice.branch_label == branch]
         return queryset
@@ -216,6 +250,25 @@ class InvoiceListView(AdminOrCoachRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         invoice_rows = list(context["invoices"])
         context["statuses"] = Invoice.STATUS_CHOICES
+        context["invoice_types"] = Invoice.TYPE_CHOICES
+        # Build the month dropdown from periods that actually exist for this user.
+        month_periods = (
+            visible_invoices_for_user(self.request.user)
+            .order_by("-period")
+            .values_list("period", flat=True)
+            .distinct()
+        )
+        seen = set()
+        month_options = []
+        for period in month_periods:
+            if not period:
+                continue
+            key = period.strftime("%Y-%m")
+            if key in seen:
+                continue
+            seen.add(key)
+            month_options.append((key, period.strftime("%B %Y")))
+        context["month_options"] = month_options
         context["is_admin"] = has_role(self.request.user, ROLE_ADMIN)
         context["can_manage"] = has_role(self.request.user, ROLE_ADMIN)
         context["members"] = visible_invoices_for_user(self.request.user).values_list("member_id", "member__full_name").distinct()
