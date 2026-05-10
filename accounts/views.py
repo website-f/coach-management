@@ -695,6 +695,21 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         return context
 
 
+class BranchListView(AdminRequiredMixin, TemplateView):
+    """Placeholder branch directory.
+
+    No Branch model exists yet — once one is added, swap this for a ListView
+    backed by Branch.objects.all() and surface real per-branch data.
+    """
+
+    template_name = "accounts/branch_list.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["branches"] = []
+        return context
+
+
 class LandingContentUpdateView(AdminRequiredMixin, UpdateView):
     form_class = LandingPageContentForm
     template_name = "accounts/website_settings.html"
@@ -750,6 +765,7 @@ class CoachManagementView(AdminRequiredMixin, FormView):
         context["coach_upcoming_session_total"] = sum(coach.upcoming_session_count for coach in coach_rows)
         context["created_coach_credentials"] = self.request.session.pop("created_coach_credentials", None)
         context["show_create_modal"] = bool(context["form"].errors)
+        context["class_level_choices"] = UserProfile.CLASS_LEVEL_CHOICES
         return context
 
     def form_valid(self, form):
@@ -786,6 +802,26 @@ class CoachPasswordResetView(AdminRequiredMixin, View):
         }
         messages.success(request, f"New temporary password issued for {coach.username}.")
         return redirect("accounts:coaches")
+
+
+class CoachLevelUpdateView(AdminRequiredMixin, View):
+    """Admin sets / clears the class level a coach is assigned to."""
+
+    http_method_names = ["post"]
+
+    def post(self, request, *args, **kwargs):
+        coach = get_object_or_404(coach_accounts_queryset(), pk=kwargs["pk"])
+        new_level = (request.POST.get("class_level") or "").strip()
+        valid_levels = {value for value, _ in UserProfile.CLASS_LEVEL_CHOICES}
+        if new_level and new_level not in valid_levels:
+            messages.error(request, "Invalid class level.")
+            return redirect("accounts:coaches")
+        profile = coach.profile
+        profile.class_level = new_level
+        profile.save(update_fields=["class_level", "updated_at"])
+        label = dict(UserProfile.CLASS_LEVEL_CHOICES).get(new_level, "Not assigned")
+        messages.success(request, f"{coach.username} class level set to {label}.")
+        return redirect(request.POST.get("next") or "accounts:coaches")
 
 
 class CoachDeleteView(AdminRequiredMixin, View):

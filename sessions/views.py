@@ -55,7 +55,6 @@ AttendanceFormSet = modelformset_factory(
     AttendanceRecord,
     fields=("status",),
     extra=0,
-    widgets={"status": forms.Select(attrs={"class": "rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 text-sm"})},
 )
 
 
@@ -1368,12 +1367,15 @@ class AttendanceOverviewView(AdminOrCoachRequiredMixin, ListView):
         search = self.request.GET.get("q", "").strip()
         status_filter = self.request.GET.get("status", "").strip()
         coach_filter = self.request.GET.get("coach", "").strip()
+        level_filter = self.request.GET.get("level", "").strip()
         if search:
             queryset = queryset.filter(full_name__icontains=search)
         if status_filter:
             queryset = queryset.filter(status=status_filter)
         if coach_filter:
             queryset = queryset.filter(assigned_coach_id=coach_filter)
+        if level_filter:
+            queryset = queryset.filter(skill_level=level_filter)
 
         # Aggregate attendance counts per member.
         queryset = queryset.annotate(
@@ -1436,12 +1438,22 @@ class AttendanceOverviewView(AdminOrCoachRequiredMixin, ListView):
         }
 
         context["statuses"] = Member.STATUS_CHOICES
+        context["levels"] = Member.LEVEL_CHOICES
         context["is_admin"] = has_role(self.request.user, ROLE_ADMIN)
         context["coaches"] = (
-            User.objects.filter(profile__role=ROLE_COACH).order_by("first_name", "username")
+            User.objects.filter(profile__role=ROLE_COACH)
+            .select_related("profile")
+            .order_by("first_name", "username")
             if has_role(self.request.user, ROLE_ADMIN)
             else []
         )
+        active_filter_count = sum(
+            1
+            for key in ("status", "coach", "level")
+            if self.request.GET.get(key, "").strip()
+        )
+        context["active_filter_count"] = active_filter_count
+        context["filters_open"] = active_filter_count > 0
         return context
 
 

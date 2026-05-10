@@ -83,6 +83,11 @@ class CoachAccountForm(forms.Form):
     username = forms.CharField(max_length=150)
     email = forms.EmailField(required=False)
     phone_number = forms.CharField(max_length=30, required=False)
+    class_level = forms.ChoiceField(
+        label="Class level",
+        choices=[("", "Not assigned")] + UserProfile.CLASS_LEVEL_CHOICES,
+        required=False,
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -115,6 +120,7 @@ class CoachAccountForm(forms.Form):
         profile = user.profile
         profile.role = ROLE_COACH
         profile.phone_number = self.cleaned_data.get("phone_number", "")
+        profile.class_level = self.cleaned_data.get("class_level", "")
         profile.must_change_password = True
         profile.temporary_password = temporary_password
         profile.save()

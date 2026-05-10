@@ -5,8 +5,8 @@ from accounts.models import LandingPageContent, Notification, SystemFlag, UserPr
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "role", "phone_number", "updated_at")
-    list_filter = ("role",)
+    list_display = ("user", "role", "class_level", "phone_number", "updated_at")
+    list_filter = ("role", "class_level")
     search_fields = ("user__username", "user__first_name", "user__last_name")
 
 

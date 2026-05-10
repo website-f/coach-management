@@ -4,6 +4,54 @@
 {% block title %}{% if is_parent_view %}My Children{% else %}Students{% endif %} | NYO{% endblock %}
 {% block page_heading %}{% if is_parent_view %}My Children{% else %}Students{% endif %}{% endblock %}
 
+{% block extra_head %}
+<style>
+  /* Minimalist enterprise filter — neutral palette, no gradients, no icons. */
+  .filter-form { padding: .75rem 1rem; }
+  .filter-row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+  .filter-search { flex: 1 1 240px; min-width: 200px; }
+  .filter-toggle, .filter-apply, .filter-clear, .filter-cta {
+    display: inline-flex; align-items: center; gap: .375rem;
+    padding: .5rem .875rem; font-size: .8125rem; font-weight: 500;
+    border-radius: .375rem; border: 1px solid #d1d5db;
+    background: #fff; color: #374151; line-height: 1; cursor: pointer;
+    transition: background-color .15s, border-color .15s, color .15s;
+    white-space: nowrap;
+  }
+  html.dark .filter-toggle, html.dark .filter-apply, html.dark .filter-clear, html.dark .filter-cta {
+    background: #111827; border-color: #374151; color: #e5e7eb;
+  }
+  .filter-toggle:hover, .filter-clear:hover, .filter-cta:hover { background: #f9fafb; border-color: #9ca3af; }
+  html.dark .filter-toggle:hover, html.dark .filter-clear:hover, html.dark .filter-cta:hover { background: #1f2937; border-color: #4b5563; }
+  .filter-toggle[aria-expanded="true"] { background: #f3f4f6; border-color: #9ca3af; }
+  html.dark .filter-toggle[aria-expanded="true"] { background: #1f2937; border-color: #4b5563; }
+  .filter-apply { background: #111827; color: #fff; border-color: #111827; }
+  .filter-apply:hover { background: #000; border-color: #000; }
+  html.dark .filter-apply { background: #f3f4f6; color: #111827; border-color: #f3f4f6; }
+  html.dark .filter-apply:hover { background: #fff; border-color: #fff; }
+  .filter-cta { margin-left: auto; }
+  .filter-count {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; padding: 0 .375rem; border-radius: 999px;
+    background: #111827; color: #fff; font-size: .6875rem; font-weight: 600;
+  }
+  html.dark .filter-count { background: #f3f4f6; color: #111827; }
+  .filter-panel {
+    border-top: 1px solid #e5e7eb; margin: .75rem -1rem -.75rem; padding: .875rem 1rem .25rem;
+  }
+  html.dark .filter-panel { border-top-color: #1f2937; }
+  .filter-panel[hidden] { display: none; }
+  .filter-grid { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .filter-field { display: block; }
+  .filter-label {
+    display: block; font-size: .6875rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .04em;
+    color: #6b7280; margin-bottom: .25rem;
+  }
+  html.dark .filter-label { color: #9ca3af; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="space-y-5">
 
@@ -68,41 +116,70 @@
     {% endif %}
   {% endif %}
 
-  <!-- Filters -->
-  <section class="card p-4">
-    <form method="get" class="grid gap-3 md:grid-cols-4 items-end">
-      <div class="md:col-span-2">
-        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Search</label>
-        <input type="text" name="q" value="{{ request.GET.q }}" placeholder="{% if is_parent_view %}Search child...{% else %}Search student...{% endif %}">
-      </div>
-      <div>
-        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Status</label>
-        <select name="status">
-          <option value="">All statuses</option>
-          {% for value, label in statuses %}
-          <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      {% if show_coach_filter %}
-      <div>
-        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Coach</label>
-        <select name="coach">
-          <option value="">All coaches</option>
-          {% for coach in coaches %}
-          <option value="{{ coach.id }}" {% if request.GET.coach == coach.id|stringformat:"s" %}selected{% endif %}>{{ coach.get_full_name|default:coach.username }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      {% endif %}
-      <div class="flex gap-2 md:col-span-4">
-        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i>Filter</button>
-        {% if request.GET.q or request.GET.status or request.GET.coach %}
-        <a href="{% url 'members:list' %}" class="btn btn-secondary">Clear</a>
+  <!-- Filters: minimalist enterprise. Search always visible; advanced filters collapsible. -->
+  <section class="card">
+    <form method="get" class="filter-form">
+      <div class="filter-row">
+        <input
+          type="search"
+          name="q"
+          value="{{ request.GET.q }}"
+          placeholder="{% if is_parent_view %}Search child{% else %}Search student{% endif %} by name"
+          class="filter-search"
+        >
+        <button
+          type="button"
+          class="filter-toggle"
+          data-filter-toggle
+          aria-expanded="{% if filters_open %}true{% else %}false{% endif %}"
+        >
+          Filters{% if active_filter_count %} <span class="filter-count">{{ active_filter_count }}</span>{% endif %}
+        </button>
+        <button type="submit" class="filter-apply">Apply</button>
+        {% if request.GET.q or request.GET.status or request.GET.coach or request.GET.level %}
+        <a href="{% url 'members:list' %}" class="filter-clear">Clear</a>
         {% endif %}
         {% if is_admin %}
-        <a href="{% url 'members:create' %}" class="btn btn-primary ml-auto"><i class="fa-solid fa-plus"></i>Add Student</a>
+        <a href="{% url 'members:create' %}" class="filter-cta">Add Student</a>
         {% endif %}
+      </div>
+
+      <div class="filter-panel" data-filter-panel {% if not filters_open %}hidden{% endif %}>
+        <div class="filter-grid">
+          <label class="filter-field">
+            <span class="filter-label">Status</span>
+            <select name="status">
+              <option value="">All statuses</option>
+              {% for value, label in statuses %}
+              <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label class="filter-field">
+            <span class="filter-label">Class level</span>
+            <select name="level">
+              <option value="">All levels</option>
+              {% for value, label in levels %}
+              <option value="{{ value }}" {% if request.GET.level == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          {% if show_coach_filter %}
+          <label class="filter-field">
+            <span class="filter-label">Coach</span>
+            <select name="coach">
+              <option value="">All coaches</option>
+              {% for coach in coaches %}
+              <option value="{{ coach.id }}" {% if request.GET.coach == coach.id|stringformat:"s" %}selected{% endif %}>
+                {{ coach.get_full_name|default:coach.username }}{% if coach.profile.class_level %} — {{ coach.profile.get_class_level_display }}{% endif %}
+              </option>
+              {% endfor %}
+            </select>
+          </label>
+          {% endif %}
+        </div>
       </div>
     </form>
   </section>
@@ -114,6 +191,7 @@
         <thead>
           <tr>
             <th>{% if is_parent_view %}Child{% else %}Student{% endif %}</th>
+            <th>Class level</th>
             <th>Program</th>
             <th>Package</th>
             <th>Coach</th>
@@ -128,6 +206,7 @@
               <p class="font-medium text-gray-900 dark:text-white">{{ member.full_name }}</p>
               <p class="text-xs text-gray-500">{{ member.contact_number }}</p>
             </td>
+            <td data-label="Class level">{{ member.get_skill_level_display|default:"—" }}</td>
             <td data-label="Program">{{ member.program_enrolled|default:member.syllabus_root|default:"—" }}</td>
             <td data-label="Package">{{ member.package_label }}</td>
             <td data-label="Coach">{{ member.assigned_coach|default:"Unassigned" }}</td>
@@ -143,7 +222,7 @@
             </td>
           </tr>
           {% empty %}
-          <tr><td colspan="6" class="text-center py-10 text-gray-500 dark:text-gray-400">No records match the current filter.</td></tr>
+          <tr><td colspan="7" class="text-center py-10 text-gray-500 dark:text-gray-400">No records match the current filter.</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -179,4 +258,20 @@
     {% endif %}
   </section>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    document.querySelectorAll('[data-filter-toggle]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var panel = btn.closest('form').querySelector('[data-filter-panel]');
+        if (!panel) return;
+        var open = panel.hasAttribute('hidden') ? false : true;
+        if (open) { panel.setAttribute('hidden', ''); btn.setAttribute('aria-expanded', 'false'); }
+        else      { panel.removeAttribute('hidden');  btn.setAttribute('aria-expanded', 'true'); }
+      });
+    });
+  })();
+</script>
 {% endblock %}

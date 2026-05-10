@@ -4,97 +4,126 @@
 {% block page_heading %}{% if form.instance.pk %}Edit Session{% else %}Create Session{% endif %}{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.1/dist/css/tom-select.min.css">
 <style>
-  /* ── Brand-aligned Select2 skin ─────────────────────────────────────────── */
-  .select2-container { width: 100% !important; }
-  .select2-container--default .select2-selection--multiple {
+  /* ── Tom Select skin (matches dashboard tokens) ─────────────────────────── */
+  .ts-wrapper { width: 100%; }
+  .ts-wrapper.multi .ts-control,
+  .ts-wrapper.single .ts-control {
     min-height: 44px;
-    border: 1px solid rgb(209 213 219);
+    border: 1px solid #d1d5db;
     border-radius: 0.5rem;
     background: #fff;
-    padding: 0.25rem 0.4rem;
+    padding: 0.375rem 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: #111827;
+    box-shadow: none;
     transition: border-color .15s, box-shadow .15s;
   }
-  html.dark .select2-container--default .select2-selection--multiple {
-    background: rgb(17 24 39);
-    border-color: rgb(55 65 81);
+  html.dark .ts-wrapper.multi .ts-control,
+  html.dark .ts-wrapper.single .ts-control {
+    background: #111827;
+    border-color: #374151;
+    color: #f3f4f6;
   }
-  .select2-container--default.select2-container--focus .select2-selection--multiple,
-  .select2-container--default.select2-container--open .select2-selection--multiple {
+  .ts-wrapper.focus .ts-control,
+  .ts-wrapper.dropdown-active .ts-control {
     border-color: #f59e0b;
     box-shadow: 0 0 0 3px rgba(245,158,11,.2);
-    outline: none;
   }
-  .select2-container--default .select2-selection--multiple .select2-selection__choice {
+  /* Selected pills (multi) */
+  .ts-wrapper.multi .ts-control > .item {
     background: #fff8ec;
     color: #92400e;
     border: 1px solid #ffd98a;
     border-radius: 999px;
-    padding: 2px 10px 2px 6px;
+    padding: 2px 8px 2px 10px;
     font-size: 12px;
     font-weight: 500;
-    margin: 3px 4px 3px 0;
-    line-height: 1.4;
+    margin: 2px 4px 2px 0;
   }
-  html.dark .select2-container--default .select2-selection--multiple .select2-selection__choice {
+  html.dark .ts-wrapper.multi .ts-control > .item {
     background: rgba(245,158,11,.15);
     color: #fcd34d;
     border-color: rgba(245,158,11,.3);
   }
-  .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
-    color: #b45309;
-    margin-right: 4px;
-    border: none;
-    background: transparent;
-    font-weight: 700;
-    font-size: 14px;
+  .ts-wrapper.multi .ts-control > .item.active {
+    background: #fbbf24;
+    color: #fff;
+    border-color: #f59e0b;
   }
-  html.dark .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+  /* Remove buttons appear on the right of each pill via the remove_button plugin */
+  .ts-wrapper.plugin-remove_button .item .remove {
+    border-left-color: rgba(180,83,9,.25);
+    color: #92400e;
+    padding-left: 6px;
+  }
+  html.dark .ts-wrapper.plugin-remove_button .item .remove {
+    border-left-color: rgba(252,211,77,.25);
     color: #fcd34d;
   }
-  .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
-    color: #92400e;
-  }
-  .select2-search--inline .select2-search__field {
-    margin-top: 6px !important;
-    padding-left: 4px !important;
-    color: rgb(17 24 39);
-  }
-  html.dark .select2-search--inline .select2-search__field { color: rgb(243 244 246); }
-  .select2-dropdown {
-    border-color: rgb(229 231 235);
+  /* Dropdown */
+  .ts-dropdown {
+    border: 1px solid #e5e7eb;
     border-radius: 0.5rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,.08);
+    box-shadow: 0 12px 30px rgba(0,0,0,.08);
+    margin-top: 4px;
     overflow: hidden;
+    background: #fff;
+    color: #111827;
   }
-  html.dark .select2-dropdown {
-    background: rgb(17 24 39);
-    border-color: rgb(55 65 81);
-    color: rgb(243 244 246);
+  html.dark .ts-dropdown {
+    background: #111827;
+    border-color: #374151;
+    color: #f3f4f6;
   }
-  .select2-results__option {
-    padding: 0.45rem 0.75rem;
+  .ts-dropdown .option {
+    padding: 0.5rem 0.75rem;
     font-size: 0.875rem;
   }
-  .select2-container--default .select2-results__option--highlighted[aria-selected] {
-    background: #f59e0b;
-    color: #fff;
+  .ts-dropdown .active {
+    background: #fff8ec;
+    color: #92400e;
   }
-  html.dark .select2-container--default .select2-results__option[aria-selected=true] {
+  html.dark .ts-dropdown .active {
     background: rgba(245,158,11,.15);
     color: #fcd34d;
   }
-  .select2-container--default .select2-search--dropdown .select2-search__field {
-    border: 1px solid rgb(209 213 219);
-    border-radius: 0.375rem;
-    padding: 0.45rem 0.6rem;
+  .ts-dropdown .optgroup-header {
+    font-size: .6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #6b7280;
+    background: #f9fafb;
+    padding: .375rem .75rem;
+    border-top: 1px solid #f3f4f6;
   }
-  html.dark .select2-container--default .select2-search--dropdown .select2-search__field {
-    background: rgb(17 24 39);
-    border-color: rgb(55 65 81);
-    color: rgb(243 244 246);
+  html.dark .ts-dropdown .optgroup-header {
+    background: #1f2937;
+    color: #9ca3af;
+    border-top-color: #1f2937;
   }
+  .ts-dropdown .optgroup:first-child .optgroup-header { border-top: 0; }
+  /* Inline search input inside the control */
+  .ts-wrapper.multi.has-items .ts-control > input,
+  .ts-wrapper.single .ts-control > input {
+    color: inherit;
+    font-size: 0.875rem;
+  }
+  .ts-wrapper .ts-control > input::placeholder {
+    color: #9ca3af;
+  }
+  /* When Tom Select is active, hide the original native <select> field that
+     base.html legacy CSS forces to a min-height of 140px — Tom Select moves
+     it out of view, so this guards against a flash of the native list before
+     init runs. */
+  select[data-tom][multiple] { min-height: 0 !important; }
+
+  /* Single selects on this page — already styled globally; tighten spacing
+     so they line up with the multi-select height. */
+  .form-select-clean { height: 44px; }
 </style>
 {% endblock %}
 
@@ -180,20 +209,36 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.1/dist/js/tom-select.complete.min.js"></script>
 <script>
   (function () {
     function init() {
-      if (typeof window.jQuery === 'undefined' || typeof window.jQuery.fn.select2 === 'undefined') return;
-      var $ = window.jQuery;
-      $('select[data-select2]').each(function () {
-        var $sel = $(this);
-        $sel.select2({
-          placeholder: $sel.data('placeholder') || 'Select...',
-          width: '100%',
-          allowClear: true,
-          closeOnSelect: false,
+      if (typeof window.TomSelect === 'undefined') {
+        console.warn('Tom Select failed to load; falling back to native multi-select.');
+        return;
+      }
+      document.querySelectorAll('select[data-tom]').forEach(function (el) {
+        if (el.tomselect) return; // already initialised
+        new TomSelect(el, {
+          plugins: el.multiple ? ['remove_button', 'clear_button'] : [],
+          placeholder: el.dataset.placeholder || 'Select...',
+          allowEmptyOption: false,
+          hideSelected: true,
+          // Click an option to add it; dropdown stays open for fast multi-pick.
+          closeAfterSelect: !el.multiple,
+          maxOptions: null,
+          // Render group header and options cleanly.
+          render: {
+            optgroup_header: function (data, escape) {
+              return '<div class="optgroup-header">' + escape(data.label) + '</div>';
+            },
+            option: function (data, escape) {
+              return '<div>' + escape(data.text) + '</div>';
+            },
+            no_results: function () {
+              return '<div class="no-results" style="padding:.6rem .75rem;font-size:.8125rem;color:#6b7280;">No matches</div>';
+            },
+          },
         });
       });
     }

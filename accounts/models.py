@@ -18,6 +18,18 @@ class UserProfile(models.Model):
     # Deprecated alias (headcount merged into admin). Kept for legacy refs.
     ROLE_HEADCOUNT = ROLE_ADMIN
 
+    # Mirrors members.Member.LEVEL_CHOICES so a coach's class level lines up
+    # with the student class levels used everywhere else (filters, reports,
+    # national-team eligibility queries).
+    CLASS_LEVEL_BASIC = "basic"
+    CLASS_LEVEL_INTERMEDIATE = "intermediate"
+    CLASS_LEVEL_ADVANCED = "advanced"
+    CLASS_LEVEL_CHOICES = [
+        (CLASS_LEVEL_BASIC, "Basic"),
+        (CLASS_LEVEL_INTERMEDIATE, "Intermediate"),
+        (CLASS_LEVEL_ADVANCED, "Advanced"),
+    ]
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -25,6 +37,13 @@ class UserProfile(models.Model):
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default=ROLE_PARENT)
     phone_number = models.CharField(max_length=30, blank=True)
+    class_level = models.CharField(
+        max_length=20,
+        choices=CLASS_LEVEL_CHOICES,
+        blank=True,
+        default="",
+        help_text="Class level this coach handles. Empty for non-coach roles.",
+    )
     must_change_password = models.BooleanField(default=False)
     # Plaintext temp password for admin reference (cleared once the coach sets their own).
     temporary_password = models.CharField(max_length=128, blank=True)

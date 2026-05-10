@@ -320,12 +320,15 @@ class MemberListView(LoginRequiredMixin, ListView):
         search = self.request.GET.get("q", "").strip()
         status = self.request.GET.get("status", "").strip()
         coach = self.request.GET.get("coach", "").strip()
+        level = self.request.GET.get("level", "").strip()
         if search:
             queryset = queryset.filter(full_name__icontains=search)
         if status:
             queryset = queryset.filter(status=status)
         if coach:
             queryset = queryset.filter(assigned_coach_id=coach)
+        if level:
+            queryset = queryset.filter(skill_level=level)
         return queryset.order_by("full_name", "id").distinct()
 
     def get_context_data(self, **kwargs):
@@ -343,8 +346,20 @@ class MemberListView(LoginRequiredMixin, ListView):
         context["is_sales"] = has_role(self.request.user, ROLE_HEADCOUNT) and not has_role(self.request.user, ROLE_ADMIN)
         context["is_parent_view"] = is_parent_view
         context["statuses"] = Member.STATUS_CHOICES
-        context["coaches"] = User.objects.filter(profile__role=UserProfile.ROLE_COACH).order_by("first_name", "username")
+        context["levels"] = Member.LEVEL_CHOICES
+        context["coaches"] = (
+            User.objects.filter(profile__role=UserProfile.ROLE_COACH)
+            .select_related("profile")
+            .order_by("first_name", "username")
+        )
         context["show_coach_filter"] = not is_parent_view
+        active_filter_count = sum(
+            1
+            for key in ("status", "coach", "level")
+            if self.request.GET.get(key, "").strip()
+        )
+        context["active_filter_count"] = active_filter_count
+        context["filters_open"] = active_filter_count > 0
         context["application_submitted"] = self.request.GET.get("application_submitted") == "1"
         context["linked_children_count"] = visible_members_for_user(self.request.user).count() if is_parent_view else None
         context["trial_children_count"] = (

@@ -40,12 +40,12 @@ class TrainingSessionForm(forms.ModelForm):
     members = forms.ModelMultipleChoiceField(
         queryset=Member.objects.filter(status__in=[Member.STATUS_ACTIVE, Member.STATUS_TRIAL]).order_by("full_name"),
         required=False,
-        widget=forms.SelectMultiple(attrs={"data-select2": "members", "data-placeholder": "Pick students..."}),
+        widget=forms.SelectMultiple(attrs={"data-tom": "members", "data-placeholder": "Pick students..."}),
     )
     coaches = forms.ModelMultipleChoiceField(
         queryset=User.objects.none(),
         required=False,
-        widget=forms.SelectMultiple(attrs={"data-select2": "coaches", "data-placeholder": "Pick coach(es)..."}),
+        widget=forms.SelectMultiple(attrs={"data-tom": "coaches", "data-placeholder": "Pick coach(es)..."}),
         help_text="The first coach selected becomes the lead. Add co-coaches if more than one runs the session.",
     )
     schedule_mode = forms.ChoiceField(
@@ -86,10 +86,13 @@ class TrainingSessionForm(forms.ModelForm):
         self.created_sessions = []
         self.generated_schedule_dates = []
         self.fields["syllabus_root"].queryset = SyllabusRoot.objects.filter(is_active=True).order_by("name")
-        coach_queryset = User.objects.filter(profile__role=UserProfile.ROLE_COACH).order_by(
-            "first_name", "username"
+        coach_queryset = (
+            User.objects.filter(profile__role=UserProfile.ROLE_COACH)
+            .select_related("profile")
+            .order_by("first_name", "username")
         )
         self.fields["coaches"].queryset = coach_queryset
+        self._apply_coach_class_level_groups(coach_queryset)
         if self.instance.pk:
             self.fields["members"].initial = self.instance.attendance_records.values_list("member_id", flat=True)
             existing_coaches = list(self.instance.coaches.values_list("id", flat=True))
@@ -98,8 +101,10 @@ class TrainingSessionForm(forms.ModelForm):
             self.fields["coaches"].initial = existing_coaches
             self.fields["schedule_mode"].initial = self.SCHEDULE_MODE_ONE_TIME
         if current_user and has_role(current_user, ROLE_COACH) and not has_role(current_user, ROLE_ADMIN):
-            self.fields["coaches"].queryset = User.objects.filter(pk=current_user.pk)
+            restricted = User.objects.filter(pk=current_user.pk).select_related("profile")
+            self.fields["coaches"].queryset = restricted
             self.fields["coaches"].initial = [current_user.pk]
+            self._apply_coach_class_level_groups(restricted)
         if self.instance.pk:
             self.fields["schedule_mode"].help_text = "Recurring generation is only used while creating a new schedule."
 
@@ -139,6 +144,41 @@ class TrainingSessionForm(forms.ModelForm):
                     f"Trial limit exceeded for: {', '.join(over_limit_names)}. Increase the trial limit or move them to an active package first.",
                 )
         return cleaned_data
+
+    # Group label order for the coach <select>: most senior first.
+    _COACH_LEVEL_ORDER = (
+        UserProfile.CLASS_LEVEL_ADVANCED,
+        UserProfile.CLASS_LEVEL_INTERMEDIATE,
+        UserProfile.CLASS_LEVEL_BASIC,
+    )
+
+    def _apply_coach_class_level_groups(self, coach_queryset):
+        """Render the coach <select> as <optgroup>s grouped by class level.
+
+        Tom Select picks the optgroups up natively, and so does the native
+        multi-select fallback if JS fails to load.
+        """
+        level_labels = dict(UserProfile.CLASS_LEVEL_CHOICES)
+        buckets = {value: [] for value in self._COACH_LEVEL_ORDER}
+        unassigned = []
+        for coach in coach_queryset:
+            label = coach.get_full_name() or coach.username
+            level = getattr(getattr(coach, "profile", None), "class_level", "") or ""
+            if level in buckets:
+                buckets[level].append((coach.pk, label))
+            else:
+                unassigned.append((coach.pk, label))
+
+        grouped = []
+        for level_value in self._COACH_LEVEL_ORDER:
+            if buckets[level_value]:
+                grouped.append((level_labels[level_value], buckets[level_value]))
+        if unassigned:
+            grouped.append(("Unassigned class level", unassigned))
+        # Override the widget choices so optgroups render. ModelChoiceField
+        # reassigns widget.choices whenever queryset is set, so this must run
+        # after queryset assignment.
+        self.fields["coaches"].widget.choices = grouped
 
     def _selected_coach_list(self):
         coaches = list(self.cleaned_data.get("coaches") or [])

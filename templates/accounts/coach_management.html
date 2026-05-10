@@ -54,7 +54,7 @@
     <div class="overflow-x-auto">
       <table class="data-table">
         <thead>
-          <tr><th>Coach</th><th>Contact</th><th>Players</th><th>Sessions</th><th>Reports</th><th>Password</th><th>Last Login</th><th class="text-right">Action</th></tr>
+          <tr><th>Coach</th><th>Contact</th><th>Class</th><th>Players</th><th>Sessions</th><th>Reports</th><th>Password</th><th>Last Login</th><th class="text-right">Action</th></tr>
         </thead>
         <tbody>
           {% for coach in coach_rows %}
@@ -66,6 +66,17 @@
             <td data-label="Contact">
               <p>{{ coach.email|default:"—" }}</p>
               <p class="text-xs text-gray-500">{{ coach.profile.phone_number|default:"—" }}</p>
+            </td>
+            <td data-label="Class">
+              <form method="post" action="{% url 'accounts:coach_class_level' coach.pk %}" class="flex items-center gap-1.5">
+                {% csrf_token %}
+                <select name="class_level" onchange="this.form.submit()" class="text-xs py-1.5 px-2 max-w-[150px]">
+                  <option value="" {% if not coach.profile.class_level %}selected{% endif %}>Not assigned</option>
+                  {% for value, label in class_level_choices %}
+                  <option value="{{ value }}" {% if coach.profile.class_level == value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </form>
             </td>
             <td data-label="Players">
               <p>{{ coach.member_count }}</p>
@@ -120,7 +131,7 @@
             </td>
           </tr>
           {% empty %}
-          <tr><td data-label="Coach" colspan="8" class="text-center py-10 text-gray-500">No coach accounts yet.</td></tr>
+          <tr><td data-label="Coach" colspan="9" class="text-center py-10 text-gray-500">No coach accounts yet.</td></tr>
           {% endfor %}
         </tbody>
       </table>
