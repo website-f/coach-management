@@ -91,51 +91,79 @@
       html.dark .badge-info    { background:rgba(59,130,246,.12); color:#60a5fa; }
       html.dark .badge-muted   { background:rgba(156,163,175,.12); color:#d1d5db; }
 
-      /* Form controls — use explicit background-color (not shorthand) so it
-         doesn't clobber background-image for the select chevron below. */
+      /* Form controls — uniform height, weight, and focus across the whole app.
+         Use explicit background-color (not shorthand) so it doesn't clobber the
+         background-image used for the select chevron below. */
       input[type="text"], input[type="email"], input[type="password"], input[type="number"],
       input[type="tel"], input[type="date"], input[type="time"], input[type="datetime-local"],
       input[type="search"], input[type="url"], input[type="file"], select, textarea,
       .form-input, .form-select, .form-textarea {
-        width:100%; border:1px solid #d1d5db; background-color:#fff; color:#111827;
-        padding:.5rem .75rem; border-radius:.5rem; font-size:.875rem; line-height:1.25rem;
-        transition:border-color .15s, box-shadow .15s; box-sizing:border-box;
+        width:100%; min-height:42px;
+        border:1px solid #d1d5db; background-color:#fff; color:#111827;
+        padding:.625rem .875rem; border-radius:.5rem;
+        font-size:.875rem; line-height:1.25rem; font-family: inherit;
+        transition:border-color .15s, box-shadow .15s, background-color .15s;
+        box-sizing:border-box; box-shadow: 0 1px 1px rgba(15,23,42,.02);
       }
-      input[type="file"] { padding:.4rem .6rem; }
-      textarea { resize: vertical; min-height: 90px; padding: .75rem .875rem; line-height: 1.55; }
-      input:focus, select:focus, textarea:focus { outline:none; border-color:#f59e0b; box-shadow:0 0 0 3px rgba(245,158,11,.2); }
+      input[type="text"]:hover, input[type="email"]:hover, input[type="password"]:hover,
+      input[type="number"]:hover, input[type="tel"]:hover, input[type="date"]:hover,
+      input[type="time"]:hover, input[type="datetime-local"]:hover, input[type="search"]:hover,
+      input[type="url"]:hover, textarea:hover, .form-input:hover, .form-textarea:hover {
+        border-color: #9ca3af;
+      }
+      input[type="file"] { padding:.45rem .6rem; }
+      textarea { resize: vertical; min-height: 96px; padding: .75rem .875rem; line-height: 1.55; }
+      input:focus, select:focus, textarea:focus {
+        outline:none; border-color:#f59e0b; box-shadow:0 0 0 3px rgba(245,158,11,.2);
+      }
       html.dark input[type="text"], html.dark input[type="email"], html.dark input[type="password"],
       html.dark input[type="number"], html.dark input[type="tel"], html.dark input[type="date"],
       html.dark input[type="time"], html.dark input[type="datetime-local"], html.dark input[type="search"],
       html.dark input[type="url"], html.dark input[type="file"], html.dark select, html.dark textarea {
         background-color:#111827; border-color:#374151; color:#f3f4f6;
+        box-shadow: none;
+      }
+      html.dark input[type="text"]:hover, html.dark input[type="email"]:hover,
+      html.dark input[type="password"]:hover, html.dark input[type="number"]:hover,
+      html.dark input[type="tel"]:hover, html.dark input[type="date"]:hover,
+      html.dark input[type="time"]:hover, html.dark input[type="datetime-local"]:hover,
+      html.dark input[type="search"]:hover, html.dark input[type="url"]:hover,
+      html.dark textarea:hover {
+        border-color: #4b5563;
       }
 
-      /* Custom select dropdown — !important to beat any legacy overrides. */
+      /* Custom select dropdown — uniform height with inputs, larger chevron. */
       select {
         appearance: none !important; -webkit-appearance: none !important; -moz-appearance: none !important;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
         background-repeat: no-repeat !important;
         background-position: right 12px center !important;
-        background-size: 16px 16px !important;
-        padding-right: 36px !important;
+        background-size: 18px 18px !important;
+        padding-right: 40px !important;
         cursor: pointer;
         text-overflow: ellipsis;
+        font-weight: 500;
       }
       select:hover { border-color: #9ca3af; }
       html.dark select {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
       }
       html.dark select:hover { border-color: #4b5563; }
       /* Multi-select should keep native list appearance */
       select[multiple], select[size]:not([size="1"]) {
         background-image: none !important;
-        padding-right: .75rem !important;
+        padding-right: .875rem !important;
         appearance: auto !important; -webkit-appearance: auto !important; -moz-appearance: auto !important;
         cursor: default;
         min-height: 140px;
+        font-weight: 400;
       }
       select[multiple] option, select[size] option { padding: .375rem .5rem; }
+      /* Tighter selects for compact rows that opt in via .form-select-sm */
+      select.form-select-sm, .form-select-sm select {
+        min-height: 34px; padding-top:.375rem; padding-bottom:.375rem;
+        padding-right: 32px !important; background-size: 14px 14px !important;
+      }
       select option { padding: .25rem .5rem; }
 
       /* Data tables */

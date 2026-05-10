@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from accounts.models import LandingPageContent, Notification, SystemFlag, UserProfile
+from accounts.models import Branch, LandingPageContent, Notification, SystemFlag, UserProfile
 
 
 @admin.register(UserProfile)
@@ -27,3 +27,10 @@ class NotificationAdmin(admin.ModelAdmin):
     list_display = ("user", "title", "is_read", "created_at")
     list_filter = ("is_read", "created_at")
     search_fields = ("user__username", "title", "message")
+
+
+@admin.register(Branch)
+class BranchAdmin(admin.ModelAdmin):
+    list_display = ("name", "code", "city", "state", "is_active", "updated_at")
+    list_filter = ("is_active", "state")
+    search_fields = ("name", "code", "city", "state")

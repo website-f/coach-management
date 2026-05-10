@@ -1,7 +1,10 @@
 from django.urls import path
 
 from accounts.views import (
+    BranchCreateView,
+    BranchDeleteView,
     BranchListView,
+    BranchUpdateView,
     CoachDeleteView,
     CoachDetailView,
     CoachLevelUpdateView,
@@ -29,6 +32,9 @@ urlpatterns = [
     path("coaches/<int:pk>/delete/", CoachDeleteView.as_view(), name="coach_delete"),
     path("coaches/<int:pk>/class-level/", CoachLevelUpdateView.as_view(), name="coach_class_level"),
     path("branches/", BranchListView.as_view(), name="branches"),
+    path("branches/create/", BranchCreateView.as_view(), name="branch_create"),
+    path("branches/<int:pk>/edit/", BranchUpdateView.as_view(), name="branch_edit"),
+    path("branches/<int:pk>/delete/", BranchDeleteView.as_view(), name="branch_delete"),
     path("notifications/", NotificationListView.as_view(), name="notifications"),
     path("notifications/<int:pk>/read/", NotificationReadView.as_view(), name="notification_read"),
     path("website/", LandingContentUpdateView.as_view(), name="website"),

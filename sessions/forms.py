@@ -93,6 +93,7 @@ class TrainingSessionForm(forms.ModelForm):
         )
         self.fields["coaches"].queryset = coach_queryset
         self._apply_coach_class_level_groups(coach_queryset)
+        self._apply_member_class_level_groups(self.fields["members"].queryset)
         if self.instance.pk:
             self.fields["members"].initial = self.instance.attendance_records.values_list("member_id", flat=True)
             existing_coaches = list(self.instance.coaches.values_list("id", flat=True))
@@ -179,6 +180,37 @@ class TrainingSessionForm(forms.ModelForm):
         # reassigns widget.choices whenever queryset is set, so this must run
         # after queryset assignment.
         self.fields["coaches"].widget.choices = grouped
+
+    # Mirrors Member.LEVEL_CHOICES order: most senior first.
+    _MEMBER_LEVEL_ORDER = (
+        Member.LEVEL_ADVANCED,
+        Member.LEVEL_INTERMEDIATE,
+        Member.LEVEL_BASIC,
+    )
+
+    def _apply_member_class_level_groups(self, member_queryset):
+        """Render the Assigned Members <select> as <optgroup>s grouped by
+        student class level. Tom Select renders the group headers natively
+        and also searches across them, so a coach can type a name OR a level.
+        """
+        level_labels = dict(Member.LEVEL_CHOICES)
+        buckets = {value: [] for value in self._MEMBER_LEVEL_ORDER}
+        unassigned = []
+        for member in member_queryset:
+            label = member.full_name
+            level = (member.skill_level or "").strip()
+            if level in buckets:
+                buckets[level].append((member.pk, label))
+            else:
+                unassigned.append((member.pk, label))
+
+        grouped = []
+        for level_value in self._MEMBER_LEVEL_ORDER:
+            if buckets[level_value]:
+                grouped.append((level_labels[level_value], buckets[level_value]))
+        if unassigned:
+            grouped.append(("Unassigned class level", unassigned))
+        self.fields["members"].widget.choices = grouped
 
     def _selected_coach_list(self):
         coaches = list(self.cleaned_data.get("coaches") or [])

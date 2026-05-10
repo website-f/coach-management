@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Branch | NYO{% endblock %}
+{% block page_heading %}Edit Branch{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+  <section class="card p-6 sm:p-8">
+    <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+      <div class="max-w-xl">
+        <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">Branch</p>
+        <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">{{ object.name }}</h2>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Update branch contact info and status.</p>
+      </div>
+      <a href="{% url 'accounts:branches' %}" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i>Back</a>
+    </div>
+
+    <form method="post" novalidate class="grid gap-4 sm:grid-cols-2">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+      <div class="sm:col-span-2 rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-300 text-sm p-3">
+        {{ form.non_field_errors|join:", " }}
+      </div>
+      {% endif %}
+      {% for field in form %}
+      <div class="{% if field.name == 'address' or field.name == 'name' %}sm:col-span-2{% endif %}">
+        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}<p class="text-xs text-red-600 mt-1">{{ field.errors|join:", " }}</p>{% endif %}
+      </div>
+      {% endfor %}
+      <div class="sm:col-span-2 flex justify-end gap-2 pt-2">
+        <a href="{% url 'accounts:branches' %}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i>Save</button>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

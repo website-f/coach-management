@@ -57,6 +57,39 @@ class UserProfile(models.Model):
         return f"{self.user.username} ({self.get_role_display()})"
 
 
+class Branch(models.Model):
+    """A physical location / venue the organization operates from.
+
+    Today it's a flat list under one club. When the multi-tenant revamp lands,
+    each Branch will hang off an Organization and pick up a Region FK.
+    """
+
+    name = models.CharField(max_length=255)
+    code = models.CharField(max_length=30, blank=True, help_text="Short identifier, e.g. RSBE-KL.")
+    city = models.CharField(max_length=120, blank=True)
+    state = models.CharField(max_length=120, blank=True)
+    address = models.TextField(blank=True)
+    phone = models.CharField(max_length=30, blank=True)
+    email = models.EmailField(blank=True)
+    is_active = models.BooleanField(default=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_branches",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name_plural = "Branches"
+
+    def __str__(self):
+        return self.name
+
+
 class SystemFlag(models.Model):
     key = models.CharField(max_length=100, unique=True)
     value = models.CharField(max_length=255, blank=True)

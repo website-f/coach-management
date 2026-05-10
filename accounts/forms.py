@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import PasswordChangeForm
 from django.utils.crypto import get_random_string
 
-from accounts.models import LandingPageContent, UserProfile
+from accounts.models import Branch, LandingPageContent, UserProfile
 from accounts.utils import ROLE_COACH
 
 User = get_user_model()
@@ -125,6 +125,25 @@ class CoachAccountForm(forms.Form):
         profile.temporary_password = temporary_password
         profile.save()
         return user, temporary_password
+
+
+class BranchForm(forms.ModelForm):
+    class Meta:
+        model = Branch
+        fields = ["name", "code", "city", "state", "address", "phone", "email", "is_active"]
+        widgets = {
+            "address": forms.Textarea(attrs={"rows": 2}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        apply_dashboard_control_styles(self)
+        self.fields["name"].widget.attrs.setdefault("placeholder", "e.g. RSBE Kuala Lumpur")
+        self.fields["code"].widget.attrs.setdefault("placeholder", "Optional short code, e.g. RSBE-KL")
+        self.fields["city"].widget.attrs.setdefault("placeholder", "e.g. Kuala Lumpur")
+        self.fields["state"].widget.attrs.setdefault("placeholder", "e.g. Selangor")
+        self.fields["phone"].widget.attrs.setdefault("placeholder", "Optional phone number")
+        self.fields["email"].widget.attrs.setdefault("placeholder", "Optional contact email")
 
 
 class CoachPasswordChangeForm(PasswordChangeForm):

@@ -11,10 +11,10 @@
       <div class="max-w-xl">
         <p class="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">Locations</p>
         <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white leading-tight">Branch directory</h2>
-        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Once you start operating from more than one venue, each branch will appear here with its own roster, sessions, and finance breakdown.</p>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Each branch can have its own roster, sessions, and finance breakdown.</p>
       </div>
       <div class="flex gap-2 flex-wrap">
-        <button type="button" disabled class="btn btn-primary opacity-60 cursor-not-allowed" title="Branch creation coming soon">
+        <button type="button" onclick="document.getElementById('createBranch').showModal()" class="btn btn-primary">
           <i class="fa-solid fa-plus"></i>Add Branch
         </button>
       </div>
@@ -27,15 +27,15 @@
       <p class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{{ branches|length }}</p>
     </div>
     <div class="card p-4">
-      <p class="text-[11px] uppercase tracking-wider text-gray-500">Players</p>
+      <p class="text-[11px] uppercase tracking-wider text-gray-500">Active</p>
+      <p class="mt-1 text-2xl font-bold text-green-600">{% with active_count=0 %}{% for b in branches %}{% if b.is_active %}{% with active_count=active_count|add:1 %}{% endwith %}{% endif %}{% endfor %}{{ active_count }}{% endwith %}</p>
+    </div>
+    <div class="card p-4">
+      <p class="text-[11px] uppercase tracking-wider text-gray-500">States covered</p>
       <p class="mt-1 text-2xl font-bold text-blue-500">—</p>
     </div>
     <div class="card p-4">
-      <p class="text-[11px] uppercase tracking-wider text-gray-500">Coaches</p>
-      <p class="mt-1 text-2xl font-bold text-green-600">—</p>
-    </div>
-    <div class="card p-4">
-      <p class="text-[11px] uppercase tracking-wider text-gray-500">Sessions / wk</p>
+      <p class="text-[11px] uppercase tracking-wider text-gray-500">Cities</p>
       <p class="mt-1 text-2xl font-bold text-amber-500">—</p>
     </div>
   </section>
@@ -47,9 +47,7 @@
           <tr>
             <th>Branch</th>
             <th>Location</th>
-            <th>Players</th>
-            <th>Coaches</th>
-            <th>Sessions / wk</th>
+            <th>Contact</th>
             <th>Status</th>
             <th class="text-right">Action</th>
           </tr>
@@ -62,12 +60,13 @@
               <p class="text-xs text-gray-500">{{ branch.code|default:"—" }}</p>
             </td>
             <td data-label="Location">
-              <p>{{ branch.city|default:"—" }}</p>
+              <p>{{ branch.city|default:"—" }}{% if branch.state %}, {{ branch.state }}{% endif %}</p>
               <p class="text-xs text-gray-500">{{ branch.address|default:"—" }}</p>
             </td>
-            <td data-label="Players">{{ branch.member_count|default:"—" }}</td>
-            <td data-label="Coaches">{{ branch.coach_count|default:"—" }}</td>
-            <td data-label="Sessions / wk">{{ branch.weekly_session_count|default:"—" }}</td>
+            <td data-label="Contact">
+              <p>{{ branch.phone|default:"—" }}</p>
+              <p class="text-xs text-gray-500">{{ branch.email|default:"—" }}</p>
+            </td>
             <td data-label="Status">
               {% if branch.is_active %}
                 <span class="badge badge-success">Active</span>
@@ -76,20 +75,30 @@
               {% endif %}
             </td>
             <td data-label="Action" class="text-right whitespace-nowrap">
-              <a href="#" class="btn btn-secondary btn-sm">View</a>
+              <div class="inline-flex flex-wrap gap-1 justify-end">
+                <a href="{% url 'accounts:branch_edit' branch.pk %}" class="btn btn-secondary btn-sm">Edit</a>
+                <form method="post" action="{% url 'accounts:branch_delete' branch.pk %}" class="inline"
+                      onsubmit="return confirm('Delete branch {{ branch.name|escapejs }}? This cannot be undone.');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-danger btn-sm" title="Delete branch"><i class="fa-solid fa-trash"></i>Delete</button>
+                </form>
+              </div>
             </td>
           </tr>
           {% empty %}
           <tr>
-            <td data-label="Branch" colspan="7" class="py-12">
+            <td data-label="Branch" colspan="5" class="py-12">
               <div class="flex flex-col items-center text-center gap-3 text-gray-500">
                 <div class="w-12 h-12 rounded-full bg-brand-50 dark:bg-brand-400/10 text-brand-500 grid place-items-center">
                   <i class="fa-solid fa-building text-lg"></i>
                 </div>
                 <div class="max-w-sm">
                   <p class="font-medium text-gray-900 dark:text-white">No branches yet</p>
-                  <p class="text-sm mt-1">When you add your first branch you'll be able to assign coaches, members, and sessions to it, and see per-branch performance from this page.</p>
+                  <p class="text-sm mt-1">Add your first branch to start assigning coaches, members, and sessions to it.</p>
                 </div>
+                <button type="button" onclick="document.getElementById('createBranch').showModal()" class="btn btn-primary btn-sm mt-2">
+                  <i class="fa-solid fa-plus"></i>Add Branch
+                </button>
               </div>
             </td>
           </tr>
@@ -100,4 +109,30 @@
   </section>
 
 </div>
+
+<dialog id="createBranch" class="rounded-2xl backdrop:bg-black/50 p-0 w-full max-w-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+  <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+    <h3 class="font-semibold">Add Branch</h3>
+    <button type="button" onclick="this.closest('dialog').close()" class="w-9 h-9 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="p-6">
+    <form method="post" action="{% url 'accounts:branch_create' %}" novalidate class="grid gap-4 sm:grid-cols-2">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="{% if field.name == 'address' or field.name == 'name' %}sm:col-span-2{% endif %}">
+        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}<p class="text-xs text-red-600 mt-1">{{ field.errors|join:", " }}</p>{% endif %}
+      </div>
+      {% endfor %}
+      {% if form.non_field_errors %}<p class="sm:col-span-2 text-sm text-red-600">{{ form.non_field_errors|join:", " }}</p>{% endif %}
+      <div class="sm:col-span-2 flex justify-end gap-2 pt-2">
+        <button type="button" onclick="this.closest('dialog').close()" class="btn btn-secondary">Cancel</button>
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i>Create</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+{% if show_create_modal %}<script>document.getElementById('createBranch').showModal();</script>{% endif %}
 {% endblock %}

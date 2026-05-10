@@ -13,11 +13,11 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views import View
-from django.views.generic import DetailView, FormView, ListView, RedirectView, TemplateView, UpdateView
+from django.views.generic import CreateView, DeleteView, DetailView, FormView, ListView, RedirectView, TemplateView, UpdateView
 
-from accounts.forms import CoachAccountForm, CoachPasswordChangeForm, LandingPageContentForm
+from accounts.forms import BranchForm, CoachAccountForm, CoachPasswordChangeForm, LandingPageContentForm
 from accounts.mixins import AdminRequiredMixin, ParentRequiredMixin
-from accounts.models import LandingPageContent, Notification, UserProfile
+from accounts.models import Branch, LandingPageContent, Notification, UserProfile
 from accounts.utils import (
     ROLE_ADMIN,
     ROLE_COACH,
@@ -695,19 +695,59 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class BranchListView(AdminRequiredMixin, TemplateView):
-    """Placeholder branch directory.
-
-    No Branch model exists yet — once one is added, swap this for a ListView
-    backed by Branch.objects.all() and surface real per-branch data.
-    """
-
+class BranchListView(AdminRequiredMixin, ListView):
+    model = Branch
     template_name = "accounts/branch_list.html"
+    context_object_name = "branches"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["branches"] = []
+        context["form"] = BranchForm()
+        context["show_create_modal"] = False
         return context
+
+
+class BranchCreateView(AdminRequiredMixin, CreateView):
+    model = Branch
+    form_class = BranchForm
+    template_name = "accounts/branch_list.html"
+    success_url = reverse_lazy("accounts:branches")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["branches"] = Branch.objects.all()
+        context["show_create_modal"] = True
+        return context
+
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        response = super().form_valid(form)
+        messages.success(self.request, f"Branch '{self.object.name}' created.")
+        return response
+
+
+class BranchUpdateView(AdminRequiredMixin, UpdateView):
+    model = Branch
+    form_class = BranchForm
+    template_name = "accounts/branch_form.html"
+    success_url = reverse_lazy("accounts:branches")
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, f"Branch '{self.object.name}' updated.")
+        return response
+
+
+class BranchDeleteView(AdminRequiredMixin, DeleteView):
+    model = Branch
+    success_url = reverse_lazy("accounts:branches")
+    http_method_names = ["post"]
+
+    def form_valid(self, form):
+        name = self.object.name
+        response = super().form_valid(form)
+        messages.success(self.request, f"Branch '{name}' deleted.")
+        return response
 
 
 class LandingContentUpdateView(AdminRequiredMixin, UpdateView):

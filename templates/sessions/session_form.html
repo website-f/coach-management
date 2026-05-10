@@ -106,6 +106,17 @@
     border-top-color: #1f2937;
   }
   .ts-dropdown .optgroup:first-child .optgroup-header { border-top: 0; }
+  .ts-option-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .ts-option-hint {
+    font-size: .6875rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #9ca3af;
+    font-weight: 500;
+  }
+  html.dark .ts-option-hint { color: #6b7280; }
+  .ts-dropdown .active .ts-option-hint { color: #b45309; }
+  html.dark .ts-dropdown .active .ts-option-hint { color: #fcd34d; }
   /* Inline search input inside the control */
   .ts-wrapper.multi.has-items .ts-control > input,
   .ts-wrapper.single .ts-control > input {
@@ -124,6 +135,39 @@
   /* Single selects on this page — already styled globally; tighten spacing
      so they line up with the multi-select height. */
   .form-select-clean { height: 44px; }
+
+  /* Recurring weekday chips: auto-fit grid so labels never get clipped.
+     Each chip is at least 110px wide; on narrow phones it wraps to 2 columns,
+     on wider screens it stays 7-across. */
+  .weekday-grid {
+    display: grid;
+    gap: .5rem;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  }
+  .weekday-chip {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .5rem .75rem;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    border-radius: .5rem;
+    font-size: .8125rem;
+    line-height: 1;
+    color: #374151;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color .15s, background-color .15s;
+  }
+  .weekday-chip:hover { border-color: #fbbf24; background: #fffaf0; }
+  .weekday-chip input[type="checkbox"] {
+    width: 14px; height: 14px; margin: 0; flex-shrink: 0;
+    accent-color: #f59e0b;
+  }
+  html.dark .weekday-chip {
+    background: #111827;
+    border-color: #1f2937;
+    color: #d1d5db;
+  }
+  html.dark .weekday-chip:hover { border-color: rgba(245,158,11,.4); background: rgba(245,158,11,.06); }
 </style>
 {% endblock %}
 
@@ -165,17 +209,17 @@
 
       <div class="rounded-xl border border-gray-200 dark:border-gray-800 p-4 bg-gray-50/50 dark:bg-gray-800/20">
         <p class="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-3">Schedule Mode</p>
-        <div class="grid gap-4 sm:grid-cols-2">
-          <div>
+        <div class="space-y-4">
+          <div class="sm:max-w-sm">
             <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{{ form.schedule_mode.label }}</label>
             {{ form.schedule_mode }}
             <p class="text-xs text-gray-500 mt-1">One-time, or repeat weekly across the month.</p>
           </div>
           <div>
             <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{{ form.recurring_weekdays.label }}</label>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1">
+            <div class="weekday-grid mt-1">
               {% for checkbox in form.recurring_weekdays %}
-              <label class="flex items-center gap-2 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-sm cursor-pointer hover:border-brand-300">
+              <label class="weekday-chip">
                 {{ checkbox.tag }}<span>{{ checkbox.choice_label }}</span>
               </label>
               {% endfor %}
@@ -219,6 +263,16 @@
       }
       document.querySelectorAll('select[data-tom]').forEach(function (el) {
         if (el.tomselect) return; // already initialised
+        // Build a level lookup: option PK -> its <optgroup> label, so the
+        // dropdown can search across both the student/coach name and their
+        // class level (e.g. typing "advanced" filters to Advanced students).
+        var levelByPk = {};
+        el.querySelectorAll('optgroup').forEach(function (group) {
+          var label = group.getAttribute('label') || '';
+          group.querySelectorAll('option').forEach(function (opt) {
+            levelByPk[opt.value] = label;
+          });
+        });
         new TomSelect(el, {
           plugins: el.multiple ? ['remove_button', 'clear_button'] : [],
           placeholder: el.dataset.placeholder || 'Select...',
@@ -227,13 +281,23 @@
           // Click an option to add it; dropdown stays open for fast multi-pick.
           closeAfterSelect: !el.multiple,
           maxOptions: null,
+          // Search across name + class level label.
+          searchField: ['text', 'level'],
+          // Inject the level into every option's dataset so searchField picks it up.
+          onInitialize: function () {
+            var self = this;
+            Object.keys(self.options).forEach(function (pk) {
+              self.options[pk].level = levelByPk[pk] || '';
+            });
+          },
           // Render group header and options cleanly.
           render: {
             optgroup_header: function (data, escape) {
               return '<div class="optgroup-header">' + escape(data.label) + '</div>';
             },
             option: function (data, escape) {
-              return '<div>' + escape(data.text) + '</div>';
+              var hint = data.level ? '<span class="ts-option-hint">' + escape(data.level) + '</span>' : '';
+              return '<div class="ts-option-row"><span>' + escape(data.text) + '</span>' + hint + '</div>';
             },
             no_results: function () {
               return '<div class="no-results" style="padding:.6rem .75rem;font-size:.8125rem;color:#6b7280;">No matches</div>';
