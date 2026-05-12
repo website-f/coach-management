@@ -1175,6 +1175,16 @@ class SessionCreateView(AdminRequiredMixin, CreateView):
             messages.success(self.request, f"{session_count} recurring sessions created and notifications were sent.")
         else:
             messages.success(self.request, "Session created successfully and notifications were sent.")
+        # Warn the admin if no students were assigned. The coach view shows
+        # "No players assigned yet" if a session is created with an empty
+        # roster, so call it out instead of letting it slip through silently.
+        empty_count = sum(1 for s in created_sessions if not s.attendance_records.exists())
+        if empty_count:
+            messages.warning(
+                self.request,
+                f"{empty_count} session(s) were created without any assigned students. "
+                "Open the session and add players, or coaches will see an empty roster.",
+            )
         return response
 
 
@@ -1196,6 +1206,11 @@ class SessionUpdateView(AdminRequiredMixin, UpdateView):
         response = super().form_valid(form)
         notify_schedule_participants([self.object], updated=True)
         messages.success(self.request, "Session updated successfully and the schedule alerts were refreshed.")
+        if not self.object.attendance_records.exists():
+            messages.warning(
+                self.request,
+                "This session has no assigned students. Coaches will see an empty roster until you add some.",
+            )
         return response
 
 

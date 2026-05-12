@@ -290,6 +290,19 @@
               self.options[pk].level = levelByPk[pk] || '';
             });
           },
+          // Belt-and-braces sync: on every change, mark the matching <option>
+          // selected on the underlying <select>. Without this, Tom Select on a
+          // multi-select with <optgroup>s sometimes ships an empty value when
+          // the form is submitted — Django then sees no members and creates
+          // a session with an empty roster.
+          onChange: function (values) {
+            if (!el.multiple) return;
+            var arr = Array.isArray(values) ? values : (values ? [values] : []);
+            var set = new Set(arr.map(String));
+            el.querySelectorAll('option').forEach(function (opt) {
+              opt.selected = set.has(String(opt.value));
+            });
+          },
           // Render group header and options cleanly.
           render: {
             optgroup_header: function (data, escape) {
@@ -304,6 +317,25 @@
             },
           },
         });
+      });
+
+      // Final guard: right before the form submits, force every Tom Select
+      // back into the underlying <select> one more time. This catches any
+      // edge case where Tom Select internal state was updated but the
+      // <option selected> attributes weren't yet synced.
+      document.querySelectorAll('form').forEach(function (form) {
+        if (!form.querySelector('select[data-tom]')) return;
+        form.addEventListener('submit', function () {
+          form.querySelectorAll('select[data-tom]').forEach(function (el) {
+            if (!el.tomselect || !el.multiple) return;
+            var values = el.tomselect.getValue() || [];
+            var arr = Array.isArray(values) ? values : (values ? [values] : []);
+            var set = new Set(arr.map(String));
+            el.querySelectorAll('option').forEach(function (opt) {
+              opt.selected = set.has(String(opt.value));
+            });
+          });
+        }, true);
       });
     }
     if (document.readyState === 'loading') {
