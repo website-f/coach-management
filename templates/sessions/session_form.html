@@ -319,20 +319,41 @@
         });
       });
 
-      // Final guard: right before the form submits, force every Tom Select
-      // back into the underlying <select> one more time. This catches any
-      // edge case where Tom Select internal state was updated but the
-      // <option selected> attributes weren't yet synced.
+      // Bulletproof form submission: Tom Select on a <select multiple> with
+      // <optgroup> doesn't always sync the source <option selected> reliably.
+      // On submit, we bypass the source <select> entirely — disable it so the
+      // browser doesn't read its (possibly empty) values, then inject one
+      // hidden <input> per selected value sharing the original name. Tom
+      // Select's getValue() is the single source of truth because that's
+      // what the user actually sees on screen as pills.
       document.querySelectorAll('form').forEach(function (form) {
         if (!form.querySelector('select[data-tom]')) return;
         form.addEventListener('submit', function () {
+          // Clear any shadow inputs we added on a previous submit attempt
+          // (e.g. when validation failed and the user re-submits).
+          form.querySelectorAll('input[data-tom-shadow]').forEach(function (n) { n.remove(); });
           form.querySelectorAll('select[data-tom]').forEach(function (el) {
-            if (!el.tomselect || !el.multiple) return;
-            var values = el.tomselect.getValue() || [];
-            var arr = Array.isArray(values) ? values : (values ? [values] : []);
-            var set = new Set(arr.map(String));
-            el.querySelectorAll('option').forEach(function (opt) {
-              opt.selected = set.has(String(opt.value));
+            if (!el.tomselect) return;
+            var name = el.getAttribute('name');
+            if (!name) return;
+            var values = el.tomselect.getValue();
+            var arr;
+            if (Array.isArray(values)) arr = values;
+            else if (values === null || values === undefined || values === '') arr = [];
+            else arr = [values];
+            // Disable the source <select> so the browser ignores its options
+            // entirely. We re-enable it asynchronously after the submit so
+            // the UI still works if the user comes back to the page.
+            el.disabled = true;
+            setTimeout(function () { el.disabled = false; }, 0);
+            arr.forEach(function (v) {
+              if (v === null || v === undefined || v === '') return;
+              var inp = document.createElement('input');
+              inp.type = 'hidden';
+              inp.name = name;
+              inp.value = v;
+              inp.setAttribute('data-tom-shadow', '1');
+              form.appendChild(inp);
             });
           });
         }, true);

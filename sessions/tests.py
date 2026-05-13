@@ -16,6 +16,92 @@ from sessions.services import ensure_default_syllabus
 User = get_user_model()
 
 
+class SessionRosterPersistenceTests(TestCase):
+    """Lock the bug we fixed: when admin saves a session with members picked,
+    the roster must end up in attendance_records, otherwise the coach opens
+    the session and sees "No players assigned yet"."""
+
+    def setUp(self):
+        self.admin = User.objects.create_user(username="admin_qa", password="x")
+        self.admin.profile.role = UserProfile.ROLE_ADMIN
+        self.admin.profile.save()
+
+        self.coach = User.objects.create_user(username="coach_qa", password="x")
+        self.coach.profile.role = UserProfile.ROLE_COACH
+        self.coach.profile.save()
+
+        self.members = [
+            Member.objects.create(
+                full_name=f"Player {i}",
+                date_of_birth="2015-01-01",
+                contact_number="0123",
+                emergency_contact_name="Guardian",
+                emergency_contact_phone="0123",
+                status=Member.STATUS_ACTIVE,
+                skill_level=Member.LEVEL_BASIC,
+                payment_plan=PaymentPlan.get_default(),
+            )
+            for i in range(3)
+        ]
+        ensure_default_syllabus()
+
+    def _post_body(self, members):
+        return {
+            "title": "Kelas QA",
+            "session_date": "2026-05-20",
+            "start_time": "10:00",
+            "end_time": "11:30",
+            "court": "Court 1",
+            "syllabus_root": str(SyllabusRoot.get_default().pk),
+            "notes": "",
+            "members": [str(m.pk) for m in members],
+            "coaches": [str(self.coach.pk)],
+            "schedule_mode": TrainingSessionForm.SCHEDULE_MODE_ONE_TIME,
+        }
+
+    def test_create_session_with_members_persists_roster(self):
+        self.client.force_login(self.admin)
+        resp = self.client.post(reverse("sessions:create"), self._post_body(self.members))
+        # 302 redirect on success, 200 means form errors
+        self.assertEqual(resp.status_code, 302, msg=getattr(resp, "context", {}).get("form").errors if resp.status_code == 200 else "")
+        session = TrainingSession.objects.get(title="Kelas QA")
+        roster_ids = set(session.attendance_records.values_list("member_id", flat=True))
+        self.assertEqual(roster_ids, {m.pk for m in self.members})
+
+    def test_edit_session_repick_members_persists_roster(self):
+        # Create the session with no members first, then re-edit and attach all three.
+        session = TrainingSession.objects.create(
+            title="Kelas QA",
+            session_date="2026-05-20",
+            start_time="10:00",
+            end_time="11:30",
+            court="Court 1",
+            coach=self.coach,
+        )
+        self.assertEqual(session.attendance_records.count(), 0)
+
+        self.client.force_login(self.admin)
+        resp = self.client.post(
+            reverse("sessions:edit", kwargs={"pk": session.pk}),
+            self._post_body(self.members),
+        )
+        self.assertEqual(resp.status_code, 302)
+        session.refresh_from_db()
+        roster_ids = set(session.attendance_records.values_list("member_id", flat=True))
+        self.assertEqual(roster_ids, {m.pk for m in self.members})
+
+    def test_create_session_without_members_shows_warning(self):
+        self.client.force_login(self.admin)
+        resp = self.client.post(
+            reverse("sessions:create"),
+            self._post_body([]),
+            follow=True,
+        )
+        self.assertEqual(resp.status_code, 200)
+        # Warning toast text from SessionCreateView.form_valid
+        self.assertContains(resp, "without any assigned students")
+
+
 class TrialSessionLimitTests(TestCase):
     def create_user(self, username, role):
         user = User.objects.create_user(username=username, password="testpass123")
