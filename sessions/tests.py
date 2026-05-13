@@ -90,6 +90,40 @@ class SessionRosterPersistenceTests(TestCase):
         roster_ids = set(session.attendance_records.values_list("member_id", flat=True))
         self.assertEqual(roster_ids, {m.pk for m in self.members})
 
+    def test_attendance_form_lists_members_in_both_desktop_and_mobile_blocks(self):
+        """Regression: zip() in the view exhausts after the first {% for %}
+        loop in the template, so the mobile cards block silently fell back to
+        the empty state ("No players assigned yet") even when the roster was
+        populated. The fix is to materialise the zip into a list."""
+        session = TrainingSession.objects.create(
+            title="Kelas QA",
+            session_date="2026-05-20",
+            start_time="10:00",
+            end_time="11:30",
+            court="Court 1",
+            coach=self.coach,
+        )
+        for m in self.members:
+            session.attendance_records.create(member=m)
+
+        self.client.force_login(self.coach)
+        resp = self.client.get(reverse("sessions:attendance", kwargs={"pk": session.pk}))
+        self.assertEqual(resp.status_code, 200)
+        body = resp.content.decode()
+
+        # Each player name should appear at least TWICE in the rendered HTML —
+        # once in the desktop <table> and once in the mobile card list. If the
+        # iterator was exhausted by the first loop, the second copy would be
+        # missing.
+        for m in self.members:
+            self.assertGreaterEqual(
+                body.count(m.full_name),
+                2,
+                f"{m.full_name} appears < 2x — mobile block likely empty (zip iterator exhausted).",
+            )
+        # And the empty-state must NOT render when the roster is populated.
+        self.assertNotIn("No players assigned yet", body)
+
     def test_create_session_without_members_shows_warning(self):
         self.client.force_login(self.admin)
         resp = self.client.post(

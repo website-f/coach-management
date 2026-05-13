@@ -90,11 +90,11 @@
         <tbody>
           {% for p in invoice.receipt_history %}
           <tr>
-            <td class="text-gray-500">{{ p.submitted_at|date:"d M Y H:i" }}</td>
-            <td>{{ p.get_payment_method_display }}</td>
-            <td>RM {{ p.amount_received|floatformat:2 }}</td>
-            <td><span class="badge {{ p.status|status_badge }}">{{ p.get_status_display }}</span></td>
-            <td>{{ p.receipt_reference|default:"—" }}</td>
+            <td data-label="Submitted" class="text-gray-500">{{ p.submitted_at|date:"d M Y H:i" }}</td>
+            <td data-label="Method">{{ p.get_payment_method_display }}</td>
+            <td data-label="Amount">RM {{ p.amount_received|floatformat:2 }}</td>
+            <td data-label="Status"><span class="badge {{ p.status|status_badge }}">{{ p.get_status_display }}</span></td>
+            <td data-label="Ref">{{ p.receipt_reference|default:"—" }}</td>
           </tr>
           {% endfor %}
         </tbody>

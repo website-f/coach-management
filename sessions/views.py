@@ -1233,12 +1233,15 @@ class AttendanceUpdateView(HeadcountOrAboveRequiredMixin, View):
 
     def render_page(self, request, training_session, formset):
         queryset = training_session.attendance_records.select_related("member", "member__payment_plan").order_by("member__full_name")
+        # Materialise to a list — the template iterates this twice (desktop
+        # table + mobile cards). A bare zip() is a single-use generator, so
+        # the second loop would silently render the empty-state.
         return render(
             request,
             self.template_name,
             {
                 "training_session": training_session,
-                "attendance_rows": zip(formset.forms, queryset),
+                "attendance_rows": list(zip(formset.forms, queryset)),
                 "management_form": formset.management_form,
             },
         )
